@@ -219,7 +219,7 @@ Implementação e verificação automática concluídas ([ADR 008](docs/adr/008-
 - [ ] Página de status: uso de CPU/GPU, transcodificações ativas, tamanho do cache
 - [ ] Tratamento de erros amigável no frontend (arquivo sumiu, codec não suportado)
 - [ ] Testes de carga: 3 streams simultâneos (2 direct play + 1 transcodificado)
-- [ ] `README.md` completo: instalação, configuração, convenção de pastas
+- [x] `README.md` completo: instalação, configuração, convenção de pastas
 - [ ] Release `v1.0.0` com binários Windows, Linux e macOS + pacotes das TVs (`.wgt`, `.ipk`, `.apk`)
 
 **Aceite**
@@ -253,4 +253,5 @@ Implementação e verificação automática concluídas ([ADR 008](docs/adr/008-
 - Transcodificação: *tone mapping* HDR→SDR (hoje um HDR convertido para H.264 fica desbotado)
 - Transcodificação: manter 5.1 quando o cliente suporta (hoje o áudio convertido é AAC estéreo)
 - Transcodificação: pausar o FFmpeg quando ele está muito à frente do player (*throttling*)
+- Perfis: redefinir um PIN esquecido (hoje só o próprio perfil edita ou apaga a si mesmo)
 - Transcodificação: matar os FFmpeg filhos se o servidor cair à força (Job Object no Windows, `Pdeathsig` no Linux); no encerramento normal nada sobra
