@@ -125,4 +125,12 @@
 			0 16px 40px rgba(0, 0, 0, 0.6),
 			0 0 0 3px rgba(255, 255, 255, 0.92);
 	}
+	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
+	:global(html.tv) .title {
+		font-size: 1.625rem;
+	}
+	:global(html.tv) .subtitle,
+	:global(html.tv) .check {
+		font-size: 1.5rem;
+	}
 </style>

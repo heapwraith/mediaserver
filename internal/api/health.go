@@ -8,6 +8,8 @@ import (
 )
 
 type healthBody struct {
+	// Name lets TV apps tell this server apart while scanning the network.
+	Name    string `json:"name"`
 	Status  string `json:"status"`
 	Version string `json:"version"`
 	DB      string `json:"db"`
@@ -18,10 +20,11 @@ type errorBody struct {
 }
 
 // healthHandler answers GET /api/health. It returns 503 when the database
-// does not respond.
+// does not respond. It is the only endpoint open to other origins: TV apps
+// call it from their packaged (file://) page to find the server.
 func healthHandler(d Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		body := healthBody{Status: "ok", Version: d.Version, DB: "ok"}
+		body := healthBody{Name: "mediaserver", Status: "ok", Version: d.Version, DB: "ok"}
 		status := http.StatusOK
 
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
@@ -31,6 +34,7 @@ func healthHandler(d Deps) http.HandlerFunc {
 			status = http.StatusServiceUnavailable
 		}
 		w.Header().Set("Cache-Control", "no-store")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		writeJSON(w, status, body)
 	}
 }

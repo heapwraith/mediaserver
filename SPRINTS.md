@@ -1,6 +1,6 @@
 # SPRINTS.md
 
-Planejamento do projeto. **Sprint ativa: 6.**
+Planejamento do projeto. **Sprint ativa: 7.** (A Sprint 6 aguarda só o aceite manual reservado ao usuário.)
 
 Regras:
 - Marcar `[x]` só quando o critério de aceite da tarefa for cumprido.
@@ -190,15 +190,17 @@ Implementação e verificações automáticas/Edge concluídas. O aceite manual 
 
 **Objetivo:** assistir em qualquer TV com o controle remoto, usando o mesmo frontend.
 
-- [ ] Camada de plataforma em `web/src/lib/platform/` (teclas do controle, armazenamento local, sair do app) com implementações para navegador, Tizen, webOS e Android
-- [ ] Tela inicial de configuração: IP/porta do servidor (salvo localmente), com descoberta automática na rede quando possível
-- [ ] Mapeamento das teclas do controle (setas, OK, Voltar, Play/Pause, Avançar/Retroceder, teclas coloridas)
-- [ ] Foco visível e área de toque grande (layout 10-foot), testado em 720p, 1080p e 4K
-- [ ] **Samsung (Tizen):** empacotamento `.wgt` em `tv/tizen/`
-- [ ] **LG (webOS):** empacotamento `.ipk` em `tv/webos/`
-- [ ] **Android TV / Google TV / Fire TV:** wrapper WebView `.apk` em `tv/android/`, com *leanback launcher*
-- [ ] Teste de codecs nativos de cada plataforma e ajuste da decisão de direct play
-- [ ] Guias de instalação por plataforma (modo desenvolvedor / sideload) em `docs/tv/`
+- [x] Camada de plataforma em `web/src/lib/platform/` (teclas do controle, armazenamento local, sair do app) com implementações para navegador, Tizen, webOS e Android
+- [x] Tela inicial de configuração: IP/porta do servidor (salvo localmente), com descoberta automática na rede quando possível
+- [x] Mapeamento das teclas do controle (setas, OK, Voltar, Play/Pause, Avançar/Retroceder, teclas coloridas)
+- [x] Foco visível e área de toque grande (layout 10-foot), testado em 720p, 1080p e 4K
+- [ ] **Samsung (Tizen):** empacotamento `.wgt` em `tv/tizen/` — `config.xml`, ícone e `make tv-tizen` prontos; falta gerar e instalar com o Tizen Studio + certificado Samsung (usuário, [guia](docs/tv/samsung.md))
+- [x] **LG (webOS):** empacotamento `.ipk` em `tv/webos/`
+- [x] **Android TV / Google TV / Fire TV:** wrapper WebView `.apk` em `tv/android/`, com *leanback launcher*
+- [ ] Teste de codecs nativos de cada plataforma e ajuste da decisão de direct play — ajuste feito (Tizen/webOS: `mkv`, `ac3`, `eac3`), "Este aparelho" nas Configurações e log `playback` no servidor; falta conferir em aparelho real
+- [x] Guias de instalação por plataforma (modo desenvolvedor / sideload) em `docs/tv/`
+
+Implementação e verificação automática concluídas ([ADR 008](docs/adr/008-tv-apps.md), [Verificação da Sprint 7](docs/sprint-7-verificacao.md)). O app da TV é leve: traz só a tela de conexão e mostra a interface servida pelo servidor. Pendente: aceite em aparelho real (Samsung disponível; LG e Android TV/Fire TV sem aparelho).
 
 **Aceite**
 - Navegação completa só com o controle em Tizen, webOS e Android TV

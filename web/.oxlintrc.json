@@ -24,7 +24,7 @@
 		],
 		"unicorn/no-array-sort": "off"
 	},
-	"ignorePatterns": ["build/**", ".svelte-kit/**", "node_modules/**"],
+	"ignorePatterns": ["build/**", "build-tv/**", ".svelte-kit/**", "node_modules/**"],
 	"overrides": [
 		{
 			"files": ["src/app.d.ts"],

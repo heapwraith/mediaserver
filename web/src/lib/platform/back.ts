@@ -12,11 +12,15 @@ export function trackNavigation(nav: AfterNavigate): void {
 
 /**
  * Voltar closes the current level: player → details → menu page → Início.
- * `top` are the menu pages, which go back to Início.
+ * `top` are the menu pages, which go back to Início. On Início, `atHome`
+ * runs (TVs ask whether to leave the app; the browser has nothing to close).
  */
-export function goBack(top: ReadonlySet<string> = new Set()): void {
+export function goBack(top: ReadonlySet<string> = new Set(), atHome?: () => void): void {
 	const path = location.pathname;
-	if (path === '/') return; // TVs ask to exit the app (Sprint 7)
+	if (path === '/') {
+		atHome?.();
+		return;
+	}
 	if (top.has(path)) void goto('/');
 	else if (depth > 0) history.back();
 	else void goto('/', { replaceState: true });

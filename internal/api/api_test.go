@@ -69,8 +69,8 @@ func TestHealth(t *testing.T) {
 		wantStatus int
 		want       healthBody
 	}{
-		{"db ok", true, http.StatusOK, healthBody{Status: "ok", Version: "1.2.3-test", DB: "ok"}},
-		{"db missing", false, http.StatusServiceUnavailable, healthBody{Status: "degraded", Version: "1.2.3-test", DB: "error"}},
+		{"db ok", true, http.StatusOK, healthBody{Name: "mediaserver", Status: "ok", Version: "1.2.3-test", DB: "ok"}},
+		{"db missing", false, http.StatusServiceUnavailable, healthBody{Name: "mediaserver", Status: "degraded", Version: "1.2.3-test", DB: "error"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -80,6 +80,10 @@ func TestHealth(t *testing.T) {
 			}
 			if ct := header.Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
 				t.Errorf("Content-Type = %q", ct)
+			}
+			// TV apps look for servers from their own (file://) page.
+			if acao := header.Get("Access-Control-Allow-Origin"); acao != "*" {
+				t.Errorf("Access-Control-Allow-Origin = %q, want *", acao)
 			}
 			var got healthBody
 			if err := json.Unmarshal([]byte(body), &got); err != nil {

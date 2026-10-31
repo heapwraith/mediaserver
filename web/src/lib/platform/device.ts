@@ -1,5 +1,7 @@
 // Device facts and storage. Platform differences live in this folder only.
 
+import { isTV } from './platform';
+
 /** Reads a JSON value saved by `save` (undefined when missing or broken). */
 export function load(key: string): unknown {
 	try {
@@ -28,11 +30,7 @@ export function prefersReducedMotion(): boolean {
 	return matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-/** Whether the app runs as a TV app (Sprint 7 sets this per platform). */
-export const isTV = false;
-
-/** Leaves the app (TV only; the browser has nothing to exit). */
-export function exitApp(): void {}
+export { exitApp, isTV } from './platform';
 
 // Fullscreen (Safari 15 still needs the webkit-prefixed API).
 type WebkitDocument = Document & {

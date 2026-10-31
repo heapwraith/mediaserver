@@ -500,7 +500,39 @@
 		return true;
 	}
 
+	/** Remote keys with one meaning wherever the focus is (AGENTS.md §7, Sprint 7). */
+	function remoteKey(a: Action): boolean {
+		switch (a) {
+			case 'play':
+				if (video?.paused === true) toggle();
+				else show();
+				return true;
+			case 'pause':
+				if (video?.paused === false) toggle();
+				else show();
+				return true;
+			case 'forward':
+				seek(SEEK_S);
+				return true;
+			case 'rewind':
+				seek(-SEEK_S);
+				return true;
+			case 'stop':
+				goBack();
+				return true;
+			case 'red':
+				if (subs.length > 0) open('subs');
+				return true;
+			case 'green':
+				if (audio.length > 1) open('audio');
+				return true;
+			default:
+				return false;
+		}
+	}
+
 	function onKey(a: Action): boolean {
+		if (remoteKey(a)) return true;
 		if (panel !== '') return panelKey(a);
 		if (inTop) return topKey(a);
 		if (countdown !== null && nextKey(a)) return true;
@@ -1095,5 +1127,12 @@
 		to {
 			transform: rotate(360deg);
 		}
+	}
+	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
+	:global(html.tv) .next-label,
+	:global(html.tv) .pill,
+	:global(html.tv) .time,
+	:global(html.tv) .buttons button {
+		font-size: 1.5rem;
 	}
 </style>

@@ -97,4 +97,9 @@
 		font-size: 1.25rem;
 		color: rgba(255, 255, 255, 0.6);
 	}
+	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
+	:global(html.tv) .empty p,
+	:global(html.tv) .error {
+		font-size: 1.5rem;
+	}
 </style>

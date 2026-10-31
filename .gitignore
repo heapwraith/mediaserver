@@ -2,6 +2,12 @@
 /dist/
 /.dev/
 /web/build/
+/web/build-tv/
+/web/vite.tv.config.ts.timestamp-*
+/tv/android/.gradle/
+/tv/android/build/
+/tv/android/app/build/
+/tv/android/local.properties
 /web/.svelte-kit/
 /web/node_modules/
 /web/vite.config.ts.timestamp-*

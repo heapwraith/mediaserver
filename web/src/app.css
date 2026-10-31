@@ -18,6 +18,16 @@ html {
 		font-size: 20px;
 	}
 }
+/* TV apps always scale with the width (720p, 1080p, 4K): Android TV reports
+   a 960×540 viewport and a 4K TV may report 3840 px, where the PC limits
+   above would make the layout huge or tiny. */
+html.tv {
+	font-size: calc(100vw / 120);
+}
+/* Body text on TVs: at least 24px at 1080p (AGENTS.md §7). */
+html.tv body {
+	font-size: 1.5rem;
+}
 /* No scrollbars: the focus drives the scrolling (the mouse wheel still works). */
 html {
 	scrollbar-width: none;

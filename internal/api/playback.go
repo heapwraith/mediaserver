@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 
@@ -34,6 +35,11 @@ func (d Deps) playback(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		var pb stream.Playback
 		if pb, err = d.startPlayback(r, id, req); err == nil {
+			// What each device got and why: checked on every TV (docs/tv/README.md).
+			if d.Logger != nil {
+				d.Logger.InfoContext(r.Context(), "playback", "media", id, "direct", pb.Direct,
+					"video", pb.Video, "audio", pb.Audio, "burned", pb.Burned, "caps", strings.Join(req.Caps, ","))
+			}
 			writeJSON(w, http.StatusOK, pb)
 			return
 		}

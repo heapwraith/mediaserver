@@ -180,4 +180,9 @@
 			0 12px 30px rgba(0, 0, 0, 0.5),
 			0 0 0 3px #4c8dff;
 	}
+	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
+	:global(html.tv) .error,
+	:global(html.tv) .key.small {
+		font-size: 1.5rem;
+	}
 </style>

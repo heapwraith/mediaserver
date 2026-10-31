@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<!-- App icon of the TV apps (tv/*): play on the accent color, theme background. -->
+	<rect width="512" height="512" rx="112" fill="#0B0B0F"/>
+	<circle cx="256" cy="256" r="168" fill="#4C8DFF"/>
+	<path d="M222 178 L346 256 L222 334 Z" fill="#0B0B0F" stroke="#0B0B0F" stroke-width="16" stroke-linejoin="round"/>
+</svg>

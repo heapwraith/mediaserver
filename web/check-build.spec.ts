@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { checkCss, staticImports, withoutSupports } from './scripts/check-build';
+import { checkCss, inlineStyles, staticImports, withoutSupports } from './scripts/check-build';
 import { unwrapSvelteWhere } from './vite.config';
+import { inlineIntoHtml } from './vite.tv.config';
 
 describe('checkCss', () => {
 	it('accepts Chromium 76 CSS', () => {
@@ -48,5 +49,32 @@ describe('staticImports', () => {
 			'./a.js',
 			'./b.js',
 		]);
+	});
+});
+
+describe('TV page', () => {
+	const html =
+		'<html><head><script type="module" crossorigin src="./assets/index-a1.js"></script>\n' +
+		'<link rel="stylesheet" crossorigin href="./assets/index-b2.css"></head><body></body></html>';
+
+	it('inlines the script (as a classic one, at the end) and the CSS', () => {
+		const page = inlineIntoHtml(
+			html,
+			new Map([['assets/index-a1.js', 'const s = "</script>";console.log(s)']]),
+			new Map([['assets/index-b2.css', '.a{color:red}']]),
+		);
+		expect(page).not.toContain('src=');
+		expect(page).not.toContain('href=');
+		expect(page).toContain('<style>.a{color:red}</style>');
+		expect(page).toContain(
+			'<body><script>(function(){\nconst s = "<\\/script>";console.log(s)\n})();</script>\n</body>',
+		);
+		expect(inlineStyles(page)).toEqual(['.a{color:red}']);
+	});
+
+	it('refuses a chunk that imports others', () => {
+		expect(() =>
+			inlineIntoHtml(html, new Map([['assets/index-a1.js', 'import "./x.js";']]), new Map()),
+		).toThrow('not a standalone chunk');
 	});
 });

@@ -7,7 +7,9 @@
 	import { scanStatus, startScan } from '#lib/api/client.ts';
 	import { session } from '#lib/api/session.svelte.ts';
 	import type { ScanStatus } from '#lib/api/types.ts';
+	import { capabilities } from '#lib/platform/codecs.ts';
 	import { focusGroup } from '#lib/platform/nav.svelte.ts';
+	import { changeServer, isTV, platform } from '#lib/platform/platform.ts';
 	import { saveSettings, settings } from '#lib/platform/settings.svelte.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -41,6 +43,16 @@
 		settings[key] = !settings[key];
 		saveSettings();
 	}
+
+	// "Este aparelho": what the server is told this device plays, to check
+	// direct play on each TV (Sprint 7).
+	const platformName = {
+		browser: 'Navegador',
+		tizen: 'Samsung (Tizen)',
+		webos: 'LG (webOS)',
+		android: 'Android TV',
+	}[platform];
+	const caps = capabilities();
 
 	const when = (iso?: string) => (iso === undefined ? '—' : new Date(iso).toLocaleString('pt-BR'));
 </script>
@@ -115,6 +127,23 @@
 	</div>
 </section>
 
+<section>
+	<h2>Este aparelho</h2>
+	{#if isTV}
+		<div class="bar" use:focusGroup={{ orientation: 'horizontal' }}>
+			<Button onclick={changeServer}>Trocar servidor</Button>
+		</div>
+	{/if}
+	<dl>
+		<dt>Plataforma</dt>
+		<dd>{platformName}</dd>
+		<dt>Reproduz direto</dt>
+		<dd>{caps.length > 0 ? caps.join(' · ') : '—'}</dd>
+		<dt>Legendas ASS no aparelho</dt>
+		<dd>{caps.includes('ass') ? 'sim' : 'não (gravadas no vídeo pelo servidor)'}</dd>
+	</dl>
+</section>
+
 {#await health then h}
 	{#if h}<p class="note">Servidor {h.version} · banco {h.db}</p>{/if}
 {/await}
@@ -160,5 +189,9 @@
 	.note {
 		margin-top: 2rem;
 		color: rgba(255, 255, 255, 0.6);
+	}
+	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
+	:global(html.tv) dl {
+		font-size: 1.5rem;
 	}
 </style>

@@ -267,4 +267,11 @@
 		color: #ff8a8a;
 		font-size: 1.125rem;
 	}
+	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
+	:global(html.tv) .field > span,
+	:global(html.tv) input,
+	:global(html.tv) .note,
+	:global(html.tv) .error {
+		font-size: 1.5rem;
+	}
 </style>

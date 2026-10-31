@@ -119,4 +119,8 @@
 	.actions > :global(* + *) {
 		margin-left: 1rem;
 	}
+	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
+	:global(html.tv) .meta {
+		font-size: 1.5rem;
+	}
 </style>

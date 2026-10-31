@@ -101,4 +101,9 @@
 		color: rgba(255, 255, 255, 0.6);
 		font-size: 1.25rem;
 	}
+	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
+	:global(html.tv) h1 span,
+	:global(html.tv) .note {
+		font-size: 1.5rem;
+	}
 </style>

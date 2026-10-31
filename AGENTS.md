@@ -13,8 +13,8 @@ Servidor de streaming **local** e próprio para **filmes, séries e animes**, co
 - O usuário aponta uma **pasta local** com as mídias. O servidor indexa, organiza e transmite.
 - Clientes: **qualquer PC e qualquer TV** na mesma rede.
   - **PC:** navegador moderno (Chrome, Edge, Firefox, Safari) no **Windows, Linux e macOS**.
-  - **TVs com sistema web:** Samsung (Tizen) e LG (webOS), usando o mesmo frontend empacotado.
-  - **Android TV / Google TV / Fire TV:** o mesmo frontend dentro de um *wrapper* Android (WebView).
+  - **TVs com sistema web:** Samsung (Tizen) e LG (webOS), com um app leve que traz só a tela de conexão e mostra a interface servida pelo próprio servidor ([ADR 008](docs/adr/008-tv-apps.md)).
+  - **Android TV / Google TV / Fire TV:** o mesmo app leve dentro de um *wrapper* Android (WebView).
   - **Qualquer outra TV** (Apple TV, Roku, TVs sem loja de apps): por enquanto via navegador da TV, quando houver, ou por *cast* (Chromecast/AirPlay) a partir do PC. Apps nativos ficam no Backlog.
 
   | Plataforma | App instalado na TV? | Formato | Instalação sem loja |
@@ -39,7 +39,7 @@ Servidor de streaming **local** e próprio para **filmes, séries e animes**, co
 | Frontend | **SvelteKit 3** (`adapter-static`) + **Svelte 5** + TypeScript | Config no `vite.config.ts` (sem `svelte.config.js`). Build embutido via `embed.FS` |
 | Navegação por controle | **lrud** (BBC), via *action* do Svelte | Navegação espacial independente de framework, feita para TV |
 | Player | **Player próprio** sobre o `<video>` nativo + **hls.js** (Sprint 5) | O Video.js 10 exige Chrome 111+ (ADR 004). **JASSUB** pra legendas ASS |
-| TV | Mesmo frontend empacotado: `.wgt` (Tizen), `.ipk` (webOS), `.apk` (Android TV/Fire TV, WebView) | Navegação por controle remoto; um código só |
+| TV | App leve (só a tela de conexão, `web/src/shell`) em `.wgt` (Tizen), `.ipk` (webOS) e `.apk` (Android TV/Fire TV, WebView); a interface vem do servidor | Navegação por controle remoto; um código só (ADR 008) |
 | Qualidade (Go) | **golangci-lint v2** (`run` + `fmt`) + `go fix` | Um só binário roda staticcheck, govet, gosec, modernize e formata com gofumpt + gci |
 | Estilo | **UnoCSS 66.x** (`preset-wind3` + `preset-legacy-compat`) + **Lightning CSS** | Classes estilo Tailwind geradas só no build (zero JS na TV). O Lightning CSS converte o CSS final pros alvos do browserslist. **Não** usar Tailwind v4 nem `preset-wind4` (exigem Chrome 111+) |
 | Qualidade (web) | **Oxlint** + **Oxfmt** + **svelte-check** (com tsgo) | Oxc (Rust): ~30x mais rápido que ESLint/Prettier. O svelte-check cobre os templates `.svelte`, que o Oxlint ainda não analisa |
@@ -62,11 +62,13 @@ internal/stream/        → direct play (Range) e transcodificação HLS
 internal/subtitles/     → legendas externas e embutidas, SRT→VTT
 internal/api/           → handlers HTTP, rotas, middlewares
 web/                    → SvelteKit (o build vai para web/build, embutido)
+web/src/shell/          → tela de conexão dos apps de TV (build em web/build-tv, vai nos pacotes)
 tv/tizen/               → empacotamento Samsung (.wgt)
 tv/webos/               → empacotamento LG (.ipk)
 tv/android/             → wrapper Android TV / Google TV / Fire TV (.apk)
 migrations/             → arquivos .sql numerados
 docs/                   → decisões de arquitetura (ADRs)
+docs/tv/                → guias de instalação dos apps de TV
 ```
 
 ## 4. Pasta de mídias e normalização virtual
@@ -267,6 +269,7 @@ make test       # go test -race ./... + vitest run
 make fmt        # golangci-lint fmt + oxfmt
 make check      # golangci-lint run + oxlint + svelte-check (não altera arquivos; usado no CI)
 make bench      # benchmarks do scanner e do stream
+make tv-tizen   # app Samsung (.wgt) em dist/tv; também tv-webos (.ipk) e tv-android (.apk)
 ```
 
 Variáveis principais:

@@ -89,6 +89,7 @@ function tree(): Lrud {
 		const l = lrud;
 		const first = document.querySelector<HTMLElement>('main [data-nav="item"]')?.dataset.navId;
 		const content = first !== undefined && l.getNode(first) !== undefined ? first : undefined;
+		const anyItem = [...items.keys()].find((id) => l.getNode(id) !== undefined);
 		const want = [nav.focused, savedFocus.get(location.pathname) ?? ''].find(
 			(id) => items.has(id) && l.getNode(id) !== undefined,
 		);
@@ -98,8 +99,14 @@ function tree(): Lrud {
 			// Default: first focusable of the page content, else of the whole screen.
 			lrud.assignFocus(content);
 			byDefault = false;
-		} else if (items.size > 0) {
-			lrud.assignFocus('root'); // digs down to the first focusable
+		} else if (anyItem !== undefined) {
+			try {
+				lrud.assignFocus('root'); // digs down to the first focusable
+			} catch {
+				// The remembered group is empty (its page is still mounting):
+				// lrud throws instead of trying the next one.
+				lrud.assignFocus(anyItem);
+			}
 			byDefault = true;
 		} else {
 			nav.focused = '';

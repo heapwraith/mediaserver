@@ -1,0 +1,17 @@
+// Android TV / Google TV / Fire TV wrapper (docs/tv/android.md).
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+rootProject.name = 'mediaserver-tv'
+include ':app'

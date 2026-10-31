@@ -11,7 +11,7 @@ import { defineConfig } from 'vitest/config';
 const browsers = browserslist();
 
 /** Lowest version per browser family, in the "chrome76" format used by Vite. */
-function jsTargets(list: string[]): string[] {
+export function jsTargets(list: string[]): string[] {
 	const names: Record<string, string> = {
 		chrome: 'chrome',
 		edge: 'edge',
@@ -36,7 +36,7 @@ function jsTargets(list: string[]): string[] {
  * Vite index.html, which SvelteKit does not use (and warns about); the CSS
  * comes from `virtual:uno.css` instead.
  */
-function unoCSS(): Plugin[] {
+export function unoCSS(): Plugin[] {
 	return UnoCSS().map(({ transformIndexHtml: _unused, ...plugin }) => plugin);
 }
 
@@ -49,7 +49,7 @@ export function unwrapSvelteWhere(css: string): string {
 	return css.replace(/:where\((\.svelte-[\w-]+)\)/g, '$1');
 }
 
-function legacyScopedCss(): Plugin {
+export function legacyScopedCss(): Plugin {
 	return {
 		name: 'legacy-scoped-css',
 		apply: 'build',

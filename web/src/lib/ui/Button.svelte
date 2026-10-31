@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
+	import type { Action } from '../platform/keys';
 	import { focusable } from '../platform/nav.svelte';
 
 	let {
@@ -8,17 +9,20 @@
 		primary = false,
 		selected = false,
 		id,
+		onKey,
 		children,
 	}: {
 		onclick: () => unknown;
 		primary?: boolean;
 		selected?: boolean;
 		id?: string;
+		/** Handles a key while focused; returns true when it consumed it. */
+		onKey?: (a: Action) => boolean;
 		children: Snippet;
 	} = $props();
 </script>
 
-<button class="btn" class:primary class:selected use:focusable={{ id }} onclick={() => void onclick()}>
+<button class="btn" class:primary class:selected use:focusable={{ id, onKey }} onclick={() => void onclick()}>
 	{@render children()}
 </button>
 
@@ -51,5 +55,11 @@
 		box-shadow:
 			0 12px 30px rgba(0, 0, 0, 0.5),
 			0 0 0 3px #4c8dff;
+	}
+	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
+	:global(html.tv) .btn {
+		min-height: 4rem;
+		padding: 0 2.25rem;
+		font-size: 1.5rem;
 	}
 </style>

@@ -323,4 +323,9 @@
 		transform: scale(1.03);
 		box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.92);
 	}
+	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
+	:global(html.tv) .message,
+	:global(html.tv) input {
+		font-size: 1.5rem;
+	}
 </style>

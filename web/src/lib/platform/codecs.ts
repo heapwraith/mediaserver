@@ -3,6 +3,7 @@
 // only, never the user agent (AGENTS.md §5.1).
 
 import { lowMemory } from './device';
+import { extraCapabilities } from './platform';
 
 /** Containers of direct play, asked to the <video> element. */
 const containers: Record<string, string> = {
@@ -82,6 +83,7 @@ export function capabilities(): string[] {
 			(t) => video.canPlayType(t) !== '',
 			MS === undefined ? undefined : (t) => MS.isTypeSupported(t),
 		);
+		for (const c of extraCapabilities()) if (!cached.includes(c)) cached.push(c);
 		if (supportsASS()) cached.push('ass');
 	}
 	return cached;

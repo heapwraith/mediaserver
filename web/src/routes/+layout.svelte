@@ -3,17 +3,20 @@
 	import 'virtual:uno.css';
 	import '../app.css';
 
+	import { onMount } from 'svelte';
+
 	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 
 	import { session } from '#lib/api/session.svelte.ts';
 	import favicon from '#lib/assets/favicon.svg';
 	import { goBack, trackNavigation } from '#lib/platform/back.ts';
-	import { isTV } from '#lib/platform/device.ts';
 	import { isDirection, keyAction } from '#lib/platform/keys.ts';
 	import { focusGroup, focusable, handleAction } from '#lib/platform/nav.svelte.ts';
+	import { connectShell, exitApp, isTV } from '#lib/platform/platform.ts';
 	import { settings } from '#lib/platform/settings.svelte.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
+	import ExitDialog from '#lib/ui/ExitDialog.svelte';
 	import type { LayoutProps } from './$types';
 
 	let { children }: LayoutProps = $props();
@@ -44,6 +47,15 @@
 
 	afterNavigate(trackNavigation);
 
+	// TV apps: the layout scales with the screen (app.css) and Voltar on
+	// Início asks whether to leave.
+	let askingExit = $state(false);
+	const atHome = isTV ? () => (askingExit = true) : undefined;
+	onMount(() => {
+		document.documentElement.classList.toggle('tv', isTV);
+		connectShell();
+	});
+
 	function onkeydown(e: KeyboardEvent) {
 		const action = keyAction(e);
 		if (action === null || e.altKey || e.ctrlKey || e.metaKey) return;
@@ -55,9 +67,17 @@
 		}
 		if (handleAction(action)) {
 			e.preventDefault();
+		} else if (askingExit) {
+			e.preventDefault(); // the dialog keeps every key
 		} else if (action === 'back') {
 			e.preventDefault();
-			goBack(top);
+			goBack(top, atHome);
+		} else if (action === 'yellow') {
+			e.preventDefault();
+			void goto('/busca');
+		} else if (action === 'blue') {
+			e.preventDefault();
+			void goto('/');
 		} else if (isDirection(action)) {
 			e.preventDefault(); // no native scrolling: the focus drives the page
 		}
@@ -99,6 +119,10 @@
 	</main>
 </div>
 
+{#if askingExit}
+	<ExitDialog onexit={exitApp} oncancel={() => (askingExit = false)} />
+{/if}
+
 <style>
 	.app {
 		min-height: 100vh;
@@ -139,5 +163,9 @@
 	}
 	main.fullscreen {
 		padding: 0;
+	}
+	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
+	:global(html.tv) .menu a {
+		font-size: 1.5rem;
 	}
 </style>

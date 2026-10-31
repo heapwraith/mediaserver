@@ -1,0 +1,36 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.mediaserver.tv'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.mediaserver.tv'
+        minSdk 21
+        targetSdk 36
+        versionCode 1
+        versionName '1.0.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            // Sideloaded app: signed with this machine's debug key (docs/tv/android.md).
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    // The connection page (make tv → web/build-tv) is the app's only asset.
+    sourceSets {
+        main {
+            assets.srcDirs = ['../../../web/build-tv']
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

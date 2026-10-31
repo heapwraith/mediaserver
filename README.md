@@ -39,6 +39,10 @@ make check    # lint + formatação + tipos + build do frontend (orçamento de 1
 make bench    # benchmarks
 ```
 
+## Apps de TV
+
+Samsung, LG e Android TV/Google TV/Fire TV: veja [docs/tv](docs/tv/README.md) (`make tv-tizen`, `make tv-webos`, `make tv-android`).
+
 ## Rodando
 
 ```bash

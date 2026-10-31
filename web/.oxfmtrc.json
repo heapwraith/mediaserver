@@ -4,5 +4,11 @@
 	"singleQuote": true,
 	"printWidth": 100,
 	"trailingComma": "all",
-	"ignorePatterns": ["build/**", ".svelte-kit/**", "node_modules/**", "package-lock.json"]
+	"ignorePatterns": [
+		"build/**",
+		"build-tv/**",
+		".svelte-kit/**",
+		"node_modules/**",
+		"package-lock.json"
+	]
 }

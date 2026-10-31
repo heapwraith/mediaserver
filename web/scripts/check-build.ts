@@ -2,7 +2,8 @@
 //   1. the JS needed to open the home page is < 150 KB gzip (AGENTS.md §8);
 //   2. the final CSS uses nothing Chromium 76 lacks (AGENTS.md §6) and no
 //      blur/backdrop-filter (§7). Rules inside @supports are allowed.
-// Usage: node scripts/check-build.ts [build dir]
+// The TV page (web/build-tv, CSS inlined in its index.html) gets check 2.
+// Usage: node scripts/check-build.ts [build dir] [TV page dir]
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -62,6 +63,11 @@ export function checkCss(css: string): string[] {
 	return problems;
 }
 
+/** The CSS of the <style> blocks of a page. */
+export function inlineStyles(html: string): string[] {
+	return [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1] ?? '');
+}
+
 /** Static imports (not dynamic import()) of a built JS file. */
 export function staticImports(js: string): string[] {
 	return [...js.matchAll(/(?:\bfrom|\bimport)\s*["']([^"']+\.js)["']/g)].map((m) => m[1] ?? '');
@@ -98,7 +104,7 @@ function initialJs(build: string): string[] {
 
 const kb = (n: number) => `${(n / 1024).toFixed(1)} KB`;
 
-function main(build: string): number {
+function main(build: string, tv?: string): number {
 	let failed = false;
 	const js = initialJs(build);
 	const size = js.reduce((n, f) => n + gzipSync(readFileSync(f)).length, 0);
@@ -112,8 +118,16 @@ function main(build: string): number {
 			failed = true;
 		}
 	}
+	if (tv !== undefined) {
+		const html = readFileSync(join(tv, 'index.html'), 'utf8');
+		console.log(`TV page: ${kb(gzipSync(html).length)} gzip`);
+		for (const p of inlineStyles(html).flatMap(checkCss)) {
+			console.error(`${tv}/index.html: ${p}`);
+			failed = true;
+		}
+	}
 	console.log(failed ? 'check-build: FAILED' : 'check-build: ok');
 	return failed ? 1 : 0;
 }
 
-if (import.meta.main) process.exit(main(process.argv[2] ?? 'build'));
+if (import.meta.main) process.exit(main(process.argv[2] ?? 'build', process.argv[3]));
