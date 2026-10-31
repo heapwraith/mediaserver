@@ -119,6 +119,8 @@ func TestLoadErrors(t *testing.T) {
 		{"bad hwaccel", []string{"-media-dir", media, "-hwaccel", "cuda"}, nil, "invalid HWACCEL"},
 		{"bad env", []string{"-media-dir", media, "-env", "staging"}, nil, "invalid APP_ENV"},
 		{"bad log level", []string{"-media-dir", media, "-log-level", "trace"}, nil, "invalid LOG_LEVEL"},
+		{"bad scan workers", []string{"-media-dir", media, "-scan-workers", "100"}, nil, "invalid SCAN_WORKERS"},
+		{"bad watch env", []string{"-media-dir", media}, map[string]string{"WATCH": "maybe"}, "env WATCH"},
 		{"explicit config missing", []string{"-config", filepath.Join(root, "none.toml")}, nil, "read config"},
 		{"unknown toml key", []string{"-config", badToml, "-media-dir", media}, nil, "parse config"},
 	}
@@ -130,6 +132,20 @@ func TestLoadErrors(t *testing.T) {
 				t.Fatalf("got err %v, want it to contain %q", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestLoadScannerOptions(t *testing.T) {
+	media := t.TempDir()
+	t.Chdir(media)
+	cfg, _, err := Load([]string{"-media-dir", media}, envFrom(nil), io.Discard)
+	if err != nil || !cfg.Watch || !cfg.ScanOnStart || cfg.ScanWorkers != 0 {
+		t.Fatalf("defaults: %+v %v", cfg, err)
+	}
+	cfg, _, err = Load([]string{"-media-dir", media, "-watch=false", "-scan-workers", "3"},
+		envFrom(map[string]string{"SCAN_ON_START": "false", "WATCH": "true", "SCAN_WORKERS": "8"}), io.Discard)
+	if err != nil || cfg.Watch || cfg.ScanOnStart || cfg.ScanWorkers != 3 {
+		t.Fatalf("flags/env: %+v %v", cfg, err)
 	}
 }
 

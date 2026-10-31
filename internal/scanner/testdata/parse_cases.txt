@@ -1,0 +1,209 @@
+# Parser + classification cases (AGENTS.md §4). One case per line:
+#   <relative path> TAB key=value TAB key=value ...
+# Keys: kind title year s (season) e (episode) e2 (last episode) abs (absolute)
+#       v (version) group et (episode title) extra (extra type) own (owner dir)
+#       reason (review reason)
+# kind and title are always checked; numbers not listed must be 0.
+
+# --- Movies: scene / P2P release names ---------------------------------------
+The.Matrix.1999.1080p.BluRay.x264-SPARKS.mkv	kind=movie	title=The Matrix	year=1999
+The.Matrix.Reloaded.2003.720p.BrRip.x264.YIFY.mp4	kind=movie	title=The Matrix Reloaded	year=2003
+Inception (2010) [1080p] [BluRay] [5.1] [YTS.MX].mp4	kind=movie	title=Inception	year=2010
+Interstellar.2014.2160p.UHD.BluRay.REMUX.HDR.HEVC.Atmos-EPSiLON.mkv	kind=movie	title=Interstellar	year=2014
+Blade.Runner.2049.2017.2160p.UHD.BluRay.x265.HDR.DTS-HD.MA.7.1-SWTYBLZ.mkv	kind=movie	title=Blade Runner 2049	year=2017
+2001.A.Space.Odyssey.1968.REMASTERED.1080p.BluRay.x264.mkv	kind=movie	title=2001 A Space Odyssey	year=1968
+1917 (2019).mkv	kind=movie	title=1917	year=2019
+1917.2019.1080p.WEBRip.x264-RARBG.mp4	kind=movie	title=1917	year=2019
+2012.2009.720p.BluRay.x264.mkv	kind=movie	title=2012	year=2009
+Charlotte's.Web.2006.720p.WEB-DL.AAC2.0.H.264.mkv	kind=movie	title=Charlotte's Web	year=2006
+Spider-Man.No.Way.Home.2021.1080p.WEB-DL.DDP5.1.Atmos.H.264-CMRG.mkv	kind=movie	title=Spider-Man No Way Home	year=2021
+Spider-Man.Across.the.Spider-Verse.2023.1080p.AMZN.WEB-DL.DDP5.1.H.264-FLUX.mkv	kind=movie	title=Spider-Man Across the Spider-Verse	year=2023
+Mission.Impossible.Dead.Reckoning.Part.One.2023.1080p.WEBRip.x265.10bit.AAC5.1-RARBG.mkv	kind=movie	title=Mission Impossible Dead Reckoning Part One	year=2023
+Oppenheimer.2023.IMAX.2160p.WEB-DL.DDP5.1.Atmos.DV.HDR.H.265-FLUX.mkv	kind=movie	title=Oppenheimer	year=2023
+Dune.Part.Two.2024.1080p.WEB-DL.DDP5.1.Atmos.H.264-FLUX.mkv	kind=movie	title=Dune Part Two	year=2024
+Barbie.2023.1080p.WEBRip.1400MB.DD5.1.x264-GalaxyRG.mkv	kind=movie	title=Barbie	year=2023
+Parasite.2019.KOREAN.1080p.BluRay.H264.AAC-VXT.mp4	kind=movie	title=Parasite	year=2019
+The.Lord.of.the.Rings.The.Fellowship.of.the.Ring.2001.EXTENDED.1080p.BluRay.x264.mkv	kind=movie	title=The Lord of the Rings The Fellowship of the Ring	year=2001
+Star.Wars.Episode.IV.A.New.Hope.1977.1080p.BluRay.x264.mkv	kind=movie	title=Star Wars Episode IV A New Hope	year=1977
+Back.to.the.Future.1985.PROPER.1080p.BluRay.x264.mkv	kind=movie	title=Back to the Future	year=1985
+Alien.1979.Directors.Cut.1080p.BluRay.x264.DTS-FGT.mkv	kind=movie	title=Alien	year=1979
+Aliens.1986.Special.Edition.1080p.BluRay.mkv	kind=movie	title=Aliens	year=1986
+The.Dark.Knight.2008.REPACK.1080p.BluRay.x264.mkv	kind=movie	title=The Dark Knight	year=2008
+Mad.Max.Fury.Road.2015.1080p.BluRay.x264.DTS-HD.MA.7.1-FGT.mkv	kind=movie	title=Mad Max Fury Road	year=2015
+Gladiator.2000.Extended.Remastered.1080p.BluRay.x265.HEVC.10bit.mkv	kind=movie	title=Gladiator	year=2000
+Joker (2019) (1080p BluRay x265 HEVC 10bit AAC 7.1 Tigole).mkv	kind=movie	title=Joker	year=2019
+Whiplash (2014) [BluRay] [1080p] [YTS.AM].mp4	kind=movie	title=Whiplash	year=2014
+Her.2013.720p.BluRay.x264.YIFY.mp4	kind=movie	title=Her	year=2013
+Up.2009.1080p.BluRay.x264.mkv	kind=movie	title=Up	year=2009
+It.2017.1080p.BluRay.x264.mkv	kind=movie	title=It	year=2017
+Se7en.1995.REMASTERED.1080p.BluRay.x264.mkv	kind=movie	title=Se7en	year=1995
+Amélie (2001) [1080p].mkv	kind=movie	title=Amélie	year=2001
+Le.Fabuleux.Destin.d'Amélie.Poulain.2001.1080p.BluRay.mkv	kind=movie	title=Le Fabuleux Destin d'Amélie Poulain	year=2001
+Cidade de Deus (2002).mkv	kind=movie	title=Cidade de Deus	year=2002
+Cidade.de.Deus.2002.1080p.BluRay.x264.DUAL.mkv	kind=movie	title=Cidade de Deus	year=2002
+Tropa.de.Elite.2007.NACIONAL.1080p.WEB-DL.mkv	kind=movie	title=Tropa de Elite	year=2007
+O.Auto.da.Compadecida.2000.1080p.WEBRip.x264.mkv	kind=movie	title=O Auto da Compadecida	year=2000
+Central do Brasil (1998) [1080p].mkv	kind=movie	title=Central do Brasil	year=1998
+Ainda.Estou.Aqui.2024.1080p.WEB-DL.DUAL.5.1.mkv	kind=movie	title=Ainda Estou Aqui	year=2024
+El.Laberinto.del.Fauno.2006.1080p.BluRay.mkv	kind=movie	title=El Laberinto del Fauno	year=2006
+Léon.The.Professional.1994.Extended.1080p.BluRay.mkv	kind=movie	title=Léon The Professional	year=1994
+千と千尋の神隠し (2001) [1080p].mkv	kind=movie	title=千と千尋の神隠し	year=2001
+Spirited.Away.2001.1080p.BluRay.x264.DUAL-AUDIO.mkv	kind=movie	title=Spirited Away	year=2001
+Your.Name.2016.1080p.BluRay.x264.mkv	kind=movie	title=Your Name	year=2016
+[Group] Kimi no Na wa (2016) [BD 1080p].mkv	kind=movie	title=Kimi no Na wa	year=2016	group=Group
+The_Shawshank_Redemption_1994_1080p.mkv	kind=movie	title=The Shawshank Redemption	year=1994
+pulp_fiction_(1994)_720p.avi	kind=movie	title=pulp fiction	year=1994
+fight club 1999.avi	kind=movie	title=fight club	year=1999
+Forrest Gump - 1994.mkv	kind=movie	title=Forrest Gump	year=1994
+The Godfather [1972].mkv	kind=movie	title=The Godfather	year=1972
+The.Godfather.Part.II.1974.1080p.BluRay.mkv	kind=movie	title=The Godfather Part II	year=1974
+Avengers.Endgame.2019.1080p.BluRay.x264-SPARKS.mkv	kind=movie	title=Avengers Endgame	year=2019
+Avengers - Endgame (2019) 1080p.mkv	kind=movie	title=Avengers - Endgame	year=2019
+Everything.Everywhere.All.at.Once.2022.1080p.WEB-DL.mkv	kind=movie	title=Everything Everywhere All at Once	year=2022
+The.Batman.2022.1080p.HMAX.WEB-DL.DDP5.1.Atmos.H.264.mkv	kind=movie	title=The Batman	year=2022
+Top.Gun.Maverick.2022.IMAX.1080p.WEB-DL.mkv	kind=movie	title=Top Gun Maverick	year=2022
+Poor.Things.2023.HDR.2160p.WEB.h265-ETHEL.mkv	kind=movie	title=Poor Things	year=2023
+Killers.of.the.Flower.Moon.2023.1080p.ATVP.WEB-DL.mkv	kind=movie	title=Killers of the Flower Moon	year=2023
+The.Holdovers.2023.AV1.1080p.mkv	kind=movie	title=The Holdovers	year=2023
+Fast.X.2023.1080p.WEBRip.x264.mkv	kind=movie	title=Fast X	year=2023
+Movie.Title.2020.CD1.avi	kind=movie	title=Movie Title	year=2020
+Filmes/Nome do Filme (2020)/Nome do Filme (2020).mkv	kind=movie	title=Nome do Filme	year=2020
+Filmes/Inception (2010)/movie.mkv	kind=movie	title=Inception	year=2010
+Movies/The Thing (1982)/The.Thing.1982.1080p.BluRay.mkv	kind=movie	title=The Thing	year=1982
+Movies/Alien/Alien.1979.mkv	kind=movie	title=Alien	year=1979
+Filmes/Coleção Marvel/Thor.Ragnarok.2017.1080p.mkv	kind=movie	title=Thor Ragnarok	year=2017
+Filmes/O Poderoso Chefão.mkv	kind=movie	title=O Poderoso Chefão
+Movies/Heat.mkv	kind=movie	title=Heat
+Animes/Akira (1988).mkv	kind=movie	title=Akira	year=1988
+Downloads/Arrival.2016.1080p.BluRay.x264.mkv	kind=movie	title=Arrival	year=2016
+
+# --- Series ----------------------------------------------------------------------
+Breaking.Bad.S01E01.Pilot.720p.BluRay.x264-DEMAND.mkv	kind=series	title=Breaking Bad	s=1	e=1	et=Pilot
+Breaking.Bad.S05E16.Felina.1080p.WEB-DL.DD5.1.H.264.mkv	kind=series	title=Breaking Bad	s=5	e=16	et=Felina
+Game.of.Thrones.S08E06.1080p.WEB.H264-MEMENTO.mkv	kind=series	title=Game of Thrones	s=8	e=6
+game.of.thrones.s01e01.720p.hdtv.x264-ctu.mkv	kind=series	title=game of thrones	s=1	e=1
+the.office.us.s01e01.720p.mkv	kind=series	title=the office us	s=1	e=1
+The Office (US) - S02E01 - The Dundies.mkv	kind=series	title=The Office (US)	s=2	e=1	et=The Dundies
+Friends.1x01.The.One.Where.Monica.Gets.a.Roommate.avi	kind=series	title=Friends	s=1	e=1	et=The One Where Monica Gets a Roommate
+friends.10x17.avi	kind=series	title=friends	s=10	e=17
+Doctor.Who.2005.S01E01.Rose.mkv	kind=series	title=Doctor Who	year=2005	s=1	e=1	et=Rose
+Doctor Who (2005) - S13E01 - War of the Sontarans.mkv	kind=series	title=Doctor Who	year=2005	s=13	e=1	et=War of the Sontarans
+Show.Name.S01E01-E02.1080p.mkv	kind=series	title=Show Name	s=1	e=1	e2=2
+Show Name S02E05E06 720p.mkv	kind=series	title=Show Name	s=2	e=5	e2=6
+Lost.S01E01-02.Pilot.720p.mkv	kind=series	title=Lost	s=1	e=1	e2=2	et=Pilot
+Lost.S06E17E18.The.End.mkv	kind=series	title=Lost	s=6	e=17	e2=18	et=The End
+The.Mandalorian.S02E08.Chapter.16.The.Rescue.2160p.DSNP.WEB-DL.mkv	kind=series	title=The Mandalorian	s=2	e=8	et=Chapter 16 The Rescue
+Stranger.Things.S04E09.The.Piggyback.1080p.NF.WEB-DL.DDP5.1.Atmos.x264-TEPES.mkv	kind=series	title=Stranger Things	s=4	e=9	et=The Piggyback
+The.Last.of.Us.S01E03.Long.Long.Time.1080p.HMAX.WEB-DL.mkv	kind=series	title=The Last of Us	s=1	e=3	et=Long Long Time
+Succession.S04E10.With.Open.Eyes.1080p.AMZN.WEBRip.mkv	kind=series	title=Succession	s=4	e=10	et=With Open Eyes
+Severance.S02E01.Hello.Ms.Cobel.2160p.ATVP.WEB-DL.mkv	kind=series	title=Severance	s=2	e=1	et=Hello Ms Cobel
+House.of.the.Dragon.S02E01.1080p.WEB.H264-SuccessfulCrab.mkv	kind=series	title=House of the Dragon	s=2	e=1
+The.Bear.S03E01.Tomorrow.1080p.HULU.WEB-DL.mkv	kind=series	title=The Bear	s=3	e=1	et=Tomorrow
+Dark.S03E08.German.1080p.WEB.x264.mkv	kind=series	title=Dark	s=3	e=8
+Grey's Anatomy S10E05.mkv	kind=series	title=Grey's Anatomy	s=10	e=5
+Law & Order SVU S01E01.mkv	kind=series	title=Law & Order SVU	s=1	e=1
+Marvels.Agents.of.S.H.I.E.L.D.S01E01.mkv	kind=series	title=Marvels Agents of S H I E L D	s=1	e=1
+Peaky Blinders S01 E01.mkv	kind=series	title=Peaky Blinders	s=1	e=1
+The Wire - 1x01 - The Target.avi	kind=series	title=The Wire	s=1	e=1	et=The Target
+sopranos_s01e01_720p.mkv	kind=series	title=sopranos	s=1	e=1
+The.Simpsons.S35E01.720p.mkv	kind=series	title=The Simpsons	s=35	e=1
+Chernobyl.S01E05.Vichnaya.Pamyat.2160p.mkv	kind=series	title=Chernobyl	s=1	e=5	et=Vichnaya Pamyat
+Sherlock.S00E01.A.Study.in.Pink.Unaired.Pilot.mkv	kind=series	title=Sherlock	s=0	e=1	et=A Study in Pink Unaired Pilot
+3%.S01E01.1080p.NF.WEB-DL.mkv	kind=series	title=3%	s=1	e=1
+Cidade.Invisivel.S01E01.1080p.NF.WEB-DL.DUAL.mkv	kind=series	title=Cidade Invisivel	s=1	e=1
+Sintonia.S04E01.1080p.mkv	kind=series	title=Sintonia	s=4	e=1
+La.Casa.de.Papel.S05E10.1080p.NF.WEB-DL.mkv	kind=series	title=La Casa de Papel	s=5	e=10
+Élite.S01E01.1080p.mkv	kind=series	title=Élite	s=1	e=1
+Squid.Game.S02E01.KOREAN.1080p.mkv	kind=series	title=Squid Game	s=2	e=1
+Series/Nome da Série/Temporada 01/Nome da Série - S01E01.mkv	kind=series	title=Nome da Série	s=1	e=1
+Series/Dark/Season 2/01.mkv	kind=series	title=Dark	s=2	e=1
+Series/Dark/Season 2/Episode 03.mkv	kind=series	title=Dark	s=2	e=3
+Series/Dark/Season 3/Dark - 05.mkv	kind=series	title=Dark	s=3	e=5
+Séries/Irmandade/Temporada 2/E04.mkv	kind=series	title=Irmandade	s=2	e=4
+TV Shows/Fargo/Season 01/Fargo.S01E01.mkv	kind=series	title=Fargo	s=1	e=1
+TV/Westworld/S03/Westworld.S03E01.Parce.Domine.mkv	kind=series	title=Westworld	s=3	e=1	et=Parce Domine
+Series/Black Mirror/Specials/Black Mirror - White Christmas.mkv	kind=review	title=Black Mirror - White Christmas	reason=season_without_episode
+The.Mandalorian.S02.1080p.WEB-DL/The.Mandalorian.S02E03.1080p.WEB-DL.mkv	kind=series	title=The Mandalorian	s=2	e=3
+Fallout.S01.2160p.AMZN.WEB-DL/Fallout.S01E01.The.End.mkv	kind=series	title=Fallout	s=1	e=1	et=The End
+Series/Twin Peaks/Twin Peaks - 01.mkv	kind=series	title=Twin Peaks	abs=1
+Severance/S01/Severance - S01E01 - Good News About Hell.mkv	kind=series	title=Severance	s=1	e=1	et=Good News About Hell
+
+# --- Anime -----------------------------------------------------------------------
+[SubsPlease] Frieren - 01 (1080p) [ABCD1234].mkv	kind=anime	title=Frieren	abs=1	group=SubsPlease
+[SubsPlease] Sousou no Frieren - 28 (1080p) [5C3A2B1F].mkv	kind=anime	title=Sousou no Frieren	abs=28	group=SubsPlease
+[SubsPlease] One Piece - 1080 (1080p) [F00DBABE].mkv	kind=anime	title=One Piece	abs=1080	group=SubsPlease
+[SubsPlease] One Piece - 1100 (720p) [12345678].mkv	kind=anime	title=One Piece	abs=1100	group=SubsPlease
+[Erai-raws] Mushoku Tensei S2 - 05 [1080p][Multiple Subtitle].mkv	kind=anime	title=Mushoku Tensei	s=2	e=5	group=Erai-raws
+[Erai-raws] Kaguya-sama wa Kokurasetai 2nd Season - 03v2 [720p].mkv	kind=anime	title=Kaguya-sama wa Kokurasetai	s=2	e=3	v=2	group=Erai-raws
+[HorribleSubs] Steins;Gate 0 - 12 [720p].mkv	kind=anime	title=Steins;Gate 0	abs=12	group=HorribleSubs
+[HorribleSubs] Boku no Hero Academia - 88 [1080p].mkv	kind=anime	title=Boku no Hero Academia	abs=88	group=HorribleSubs
+[SubsPlease] 葬送のフリーレン - 05 (1080p) [ABCD1234].mkv	kind=anime	title=葬送のフリーレン	abs=5	group=SubsPlease
+[SubsPlease] 薬屋のひとりごと - 12 (1080p).mkv	kind=anime	title=薬屋のひとりごと	abs=12	group=SubsPlease
+[Judas] Jujutsu Kaisen - S01E05.mkv	kind=anime	title=Jujutsu Kaisen	s=1	e=5	group=Judas
+[Judas] Vinland Saga S2 - 24 [1080p][HEVC x265 10bit][Eng-Subs].mkv	kind=anime	title=Vinland Saga	s=2	e=24	group=Judas
+[Group] Cowboy Bebop 01 [BD 1080p].mkv	kind=anime	title=Cowboy Bebop	abs=1	group=Group
+[Group] Cowboy Bebop 26v2 [BD 1080p].mkv	kind=anime	title=Cowboy Bebop	abs=26	v=2	group=Group
+[SubsPlease] 86 - Eighty Six - 12 (1080p).mkv	kind=anime	title=86 - Eighty Six	abs=12	group=SubsPlease
+[Group] Title OVA 2 [720p].mkv	kind=anime	title=Title	s=0	e=2	group=Group
+[SubsPlease] Oshi no Ko - 11v2 (1080p) [ABCDEF12].mkv	kind=anime	title=Oshi no Ko	abs=11	v=2	group=SubsPlease
+[SubsPlease] Oshi no Ko S2 - 01 (1080p).mkv	kind=anime	title=Oshi no Ko	s=2	e=1	group=SubsPlease
+[ASW] Dandadan - 07 [1080p HEVC x265 10Bit][AAC].mkv	kind=anime	title=Dandadan	abs=7	group=ASW
+[Ember] Spy x Family - 25 [1080p].mkv	kind=anime	title=Spy x Family	abs=25	group=Ember
+[Commie] Shingeki no Kyojin - 59 [ABCD1234].mkv	kind=anime	title=Shingeki no Kyojin	abs=59	group=Commie
+[DB] Neon Genesis Evangelion - 26 [Dual Audio 10bit BD1080p][HEVC-x265].mkv	kind=anime	title=Neon Genesis Evangelion	abs=26	group=DB
+[Anime Time] Hunter x Hunter (2011) - 148 [1080p].mkv	kind=anime	title=Hunter x Hunter	year=2011	abs=148	group=Anime Time
+[EMBER] Chainsaw Man (2022) (Season 1) [1080p] [Dual Audio HEVC WEBRip]/[EMBER] Chainsaw Man - 01.mkv	kind=anime	title=Chainsaw Man	year=2022	s=1	e=1	group=EMBER
+[Kawaiika-Raws] Re Zero kara Hajimeru Isekai Seikatsu 3rd Season 05 [1080p].mkv	kind=anime	title=Re Zero kara Hajimeru Isekai Seikatsu	s=3	e=5	group=Kawaiika-Raws
+[SubsPlease] Dr. Stone - New World - 11 (1080p).mkv	kind=anime	title=Dr Stone - New World	abs=11	group=SubsPlease
+[SubsPlease] Ore dake Level Up na Ken - 12 (1080p) [E1234567].mkv	kind=anime	title=Ore dake Level Up na Ken	abs=12	group=SubsPlease
+[Erai-raws] Kimetsu no Yaiba - Katanakaji no Sato Hen - 11 [1080p].mkv	kind=anime	title=Kimetsu no Yaiba - Katanakaji no Sato Hen	abs=11	group=Erai-raws
+[SubsPlease] Blue Lock - 24 (1080p).mkv	kind=anime	title=Blue Lock	abs=24	group=SubsPlease
+[Tsundere-Raws] Bocchi the Rock! - 01 [1080p].mkv	kind=anime	title=Bocchi the Rock!	abs=1	group=Tsundere-Raws
+[SubsPlease] Bocchi the Rock! - 12 (1080p).mkv	kind=anime	title=Bocchi the Rock!	abs=12	group=SubsPlease
+[Group]_Fullmetal_Alchemist_Brotherhood_-_01_[1080p].mkv	kind=anime	title=Fullmetal Alchemist Brotherhood	abs=1	group=Group
+[Coalgirls]_Clannad_After_Story_-_18_(1920x1080_Blu-ray_FLAC)_[0FF81A3A].mkv	kind=anime	title=Clannad After Story	abs=18	group=Coalgirls
+Animes/Naruto/Naruto EP001.mkv	kind=anime	title=Naruto	abs=1
+Animes/Naruto/Naruto E002.mkv	kind=anime	title=Naruto	abs=2
+Animes/Naruto/Naruto Episódio 003.mkv	kind=anime	title=Naruto	abs=3
+Animes/Bleach/Bleach - 001.mkv	kind=anime	title=Bleach	abs=1
+Animes/Bleach/Bleach 366.mkv	kind=anime	title=Bleach	abs=366
+Animes/Death Note/01.mkv	kind=anime	title=Death Note	abs=1
+Animes/Death Note/Death Note - 37 [END].mkv	kind=anime	title=Death Note	abs=37
+Animes/Attack on Titan/Season 2/Attack on Titan S02E01.mkv	kind=anime	title=Attack on Titan	s=2	e=1
+Animes/Mob Psycho 100/Temporada 3/Mob Psycho 100 - 05.mkv	kind=anime	title=Mob Psycho 100	s=3	e=5
+Anime/One Punch Man/One.Punch.Man.S02E03.1080p.mkv	kind=anime	title=One Punch Man	s=2	e=3
+Animes/Dragon Ball Z/DBZ - Ep 150.mkv	kind=anime	title=DBZ	abs=150
+Animes/Cowboy Bebop/Cowboy Bebop - Session 01.mkv	kind=review	title=Cowboy Bebop - Session 01	reason=episode_without_season
+
+# --- Secondary files ---------------------------------------------------------------
+Movie.Name.2010.sample.mkv	kind=ignored	title=Movie Name	year=2010
+The.Sample.Collector.2015.1080p.mkv	kind=ignored	title=The Sample Collector	year=2015
+Movies/Avatar (2009)/Sample/avatar-sample.mkv	kind=ignored	title=Avatar	year=2009
+Movies/Avatar (2009)/Samples/sample.mkv	kind=ignored	title=Avatar	year=2009
+sample-the.matrix.1999.mkv	kind=ignored	title=sample-the matrix	year=1999
+Movies/Avatar (2009)/Avatar-trailer.mkv	kind=trailer	title=Avatar	year=2009	extra=trailer	own=Movies/Avatar (2009)
+Movies/Avatar (2009)/Avatar.2009.trailer.mkv	kind=trailer	title=Avatar	year=2009	extra=trailer	own=Movies/Avatar (2009)
+Movies/Avatar (2009)/Trailers/Teaser.mkv	kind=trailer	title=Avatar	year=2009	extra=trailer	own=Movies/Avatar (2009)
+Movies/Avatar (2009)/trailer.mkv	kind=trailer	title=Avatar	year=2009	extra=trailer	own=Movies/Avatar (2009)
+Movies/Avatar (2009)/Extras/Making Of.mkv	kind=extra	title=Avatar	year=2009	extra=other	own=Movies/Avatar (2009)
+Movies/Avatar (2009)/Extras/Avatar-trailer.mkv	kind=trailer	title=Avatar	year=2009	extra=trailer	own=Movies/Avatar (2009)
+Movies/Avatar (2009)/Avatar-featurette.mkv	kind=extra	title=Avatar	year=2009	extra=featurette	own=Movies/Avatar (2009)
+Movies/Avatar (2009)/Featurettes/Visual Effects.mkv	kind=extra	title=Avatar	year=2009	extra=featurette	own=Movies/Avatar (2009)
+Movies/Avatar (2009)/Deleted Scenes/Scene 1.mkv	kind=extra	title=Avatar	year=2009	extra=deleted	own=Movies/Avatar (2009)
+Movies/Avatar (2009)/Interviews/Cameron.mkv	kind=extra	title=Avatar	year=2009	extra=interview	own=Movies/Avatar (2009)
+Movies/Avatar (2009)/Avatar-behindthescenes.mkv	kind=extra	title=Avatar	year=2009	extra=behind_the_scenes	own=Movies/Avatar (2009)
+Movies/Avatar (2009)/Avatar-deleted.mkv	kind=extra	title=Avatar	year=2009	extra=deleted	own=Movies/Avatar (2009)
+Movies/Avatar (2009)/Avatar-interview.mkv	kind=extra	title=Avatar	year=2009	extra=interview	own=Movies/Avatar (2009)
+Series/Dark/Behind The Scenes/Making.mkv	kind=extra	title=Making	extra=behind_the_scenes	own=Series/Dark
+Series/Dark/Season 1/Extras/Bloopers.mkv	kind=extra	title=Bloopers	s=1	extra=other	own=Series/Dark/Season 1
+Series/Dark/Trailers/Dark Season 3 Trailer.mkv	kind=trailer	title=Dark	s=3	extra=trailer	own=Series/Dark
+
+# --- Ambiguous: review queue -----------------------------------------------------
+Random Video.mkv	kind=review	title=Random Video	reason=no_year
+VID_20230101_120000.mp4	kind=review	title=VID 20230101 120000	reason=no_year
+Show - 05.mkv	kind=review	title=Show	abs=5	reason=episode_without_season
+Some.Show.S02.Complete.1080p.mkv	kind=review	title=Some Show	s=2	reason=season_without_episode
+Movies/Breaking.Bad.S01E01.mkv	kind=review	title=Breaking Bad	s=1	e=1	reason=folder_conflict
+Series/Unknown Thing.mkv	kind=review	title=Unknown Thing	reason=episode_without_season
+S01E01.mkv	kind=review	title=	s=1	e=1	reason=no_title
+01.mkv	kind=review	title=01	reason=no_year

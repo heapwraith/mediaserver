@@ -1,6 +1,6 @@
 # SPRINTS.md
 
-Planejamento do projeto. **Sprint ativa: 0.**
+Planejamento do projeto. **Sprint ativa: 1.**
 
 Regras:
 - Marcar `[x]` só quando o critério de aceite da tarefa for cumprido.
@@ -41,21 +41,21 @@ Duração sugerida: 1 semana por sprint (ajustável).
 
 **Objetivo:** qualquer pasta de mídias, organizada ou não, vira uma biblioteca limpa no banco, sem tocar nos arquivos.
 
-- [ ] Parser de nomes (`internal/scanner/parse.go`) cobrindo todos os padrões do `AGENTS.md` §4
-- [ ] Testes table-driven do parser com **no mínimo 150 casos** reais (nomes de release bagunçados de filmes, séries e animes)
-- [ ] Classificação automática (filme / série / anime / revisar) pela tabela do `AGENTS.md` §4, usando pasta só como pista
-- [ ] Agrupamento por título normalizado (episódios espalhados em pastas diferentes viram uma série só)
-- [ ] Classificação de arquivos secundários: sample (ignorado), **trailer** e **extras** (vinculados ao filme/série/temporada da mesma pasta, tabela `extras` com tipo)
-- [ ] Migração `overrides` + hash parcial (primeiros e últimos 64 KB) para identificar arquivo movido/renomeado
-- [ ] Varredura com `filepath.WalkDir` e workers concorrentes (limite configurável)
-- [ ] Scan incremental: caminho + tamanho + `mtime`; remove do banco o que sumiu do disco
-- [ ] `internal/probe`: `ffprobe` em JSON → duração, contêiner, codecs, resolução, HDR, faixas de áudio e legenda
-- [ ] Detecção de legendas laterais com idioma
-- [ ] Detecção de `poster.jpg` / `folder.jpg` / `fanart.jpg` locais
-- [ ] Fila **Revisar** com arquivos ambíguos ou não reconhecidos
-- [ ] API de correção: `PUT /api/review/{fileId}` (tipo, título, ano, temporada, episódio) e `POST /api/series/merge` / `split`
-- [ ] Watcher com `fsnotify` + debounce (arquivo copiado só é processado quando termina de copiar)
-- [ ] `POST /api/library/scan` (scan manual) e status do scan em `GET /api/library/scan`
+- [x] Parser de nomes (`internal/scanner/parse.go`) cobrindo todos os padrões do `AGENTS.md` §4
+- [x] Testes table-driven do parser com **no mínimo 150 casos** reais (nomes de release bagunçados de filmes, séries e animes)
+- [x] Classificação automática (filme / série / anime / revisar) pela tabela do `AGENTS.md` §4, usando pasta só como pista
+- [x] Agrupamento por título normalizado (episódios espalhados em pastas diferentes viram uma série só)
+- [x] Classificação de arquivos secundários: sample (ignorado), **trailer** e **extras** (vinculados ao filme/série/temporada da mesma pasta, tabela `extras` com tipo)
+- [x] Migração `overrides` + hash parcial (primeiros e últimos 64 KB) para identificar arquivo movido/renomeado
+- [x] Varredura com `filepath.WalkDir` e workers concorrentes (limite configurável)
+- [x] Scan incremental: caminho + tamanho + `mtime`; remove do banco o que sumiu do disco
+- [x] `internal/probe`: `ffprobe` em JSON → duração, contêiner, codecs, resolução, HDR, faixas de áudio e legenda
+- [x] Detecção de legendas laterais com idioma
+- [x] Detecção de `poster.jpg` / `folder.jpg` / `fanart.jpg` locais
+- [x] Fila **Revisar** com arquivos ambíguos ou não reconhecidos
+- [x] API de correção: `PUT /api/review/{fileId}` (tipo, título, ano, temporada, episódio) e `POST /api/series/merge` / `split`
+- [x] Watcher com `fsnotify` + debounce (arquivo copiado só é processado quando termina de copiar)
+- [x] `POST /api/library/scan` (scan manual) e status do scan em `GET /api/library/scan`
 
 **Aceite**
 - Scan inicial de uma biblioteca de teste com 1.000 arquivos indexa tudo corretamente

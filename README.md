@@ -47,6 +47,9 @@ Prioridade: **flags > variáveis de ambiente > `config.toml`** (na pasta atual, 
 | `-hwaccel` | `HWACCEL` | `hwaccel` | `auto` (`auto`, `nvenc`, `qsv`, `amf`, `vaapi`, `videotoolbox`, `none`) |
 | `-env` | `APP_ENV` | `env` | `prod` (`dev` = logs em texto; `prod` = JSON) |
 | `-log-level` | `LOG_LEVEL` | `log_level` | `info` |
+| `-scan-workers` | `SCAN_WORKERS` | `scan_workers` | `0` (= nº de CPUs) |
+| `-watch` | `WATCH` | `watch` | `true` (detecta arquivos novos sozinho) |
+| `-scan-on-start` | `SCAN_ON_START` | `scan_on_start` | `true` |
 
 Exemplo de `config.toml`:
 
@@ -57,3 +60,20 @@ hwaccel = "auto"
 ```
 
 O servidor **nunca** renomeia, move ou apaga seus arquivos: toda a organização é virtual, no banco (`DATA_DIR/mediaserver.db`).
+
+## Biblioteca
+
+A pasta de mídias pode estar organizada ou não: o scanner entende nomes de release (`Show.S01E01.1080p.WEB-DL.mkv`, `[SubsPlease] Anime - 01 (1080p).mkv`, `Filme (2020).mkv`), agrupa episódios espalhados em pastas diferentes e manda o que for ambíguo para a fila **Revisar**. Arquivos novos aparecem sozinhos (watcher); um arquivo ainda sendo copiado só entra quando a cópia termina.
+
+Sem `ffprobe` o servidor funciona, mas indexa só pelo nome (sem codecs, duração e faixas).
+
+| Endpoint | O que faz |
+|---|---|
+| `POST /api/library/scan` | Inicia um scan manual (202) |
+| `GET /api/library/scan` | Status do scan atual/último |
+| `GET /api/review` | Fila Revisar |
+| `PUT /api/review/{fileId}` | Corrige um arquivo: `{"kind":"movie\|series\|anime\|ignored","title":"…","year":2020,"season":1,"episode":5}` |
+| `POST /api/series/merge` | Junta séries: `{"source_ids":[…],"target_id":"…"}` |
+| `POST /api/series/split` | Separa episódios numa série nova: `{"series_id":"…","file_ids":[…],"title":"…"}` |
+
+As correções valem para os próximos scans e acompanham o arquivo se ele for renomeado ou movido.

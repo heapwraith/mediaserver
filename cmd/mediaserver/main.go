@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -11,12 +12,15 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"sync"
 	"syscall"
 	"time"
 
 	"mediaserver/internal/api"
 	"mediaserver/internal/config"
 	"mediaserver/internal/db"
+	"mediaserver/internal/probe"
+	"mediaserver/internal/scanner"
 	"mediaserver/migrations"
 	"mediaserver/web"
 )
@@ -80,14 +84,30 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 		return err
 	}
 
+	// Background work (scan, watcher) stops with this context; it is canceled
+	// before waiting for it, also when serve fails early.
+	ctx, cancel := context.WithCancel(ctx)
+	lib, stopLib, err := startLibrary(ctx, cfg, conn, logger)
+	if err != nil {
+		cancel()
+		return err
+	}
+	defer func() {
+		cancel()
+		stopLib()
+	}()
+
 	assets, err := web.Assets()
 	if err != nil {
 		return fmt.Errorf("load frontend: %w", err)
 	}
 
 	srv := &http.Server{
-		Addr:              cfg.Addr(),
-		Handler:           api.NewRouter(api.Deps{Logger: logger, DB: conn, Version: version, Web: assets}),
+		Addr: cfg.Addr(),
+		Handler: api.NewRouter(api.Deps{
+			Logger: logger, DB: conn, Version: version, Web: assets,
+			Scanner: lib, StartScan: func() bool { return lib.Start(ctx) },
+		}),
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       2 * time.Minute,
 		ErrorLog:          slog.NewLogLogger(logger.Handler(), slog.LevelWarn),
@@ -129,4 +149,45 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 	}
 	logger.Info("server stopped")
 	return nil
+}
+
+// copyGrace is how long a file must stay untouched before the scanner
+// indexes it (a copy in progress is left for the next scan).
+const copyGrace = 2 * time.Second
+
+// startLibrary creates the scanner, runs the startup scan and the watcher in
+// the background. stop waits for both after ctx is canceled.
+func startLibrary(ctx context.Context, cfg config.Config, conn *sql.DB, logger *slog.Logger) (*scanner.Scanner, func(), error) {
+	var prober scanner.Prober
+	p := probe.Prober{Path: cfg.FFprobePath}
+	if err := p.Available(ctx); err != nil {
+		logger.Warn("ffprobe not available: files are indexed by name only (no codecs, duration or tracks)",
+			"ffprobe", cfg.FFprobePath, "err", err)
+	} else {
+		prober = p
+	}
+
+	lib, err := scanner.New(ctx, conn, scanner.Options{
+		Root: cfg.MediaDir, Workers: cfg.ScanWorkers, MinAge: copyGrace, Prober: prober,
+		Logger: logger.With("component", "scanner"),
+	})
+	if err != nil {
+		return nil, nil, fmt.Errorf("scanner: %w", err)
+	}
+	if cfg.ScanOnStart {
+		lib.Start(ctx)
+	}
+	var wg sync.WaitGroup
+	if cfg.Watch {
+		wg.Go(func() {
+			if err := lib.Watch(ctx, scanner.WatchOptions{}); err != nil {
+				logger.Error("watcher stopped", "err", err)
+			}
+		})
+	}
+	stop := func() {
+		wg.Wait()
+		lib.Wait()
+	}
+	return lib, stop, nil
 }

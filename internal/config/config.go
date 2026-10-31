@@ -41,6 +41,9 @@ type Config struct {
 	HWAccel     string `toml:"hwaccel"`
 	Env         string `toml:"env"`
 	LogLevel    string `toml:"log_level"`
+	ScanWorkers int    `toml:"scan_workers"`  // 0 = number of CPUs
+	Watch       bool   `toml:"watch"`         // watch MEDIA_DIR for changes
+	ScanOnStart bool   `toml:"scan_on_start"` // incremental scan at startup
 }
 
 // Default returns the built-in defaults.
@@ -54,6 +57,8 @@ func Default() Config {
 		HWAccel:     "auto",
 		Env:         "prod",
 		LogLevel:    "info",
+		Watch:       true,
+		ScanOnStart: true,
 	}
 }
 
@@ -90,6 +95,9 @@ func Load(args []string, getenv func(string) string, output io.Writer) (Config, 
 	fset.StringVar(&fv.HWAccel, "hwaccel", fv.HWAccel, "hardware acceleration: auto|nvenc|qsv|amf|vaapi|videotoolbox|none (env HWACCEL)")
 	fset.StringVar(&fv.Env, "env", fv.Env, "environment: dev|prod (env APP_ENV)")
 	fset.StringVar(&fv.LogLevel, "log-level", fv.LogLevel, "log level: debug|info|warn|error (env LOG_LEVEL)")
+	fset.IntVar(&fv.ScanWorkers, "scan-workers", fv.ScanWorkers, "concurrent hash/probe workers, 0 = CPUs (env SCAN_WORKERS)")
+	fset.BoolVar(&fv.Watch, "watch", fv.Watch, "watch the media folder for changes (env WATCH)")
+	fset.BoolVar(&fv.ScanOnStart, "scan-on-start", fv.ScanOnStart, "scan the media folder at startup (env SCAN_ON_START)")
 	fset.BoolVar(&opts.ShowVersion, "version", false, "print version and exit")
 	if err := fset.Parse(args); err != nil {
 		return cfg, opts, err
@@ -136,6 +144,12 @@ func Load(args []string, getenv func(string) string, output io.Writer) (Config, 
 			cfg.Env = fv.Env
 		case "log-level":
 			cfg.LogLevel = fv.LogLevel
+		case "scan-workers":
+			cfg.ScanWorkers = fv.ScanWorkers
+		case "watch":
+			cfg.Watch = fv.Watch
+		case "scan-on-start":
+			cfg.ScanOnStart = fv.ScanOnStart
 		}
 	})
 
@@ -177,12 +191,25 @@ func applyEnv(cfg *Config, getenv func(string) string) error {
 			*dst = v
 		}
 	}
-	if v := getenv("PORT"); v != "" {
-		p, err := strconv.Atoi(v)
-		if err != nil {
-			return fmt.Errorf("env PORT=%q: %w", v, err)
+	ints := map[string]*int{"PORT": &cfg.Port, "SCAN_WORKERS": &cfg.ScanWorkers}
+	for key, dst := range ints {
+		if v := getenv(key); v != "" {
+			n, err := strconv.Atoi(v)
+			if err != nil {
+				return fmt.Errorf("env %s=%q: %w", key, v, err)
+			}
+			*dst = n
 		}
-		cfg.Port = p
+	}
+	bools := map[string]*bool{"WATCH": &cfg.Watch, "SCAN_ON_START": &cfg.ScanOnStart}
+	for key, dst := range bools {
+		if v := getenv(key); v != "" {
+			b, err := strconv.ParseBool(v)
+			if err != nil {
+				return fmt.Errorf("env %s=%q: %w", key, v, err)
+			}
+			*dst = b
+		}
 	}
 	return nil
 }
@@ -211,6 +238,9 @@ func (c *Config) Validate() error {
 
 	if c.Port < 1 || c.Port > 65535 {
 		return fmt.Errorf("invalid port %d: must be 1-65535", c.Port)
+	}
+	if c.ScanWorkers < 0 || c.ScanWorkers > 64 {
+		return fmt.Errorf("invalid SCAN_WORKERS %d: must be 0-64 (0 = number of CPUs)", c.ScanWorkers)
 	}
 	if !slices.Contains(hwAccelModes, c.HWAccel) {
 		return fmt.Errorf("invalid HWACCEL %q: want one of %v", c.HWAccel, hwAccelModes)

@@ -1,0 +1,255 @@
+# Messy library acceptance test (Sprint 1): every file sits in the media root,
+# with release names as found in the wild. The expected answer is what a person
+# would file it as. Format (tab separated):
+#   <file name>  <kind: movie|series|anime|review>  <title>  [season]  [episode]
+
+# Breaking Bad, 6 different naming styles: must become ONE series
+Breaking.Bad.S01E01.Pilot.720p.BluRay.x264-DEMAND.mkv	series	Breaking Bad	1	1
+breaking.bad.s01e02.720p.bluray.x264-demand.mkv	series	Breaking Bad	1	2
+Breaking_Bad_1x03_...And_the_Bags_in_the_River.avi	series	Breaking Bad	1	3
+Breaking Bad - S01E04 - Cancer Man.mkv	series	Breaking Bad	1	4
+Breaking Bad S01 E05 Gray Matter.mp4	series	Breaking Bad	1	5
+[TV] Breaking Bad - 1x06 - Crazy Handful of Nothin'.mkv	series	Breaking Bad	1	6
+Breaking.Bad.S02E01.Seven.Thirty-Seven.1080p.WEB-DL.mkv	series	Breaking Bad	2	1
+Breaking.Bad.S05E16.Felina.1080p.BluRay.x265.mkv	series	Breaking Bad	5	16
+
+# The Office (US)
+The.Office.US.S01E01.Pilot.720p.WEB-DL.mkv	series	The Office US	1	1
+The.Office.US.S01E02.Diversity.Day.720p.WEB-DL.mkv	series	The Office US	1	2
+The.Office.US.S02E01.The.Dundies.720p.WEB-DL.mkv	series	The Office US	2	1
+the.office.us.s03e01.gay.witch.hunt.720p.mkv	series	The Office US	3	1
+The.Office.US.S09E23.Finale.1080p.mkv	series	The Office US	9	23
+
+# Game of Thrones
+Game.of.Thrones.S01E01.Winter.Is.Coming.1080p.BluRay.x264.mkv	series	Game of Thrones	1	1
+Game.of.Thrones.S01E02.The.Kingsroad.1080p.BluRay.x264.mkv	series	Game of Thrones	1	2
+Game of Thrones - 3x09 - The Rains of Castamere.mkv	series	Game of Thrones	3	9
+game_of_thrones_s08e06_1080p.mkv	series	Game of Thrones	8	6
+Game.of.Thrones.S08E06.The.Iron.Throne.REPACK.1080p.AMZN.WEB-DL.DDP5.1.H.264-GoT.mkv	series	Game of Thrones	8	6
+
+# Stranger Things
+Stranger.Things.S01E01.Chapter.One.The.Vanishing.of.Will.Byers.1080p.NF.WEB-DL.mkv	series	Stranger Things	1	1
+Stranger.Things.S01E02.1080p.NF.WEB-DL.DD5.1.x264-NTb.mkv	series	Stranger Things	1	2
+Stranger Things S04E09 The Piggyback 2160p NF WEB-DL DDP5.1 Atmos DV HDR HEVC.mkv	series	Stranger Things	4	9
+
+# Dark (German)
+Dark.S01E01.Secrets.GERMAN.1080p.NF.WEB-DL.mkv	series	Dark	1	1
+Dark.S01E02.Lies.GERMAN.1080p.NF.WEB-DL.mkv	series	Dark	1	2
+Dark.S03E08.GERMAN.1080p.WEB.x264-TVARCHiV.mkv	series	Dark	3	8
+
+# Friends (old style)
+Friends.1x01.The.One.Where.Monica.Gets.a.Roommate.avi	series	Friends	1	1
+Friends.1x02.The.One.With.the.Sonogram.at.the.End.avi	series	Friends	1	2
+friends.s10e17.the.last.one.part.1.avi	series	Friends	10	17
+friends.s10e18.the.last.one.part.2.avi	series	Friends	10	18
+
+# Lost (double episodes)
+Lost.S01E01-E02.Pilot.720p.BluRay.mkv	series	Lost	1	1
+Lost.S01E03.Tabula.Rasa.720p.BluRay.mkv	series	Lost	1	3
+Lost.S06E17E18.The.End.720p.BluRay.mkv	series	Lost	6	17
+
+# Brazilian and Spanish series
+Cidade.Invisivel.S01E01.1080p.NF.WEB-DL.DUAL.5.1.mkv	series	Cidade Invisivel	1	1
+Cidade.Invisivel.S01E02.1080p.NF.WEB-DL.DUAL.5.1.mkv	series	Cidade Invisivel	1	2
+Cidade Invisível - S02E01.mkv	series	Cidade Invisível	2	1
+Sintonia.S01E01.1080p.WEB-DL.mkv	series	Sintonia	1	1
+Sintonia.S04E06.1080p.WEB-DL.mkv	series	Sintonia	4	6
+3%.S01E01.Capitulo.01.Cubos.1080p.NF.WEB-DL.mkv	series	3%	1	1
+3%.S04E07.1080p.NF.WEB-DL.mkv	series	3%	4	7
+La.Casa.de.Papel.S01E01.SPANISH.1080p.NF.WEB-DL.mkv	series	La Casa de Papel	1	1
+La.Casa.de.Papel.S05E10.SPANISH.1080p.NF.WEB-DL.mkv	series	La Casa de Papel	5	10
+Élite.S01E01.Bienvenidos.1080p.mkv	series	Élite	1	1
+Elite.S01E02.1080p.NF.WEB-DL.mkv	series	Élite	1	2
+
+# Other series
+The.Mandalorian.S01E01.Chapter.1.2160p.DSNP.WEB-DL.mkv	series	The Mandalorian	1	1
+The.Mandalorian.S02E08.Chapter.16.The.Rescue.2160p.DSNP.WEB-DL.mkv	series	The Mandalorian	2	8
+The.Last.of.Us.S01E01.When.Youre.Lost.in.the.Darkness.1080p.HMAX.WEB-DL.mkv	series	The Last of Us	1	1
+The.Last.of.Us.S01E03.Long.Long.Time.1080p.HMAX.WEB-DL.mkv	series	The Last of Us	1	3
+Succession.S04E10.With.Open.Eyes.1080p.AMZN.WEBRip.mkv	series	Succession	4	10
+Severance.S02E01.Hello.Ms.Cobel.2160p.ATVP.WEB-DL.mkv	series	Severance	2	1
+Severance.S01E01.Good.News.About.Hell.1080p.ATVP.WEB-DL.mkv	series	Severance	1	1
+House.of.the.Dragon.S02E01.1080p.WEB.H264-SuccessfulCrab.mkv	series	House of the Dragon	2	1
+The.Bear.S03E01.Tomorrow.1080p.HULU.WEB-DL.mkv	series	The Bear	3	1
+Chernobyl.S01E05.Vichnaya.Pamyat.2160p.mkv	series	Chernobyl	1	5
+Chernobyl.S01E01.1.23.45.1080p.mkv	series	Chernobyl	1	1
+Peaky Blinders S01E01.mkv	series	Peaky Blinders	1	1
+Peaky.Blinders.S06E06.Lock.and.Key.1080p.mkv	series	Peaky Blinders	6	6
+Sherlock.S01E01.A.Study.in.Pink.1080p.BluRay.mkv	series	Sherlock	1	1
+Sherlock.S04E03.The.Final.Problem.1080p.BluRay.mkv	series	Sherlock	4	3
+The.Wire.S01E01.The.Target.720p.mkv	series	The Wire	1	1
+The Wire - 5x10 - -30-.avi	series	The Wire	5	10
+Fargo.S01E01.The.Crocodiles.Dilemma.720p.mkv	series	Fargo	1	1
+Fargo.S05E10.Bisquik.1080p.mkv	series	Fargo	5	10
+True.Detective.S01E01.The.Long.Bright.Dark.1080p.mkv	series	True Detective	1	1
+Doctor.Who.2005.S01E01.Rose.mkv	series	Doctor Who	1	1
+Doctor Who (2005) - S13E01 - War of the Sontarans.mkv	series	Doctor Who	13	1
+Grey's Anatomy S10E05.mkv	series	Grey's Anatomy	10	5
+Greys.Anatomy.S10E06.720p.mkv	series	Grey's Anatomy	10	6
+Law.and.Order.SVU.S01E01.mkv	series	Law and Order SVU	1	1
+Law & Order SVU S01E02.mkv	series	Law and Order SVU	1	2
+The.Simpsons.S35E01.720p.mkv	series	The Simpsons	35	1
+The.Simpsons.S01E01.Simpsons.Roasting.on.an.Open.Fire.mkv	series	The Simpsons	1	1
+Squid.Game.S01E01.Red.Light.Green.Light.KOREAN.1080p.mkv	series	Squid Game	1	1
+Squid.Game.S02E01.KOREAN.1080p.NF.WEB-DL.mkv	series	Squid Game	2	1
+Fallout.S01E01.The.End.2160p.AMZN.WEB-DL.mkv	series	Fallout	1	1
+Shogun.2024.S01E01.Anjin.1080p.DSNP.WEB-DL.mkv	series	Shogun	1	1
+Shogun.2024.S01E10.A.Dream.of.a.Dream.1080p.mkv	series	Shogun	1	10
+Arcane.S01E01.Welcome.to.the.Playground.1080p.NF.WEB-DL.mkv	series	Arcane	1	1
+Arcane.S02E09.1080p.NF.WEB-DL.mkv	series	Arcane	2	9
+Westworld.S03E01.Parce.Domine.2160p.mkv	series	Westworld	3	1
+The.Boys.S04E01.1080p.AMZN.WEB-DL.mkv	series	The Boys	4	1
+Better.Call.Saul.S06E13.Saul.Gone.1080p.mkv	series	Better Call Saul	6	13
+Mr.Robot.S01E01.eps1.0_hellofriend.mov.1080p.mkv	series	Mr Robot	1	1
+The.Crown.S01E01.Wolferton.Splash.1080p.mkv	series	The Crown	1	1
+Ozark.S04E14.A.Hard.Way.to.Go.1080p.mkv	series	Ozark	4	14
+Black.Mirror.S03E01.Nosedive.1080p.mkv	series	Black Mirror	3	1
+Severance S02E10 Cold Harbor 2160p.mkv	series	Severance	2	10
+
+# Anime, fansub groups, absolute numbering
+[SubsPlease] Sousou no Frieren - 01 (1080p) [5C3A2B1F].mkv	anime	Sousou no Frieren	1	1
+[SubsPlease] Sousou no Frieren - 02 (1080p) [6D4B3C2A].mkv	anime	Sousou no Frieren	1	2
+[SubsPlease] Sousou no Frieren - 28 (1080p) [7E5C4D3B].mkv	anime	Sousou no Frieren	1	28
+[SubsPlease] One Piece - 1080 (1080p) [F00DBABE].mkv	anime	One Piece	1	1080
+[SubsPlease] One Piece - 1081 (1080p) [ABCDEF01].mkv	anime	One Piece	1	1081
+[SubsPlease] One Piece - 1100 (720p) [12345678].mkv	anime	One Piece	1	1100
+[Erai-raws] Mushoku Tensei S2 - 05 [1080p][Multiple Subtitle][ABCD1234].mkv	anime	Mushoku Tensei	2	5
+[Erai-raws] Mushoku Tensei S2 - 06 [1080p][Multiple Subtitle][BCDE2345].mkv	anime	Mushoku Tensei	2	6
+[Erai-raws] Kaguya-sama wa Kokurasetai 2nd Season - 03v2 [720p].mkv	anime	Kaguya-sama wa Kokurasetai	2	3
+[HorribleSubs] Steins;Gate 0 - 12 [720p].mkv	anime	Steins;Gate 0	1	12
+[HorribleSubs] Steins;Gate 0 - 13 [720p].mkv	anime	Steins;Gate 0	1	13
+[HorribleSubs] Boku no Hero Academia - 88 [1080p].mkv	anime	Boku no Hero Academia	1	88
+[HorribleSubs] Boku no Hero Academia - 89 [1080p].mkv	anime	Boku no Hero Academia	1	89
+[SubsPlease] 葬送のフリーレン - 05 (1080p) [ABCD1234].mkv	anime	葬送のフリーレン	1	5
+[SubsPlease] 薬屋のひとりごと - 12 (1080p).mkv	anime	薬屋のひとりごと	1	12
+[SubsPlease] 薬屋のひとりごと - 13 (1080p).mkv	anime	薬屋のひとりごと	1	13
+[Judas] Jujutsu Kaisen - S01E05.mkv	anime	Jujutsu Kaisen	1	5
+[Judas] Jujutsu Kaisen - S02E01.mkv	anime	Jujutsu Kaisen	2	1
+[Judas] Vinland Saga S2 - 24 [1080p][HEVC x265 10bit][Eng-Subs].mkv	anime	Vinland Saga	2	24
+[Group] Cowboy Bebop 01 [BD 1080p].mkv	anime	Cowboy Bebop	1	1
+[Group] Cowboy Bebop 02 [BD 1080p].mkv	anime	Cowboy Bebop	1	2
+[Group] Cowboy Bebop 26v2 [BD 1080p].mkv	anime	Cowboy Bebop	1	26
+[SubsPlease] 86 - Eighty Six - 12 (1080p).mkv	anime	86 - Eighty Six	1	12
+[SubsPlease] Oshi no Ko - 11 (1080p) [ABCDEF12].mkv	anime	Oshi no Ko	1	11
+[SubsPlease] Oshi no Ko S2 - 01 (1080p).mkv	anime	Oshi no Ko	2	1
+[ASW] Dandadan - 07 [1080p HEVC x265 10Bit][AAC].mkv	anime	Dandadan	1	7
+[ASW] Dandadan - 08 [1080p HEVC x265 10Bit][AAC].mkv	anime	Dandadan	1	8
+[Ember] Spy x Family - 25 [1080p].mkv	anime	Spy x Family	1	25
+[Commie] Shingeki no Kyojin - 59 [ABCD1234].mkv	anime	Shingeki no Kyojin	1	59
+[DB] Neon Genesis Evangelion - 26 [Dual Audio 10bit BD1080p][HEVC-x265].mkv	anime	Neon Genesis Evangelion	1	26
+[DB] Neon Genesis Evangelion - 01 [Dual Audio 10bit BD1080p][HEVC-x265].mkv	anime	Neon Genesis Evangelion	1	1
+[Anime Time] Hunter x Hunter (2011) - 148 [1080p].mkv	anime	Hunter x Hunter	1	148
+[Kawaiika-Raws] Re Zero kara Hajimeru Isekai Seikatsu 3rd Season 05 [1080p].mkv	anime	Re Zero kara Hajimeru Isekai Seikatsu	3	5
+[SubsPlease] Dr. Stone - New World - 11 (1080p).mkv	anime	Dr Stone - New World	1	11
+[Erai-raws] Kimetsu no Yaiba - Katanakaji no Sato Hen - 11 [1080p].mkv	anime	Kimetsu no Yaiba - Katanakaji no Sato Hen	1	11
+[SubsPlease] Blue Lock - 24 (1080p).mkv	anime	Blue Lock	1	24
+[Tsundere-Raws] Bocchi the Rock! - 01 [1080p].mkv	anime	Bocchi the Rock!	1	1
+[SubsPlease] Bocchi the Rock! - 12 (1080p).mkv	anime	Bocchi the Rock!	1	12
+[Group]_Fullmetal_Alchemist_Brotherhood_-_01_[1080p].mkv	anime	Fullmetal Alchemist Brotherhood	1	1
+[Group]_Fullmetal_Alchemist_Brotherhood_-_64_[1080p].mkv	anime	Fullmetal Alchemist Brotherhood	1	64
+[Coalgirls]_Clannad_After_Story_-_18_(1920x1080_Blu-ray_FLAC)_[0FF81A3A].mkv	anime	Clannad After Story	1	18
+[SubsPlease] Solo Leveling - 01 (1080p) [7A1B2C3D].mkv	anime	Solo Leveling	1	1
+[SubsPlease] Solo Leveling - 12 (1080p) [8B2C3D4E].mkv	anime	Solo Leveling	1	12
+[Erai-raws] Chainsaw Man - 12 [1080p].mkv	anime	Chainsaw Man	1	12
+[SubsPlease] Dungeon Meshi - 24 (1080p).mkv	anime	Dungeon Meshi	1	24
+[SubsPlease] Kusuriya no Hitorigoto - 24 (1080p).mkv	anime	Kusuriya no Hitorigoto	1	24
+[SubsPlease] Ore dake Level Up na Ken - 05 (1080p).mkv	anime	Ore dake Level Up na Ken	1	5
+[SubsPlease] Tensei shitara Slime Datta Ken S3 - 01 (1080p).mkv	anime	Tensei shitara Slime Datta Ken	3	1
+
+# Movies
+The.Matrix.1999.1080p.BluRay.x264-SPARKS.mkv	movie	The Matrix
+The.Matrix.Reloaded.2003.720p.BrRip.x264.YIFY.mp4	movie	The Matrix Reloaded
+Inception (2010) [1080p] [BluRay] [5.1] [YTS.MX].mp4	movie	Inception
+Interstellar.2014.2160p.UHD.BluRay.REMUX.HDR.HEVC.Atmos-EPSiLON.mkv	movie	Interstellar
+Blade.Runner.2049.2017.2160p.UHD.BluRay.x265.HDR.DTS-HD.MA.7.1-SWTYBLZ.mkv	movie	Blade Runner 2049
+Blade.Runner.1982.Final.Cut.1080p.BluRay.mkv	movie	Blade Runner
+2001.A.Space.Odyssey.1968.REMASTERED.1080p.BluRay.x264.mkv	movie	2001 A Space Odyssey
+1917.2019.1080p.WEBRip.x264-RARBG.mp4	movie	1917
+Charlotte's.Web.2006.720p.WEB-DL.AAC2.0.H.264.mkv	movie	Charlotte's Web
+Spider-Man.No.Way.Home.2021.1080p.WEB-DL.DDP5.1.Atmos.H.264-CMRG.mkv	movie	Spider-Man No Way Home
+Spider-Man.Across.the.Spider-Verse.2023.1080p.AMZN.WEB-DL.DDP5.1.H.264-FLUX.mkv	movie	Spider-Man Across the Spider-Verse
+Mission.Impossible.Dead.Reckoning.Part.One.2023.1080p.WEBRip.x265.10bit.AAC5.1-RARBG.mkv	movie	Mission Impossible Dead Reckoning Part One
+Oppenheimer.2023.IMAX.2160p.WEB-DL.DDP5.1.Atmos.DV.HDR.H.265-FLUX.mkv	movie	Oppenheimer
+Dune.Part.Two.2024.1080p.WEB-DL.DDP5.1.Atmos.H.264-FLUX.mkv	movie	Dune Part Two
+Dune.2021.1080p.HMAX.WEB-DL.mkv	movie	Dune
+Barbie.2023.1080p.WEBRip.1400MB.DD5.1.x264-GalaxyRG.mkv	movie	Barbie
+Parasite.2019.KOREAN.1080p.BluRay.H264.AAC-VXT.mp4	movie	Parasite
+The.Lord.of.the.Rings.The.Fellowship.of.the.Ring.2001.EXTENDED.1080p.BluRay.x264.mkv	movie	The Lord of the Rings The Fellowship of the Ring
+The.Lord.of.the.Rings.The.Two.Towers.2002.EXTENDED.1080p.BluRay.x264.mkv	movie	The Lord of the Rings The Two Towers
+Star.Wars.Episode.IV.A.New.Hope.1977.1080p.BluRay.x264.mkv	movie	Star Wars Episode IV A New Hope
+Back.to.the.Future.1985.PROPER.1080p.BluRay.x264.mkv	movie	Back to the Future
+Back.to.the.Future.Part.II.1989.1080p.BluRay.mkv	movie	Back to the Future Part II
+Alien.1979.Directors.Cut.1080p.BluRay.x264.DTS-FGT.mkv	movie	Alien
+Aliens.1986.Special.Edition.1080p.BluRay.mkv	movie	Aliens
+The.Dark.Knight.2008.REPACK.1080p.BluRay.x264.mkv	movie	The Dark Knight
+Mad.Max.Fury.Road.2015.1080p.BluRay.x264.DTS-HD.MA.7.1-FGT.mkv	movie	Mad Max Fury Road
+Gladiator.2000.Extended.Remastered.1080p.BluRay.x265.HEVC.10bit.mkv	movie	Gladiator
+Joker (2019) (1080p BluRay x265 HEVC 10bit AAC 7.1 Tigole).mkv	movie	Joker
+Whiplash (2014) [BluRay] [1080p] [YTS.AM].mp4	movie	Whiplash
+Her.2013.720p.BluRay.x264.YIFY.mp4	movie	Her
+Up.2009.1080p.BluRay.x264.mkv	movie	Up
+It.2017.1080p.BluRay.x264.mkv	movie	It
+Se7en.1995.REMASTERED.1080p.BluRay.x264.mkv	movie	Se7en
+Amélie (2001) [1080p].mkv	movie	Amélie
+Cidade de Deus (2002).mkv	movie	Cidade de Deus
+Tropa.de.Elite.2007.NACIONAL.1080p.WEB-DL.mkv	movie	Tropa de Elite
+Tropa.de.Elite.2.2010.NACIONAL.1080p.WEB-DL.mkv	movie	Tropa de Elite 2
+O.Auto.da.Compadecida.2000.1080p.WEBRip.x264.mkv	movie	O Auto da Compadecida
+Central do Brasil (1998) [1080p].mkv	movie	Central do Brasil
+Ainda.Estou.Aqui.2024.1080p.WEB-DL.DUAL.5.1.mkv	movie	Ainda Estou Aqui
+Bacurau.2019.1080p.WEB-DL.mkv	movie	Bacurau
+Que.Horas.Ela.Volta.2015.1080p.mkv	movie	Que Horas Ela Volta
+El.Laberinto.del.Fauno.2006.1080p.BluRay.mkv	movie	El Laberinto del Fauno
+Léon.The.Professional.1994.Extended.1080p.BluRay.mkv	movie	Léon The Professional
+千と千尋の神隠し (2001) [1080p].mkv	movie	千と千尋の神隠し
+Your.Name.2016.1080p.BluRay.x264.mkv	movie	Your Name
+Akira.1988.1080p.BluRay.x264.mkv	movie	Akira
+Princess.Mononoke.1997.1080p.BluRay.mkv	movie	Princess Mononoke
+The_Shawshank_Redemption_1994_1080p.mkv	movie	The Shawshank Redemption
+pulp_fiction_(1994)_720p.avi	movie	Pulp Fiction
+fight club 1999.avi	movie	Fight Club
+Forrest Gump - 1994.mkv	movie	Forrest Gump
+The Godfather [1972].mkv	movie	The Godfather
+The.Godfather.Part.II.1974.1080p.BluRay.mkv	movie	The Godfather Part II
+Avengers.Endgame.2019.1080p.BluRay.x264-SPARKS.mkv	movie	Avengers Endgame
+Avengers.Infinity.War.2018.1080p.BluRay.x264.mkv	movie	Avengers Infinity War
+Everything.Everywhere.All.at.Once.2022.1080p.WEB-DL.mkv	movie	Everything Everywhere All at Once
+The.Batman.2022.1080p.HMAX.WEB-DL.DDP5.1.Atmos.H.264.mkv	movie	The Batman
+Top.Gun.Maverick.2022.IMAX.1080p.WEB-DL.mkv	movie	Top Gun Maverick
+Poor.Things.2023.HDR.2160p.WEB.h265-ETHEL.mkv	movie	Poor Things
+Killers.of.the.Flower.Moon.2023.1080p.ATVP.WEB-DL.mkv	movie	Killers of the Flower Moon
+The.Holdovers.2023.AV1.1080p.mkv	movie	The Holdovers
+Fast.X.2023.1080p.WEBRip.x264.mkv	movie	Fast X
+John.Wick.Chapter.4.2023.1080p.WEB-DL.mkv	movie	John Wick Chapter 4
+Past.Lives.2023.1080p.WEB-DL.mkv	movie	Past Lives
+Anatomy.of.a.Fall.2023.FRENCH.1080p.WEB-DL.mkv	movie	Anatomy of a Fall
+The.Zone.of.Interest.2023.1080p.WEB-DL.mkv	movie	The Zone of Interest
+Arrival.2016.1080p.BluRay.x264.mkv	movie	Arrival
+Heat.1995.Directors.Definitive.Edition.1080p.BluRay.mkv	movie	Heat
+No.Country.for.Old.Men.2007.1080p.BluRay.mkv	movie	No Country for Old Men
+There.Will.Be.Blood.2007.1080p.BluRay.mkv	movie	There Will Be Blood
+The.Social.Network.2010.1080p.BluRay.mkv	movie	The Social Network
+Coco.2017.1080p.BluRay.x264.mkv	movie	Coco
+Toy.Story.1995.1080p.BluRay.mkv	movie	Toy Story
+WALL-E.2008.1080p.BluRay.mkv	movie	WALL-E
+Ratatouille (2007) (1080p).mkv	movie	Ratatouille
+Spirited.Away.2001.1080p.BluRay.x264.DUAL-AUDIO.mkv	movie	Spirited Away
+The.Thing.1982.1080p.BluRay.mkv	movie	The Thing
+Jaws.1975.1080p.BluRay.mkv	movie	Jaws
+Psycho.1960.1080p.BluRay.mkv	movie	Psycho
+Casablanca.1942.1080p.BluRay.mkv	movie	Casablanca
+12.Angry.Men.1957.1080p.BluRay.mkv	movie	12 Angry Men
+Ocean's.Eleven.2001.1080p.BluRay.mkv	movie	Ocean's Eleven
+Kill.Bill.Vol.1.2003.1080p.BluRay.mkv	movie	Kill Bill Vol 1
+Kill.Bill.Vol.2.2004.1080p.BluRay.mkv	movie	Kill Bill Vol 2
+Mad.Max.2.The.Road.Warrior.1981.1080p.mkv	movie	Mad Max 2 The Road Warrior
+Terminator.2.Judgment.Day.1991.1080p.BluRay.mkv	movie	Terminator 2 Judgment Day
+The.Matrix.Resurrections.2021.1080p.WEB-DL.mkv	movie	The Matrix Resurrections
+
+# Things a person cannot file without more information: review
+VID_20230101_120000.mp4	review
+Random Video.mkv	review
+Show - 05.mkv	review
+Some.Show.S02.Complete.1080p.mkv	review
+S01E01.mkv	review
+01.mkv	review
