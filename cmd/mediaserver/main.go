@@ -19,8 +19,10 @@ import (
 	"mediaserver/internal/api"
 	"mediaserver/internal/config"
 	"mediaserver/internal/db"
+	"mediaserver/internal/library"
 	"mediaserver/internal/probe"
 	"mediaserver/internal/scanner"
+	"mediaserver/internal/stream"
 	"mediaserver/migrations"
 	"mediaserver/web"
 )
@@ -97,6 +99,18 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 		stopLib()
 	}()
 
+	mediaRoot, err := os.OpenRoot(cfg.MediaDir)
+	if err != nil {
+		return fmt.Errorf("open media dir: %w", err)
+	}
+	defer mediaRoot.Close()
+	store := library.Store{DB: conn}
+	images, err := stream.NewImages(conn, mediaRoot, cfg.FFmpegPath, filepath.Join(cfg.DataDir, "images"),
+		logger.With("component", "images"))
+	if err != nil {
+		return err
+	}
+
 	assets, err := web.Assets()
 	if err != nil {
 		return fmt.Errorf("load frontend: %w", err)
@@ -107,6 +121,7 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 		Handler: api.NewRouter(api.Deps{
 			Logger: logger, DB: conn, Version: version, Web: assets,
 			Scanner: lib, StartScan: func() bool { return lib.Start(ctx) },
+			Library: store, Stream: &stream.Server{Root: mediaRoot, Files: store}, Images: images,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       2 * time.Minute,

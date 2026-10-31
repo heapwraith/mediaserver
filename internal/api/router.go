@@ -12,7 +12,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
+	"mediaserver/internal/library"
 	"mediaserver/internal/scanner"
+	"mediaserver/internal/stream"
 )
 
 // Deps are the dependencies of the HTTP layer.
@@ -27,6 +29,10 @@ type Deps struct {
 	// StartScan starts a background scan bound to the server lifetime (not to
 	// the request). It reports whether a new scan started now.
 	StartScan func() bool
+	// Library, Stream and Images power the read and playback endpoints.
+	Library library.Store
+	Stream  *stream.Server
+	Images  *stream.Images
 }
 
 // NewRouter builds the HTTP handler of the server.
@@ -46,6 +52,24 @@ func NewRouter(d Deps) http.Handler {
 			r.Put("/review/{fileId}", d.correctFile)
 			r.Post("/series/merge", d.mergeSeries)
 			r.Post("/series/split", d.splitSeries)
+
+			r.Get("/movies", d.listMovies)
+			r.Get("/series", d.listSeries("series"))
+			r.Get("/animes", d.listSeries("anime"))
+			r.Get("/series/{id}", byID(d, func(d Deps, r *http.Request, id string) (library.SeriesDetail, error) {
+				return d.Library.SeriesByID(r.Context(), id)
+			}))
+			r.Get("/movies/{id}/extras", byID(d, func(d Deps, r *http.Request, id string) ([]library.Extra, error) {
+				return d.Library.MovieExtras(r.Context(), id)
+			}))
+			r.Get("/series/{id}/extras", byID(d, func(d Deps, r *http.Request, id string) ([]library.Extra, error) {
+				return d.Library.SeriesExtras(r.Context(), id)
+			}))
+			r.Get("/media/{id}", byID(d, func(d Deps, r *http.Request, id string) (library.Media, error) {
+				return d.Library.MediaByID(r.Context(), id)
+			}))
+			r.Get("/media/{id}/stream", d.streamMedia)
+			r.Get("/images/{id}", d.image)
 		})
 		r.NotFound(func(w http.ResponseWriter, _ *http.Request) {
 			writeJSON(w, http.StatusNotFound, errorBody{Error: "not found"})
@@ -62,7 +86,7 @@ func NewRouter(d Deps) http.Handler {
 // requireScanner answers 503 when the library is not available.
 func (d Deps) requireScanner(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if d.Scanner == nil || d.StartScan == nil {
+		if d.Scanner == nil || d.StartScan == nil || d.Library.DB == nil || d.Stream == nil || d.Images == nil {
 			writeJSON(w, http.StatusServiceUnavailable, errorBody{Error: "library not available"})
 			return
 		}

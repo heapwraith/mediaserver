@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json/v2"
 	"errors"
 	"fmt"
@@ -10,7 +11,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"mediaserver/internal/library"
 	"mediaserver/internal/scanner"
+	"mediaserver/internal/stream"
 )
 
 const maxBodyBytes = 1 << 20
@@ -30,9 +33,11 @@ func decodeJSON(r *http.Request, v any) error {
 // writeError maps domain errors to HTTP status codes.
 func (d Deps) writeError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
-	case errors.Is(err, scanner.ErrInvalid):
+	case errors.Is(err, context.Canceled):
+		// The client left (e.g. a TV row scrolled past a loading image).
+	case errors.Is(err, scanner.ErrInvalid), errors.Is(err, library.ErrInvalid):
 		writeJSON(w, http.StatusBadRequest, errorBody{Error: err.Error()})
-	case errors.Is(err, scanner.ErrNotFound):
+	case errors.Is(err, scanner.ErrNotFound), errors.Is(err, library.ErrNotFound), errors.Is(err, stream.ErrNotFound):
 		writeJSON(w, http.StatusNotFound, errorBody{Error: "not found"})
 	default:
 		d.Logger.ErrorContext(r.Context(), "request failed", "path", r.URL.Path, "err", err)

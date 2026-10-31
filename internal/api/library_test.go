@@ -15,7 +15,9 @@ import (
 	"time"
 
 	"mediaserver/internal/db"
+	"mediaserver/internal/library"
 	"mediaserver/internal/scanner"
+	"mediaserver/internal/stream"
 	"mediaserver/migrations"
 )
 
@@ -45,9 +47,20 @@ func newLibraryServer(t *testing.T, files ...string) (*httptest.Server, *scanner
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
+	mediaRoot, err := os.OpenRoot(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = mediaRoot.Close() })
+	store := library.Store{DB: conn}
+	images, err := stream.NewImages(conn, mediaRoot, "ffmpeg", t.TempDir(), slog.New(slog.DiscardHandler))
+	if err != nil {
+		t.Fatal(err)
+	}
 	srv := httptest.NewServer(NewRouter(Deps{
 		Logger: slog.New(slog.DiscardHandler), DB: conn, Version: "test",
 		Scanner: sc, StartScan: func() bool { return sc.Start(ctx) },
+		Library: store, Stream: &stream.Server{Root: mediaRoot, Files: store}, Images: images,
 	}))
 	t.Cleanup(srv.Close)
 	fileID := func(rel string) string {

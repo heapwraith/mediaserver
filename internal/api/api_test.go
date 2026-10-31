@@ -39,11 +39,16 @@ func newTestServer(t *testing.T, withDB bool) *httptest.Server {
 }
 
 // get returns the status, headers and body of GET path (the body is closed).
-func get(t *testing.T, srv *httptest.Server, path string) (int, http.Header, string) {
+// headers are "Name: value" request headers.
+func get(t *testing.T, srv *httptest.Server, path string, headers ...string) (int, http.Header, string) {
 	t.Helper()
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, srv.URL+path, nil)
 	if err != nil {
 		t.Fatal(err)
+	}
+	for _, h := range headers {
+		k, v, _ := strings.Cut(h, ": ")
+		req.Header.Set(k, v)
 	}
 	res, err := srv.Client().Do(req)
 	if err != nil {

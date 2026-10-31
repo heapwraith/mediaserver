@@ -1,6 +1,6 @@
 # SPRINTS.md
 
-Planejamento do projeto. **Sprint ativa: 1.**
+Planejamento do projeto. **Sprint ativa: 3.**
 
 Regras:
 - Marcar `[x]` só quando o critério de aceite da tarefa for cumprido.
@@ -71,16 +71,16 @@ Duração sugerida: 1 semana por sprint (ajustável).
 
 **Objetivo:** dá pra listar a biblioteca e assistir um arquivo compatível no navegador.
 
-- [ ] `GET /api/movies`, `GET /api/series`, `GET /api/series/{id}` (temporadas + episódios), `GET /api/animes`
-- [ ] `GET /api/media/{id}`: detalhes técnicos e faixas
-- [ ] `GET /api/movies/{id}/extras` e `GET /api/series/{id}/extras`: trailers e extras (tocam pelo mesmo endpoint de stream)
-- [ ] `GET /api/media/{id}/stream`: direct play com `http.ServeContent` (Range)
-- [ ] Proteção contra path traversal (nenhum caminho fora de `MEDIA_DIR`)
-- [ ] Pipeline de imagens (`AGENTS.md` §7): pôster/fanart local recortado em 16:9 ou **melhor frame extraído** (sem frames pretos), em WebP 480/960/1920, versão desfocada pré-renderizada e cor dominante
-- [ ] `GET /api/images/{id}?w=960&variant=card|backdrop|blur` com cache em `DATA_DIR`
-- [ ] Paginação e ordenação (título, data de adição, ano)
-- [ ] Headers de cache (`ETag` / `Cache-Control`) para imagens e listagens
-- [ ] Testes de integração dos handlers (`httptest`)
+- [x] `GET /api/movies`, `GET /api/series`, `GET /api/series/{id}` (temporadas + episódios), `GET /api/animes`
+- [x] `GET /api/media/{id}`: detalhes técnicos e faixas
+- [x] `GET /api/movies/{id}/extras` e `GET /api/series/{id}/extras`: trailers e extras (tocam pelo mesmo endpoint de stream)
+- [x] `GET /api/media/{id}/stream`: direct play com `http.ServeContent` (Range)
+- [x] Proteção contra path traversal (nenhum caminho fora de `MEDIA_DIR`)
+- [x] Pipeline de imagens (`AGENTS.md` §7): pôster/fanart local recortado em 16:9 ou **melhor frame extraído** (sem frames pretos), em WebP 480/960/1920, versão desfocada pré-renderizada e cor dominante
+- [x] `GET /api/images/{id}?w=960&variant=card|backdrop|blur` com cache em `DATA_DIR`
+- [x] Paginação e ordenação (título, data de adição, ano)
+- [x] Headers de cache (`ETag` / `Cache-Control`) para imagens e listagens
+- [x] Testes de integração dos handlers (`httptest`)
 
 **Aceite**
 - Um `.mp4` H.264/AAC toca no navegador e o *seek* é instantâneo
@@ -230,3 +230,5 @@ Duração sugerida: 1 semana por sprint (ajustável).
 - Apps nativos para **Apple TV (tvOS)** e **Roku**, que não rodam apps web
 - *Cast* (Chromecast / AirPlay) a partir do navegador do PC
 - Escolha do nome do projeto e troca do placeholder `mediaserver`
+- Scanner: arquivo ainda "em cópia" no scan de inicialização só é reprocessado quando chega outro evento do disco; reagendar um scan quando `pending > 0`
+- Imagens: pré-gerar após o scan (cor dominante disponível já na 1ª listagem) e limpar o cache de itens removidos
