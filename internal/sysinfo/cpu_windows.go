@@ -26,8 +26,11 @@ func processTime() time.Duration {
 
 func systemTimes() (busy, total time.Duration, ok bool) {
 	var idle, kernel, user windows.Filetime
+	// The Win32 call fills three FILETIMEs: the pointers go straight into
+	// Call (the uintptr conversion inside the call expression is the pattern
+	// the unsafe rules allow), and nothing else touches the memory.
 	r, _, _ := getSystemTimes.Call(
-		uintptr(unsafe.Pointer(&idle)), uintptr(unsafe.Pointer(&kernel)), uintptr(unsafe.Pointer(&user)))
+		uintptr(unsafe.Pointer(&idle)), uintptr(unsafe.Pointer(&kernel)), uintptr(unsafe.Pointer(&user))) //nolint:gosec // G103: audited above
 	if r == 0 {
 		return 0, 0, false
 	}
