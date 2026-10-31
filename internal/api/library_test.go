@@ -82,6 +82,7 @@ func newLibraryServerDB(t *testing.T, files ...string) (*httptest.Server, *scann
 		Scanner: sc, StartScan: func() bool { return sc.Start(ctx) },
 		Library: store, Stream: &stream.Server{Root: mediaRoot, Files: store}, Images: images,
 		Transcoder: transcoder, Subtitles: subs, Secret: []byte("test-secret-0123456789abcdef"),
+		DataDir: t.TempDir(),
 	}))
 	t.Cleanup(srv.Close)
 	fileID := func(rel string) string {

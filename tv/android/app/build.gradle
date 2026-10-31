@@ -10,15 +10,32 @@ android {
         applicationId 'com.mediaserver.tv'
         minSdk 21
         targetSdk 36
-        versionCode 1
-        versionName '1.0.0'
+        // VERSION comes from git (Makefile): 1.2.3 → versionCode 10203.
+        def v = (System.getenv('MEDIASERVER_VERSION') ?: '1.0.0').replaceFirst(/^v/, '').split(/[-+]/)[0]
+        def parts = (v.split('\\.') + ['0', '0', '0']).take(3).collect { it.isInteger() ? it as int : 0 }
+        versionCode Math.max(1, parts[0] * 10000 + parts[1] * 100 + parts[2])
+        versionName v
+    }
+
+    // Releases are signed with the project key when MEDIASERVER_KEYSTORE is
+    // set (CI secrets, docs/release.md): updates then install over the old
+    // app. Without it, this machine's debug key (docs/tv/android.md).
+    def keystore = System.getenv('MEDIASERVER_KEYSTORE')
+    signingConfigs {
+        project {
+            if (keystore) {
+                storeFile file(keystore)
+                storePassword System.getenv('MEDIASERVER_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('MEDIASERVER_KEY_ALIAS')
+                keyPassword System.getenv('MEDIASERVER_KEY_PASSWORD')
+            }
+        }
     }
 
     buildTypes {
         release {
             minifyEnabled false
-            // Sideloaded app: signed with this machine's debug key (docs/tv/android.md).
-            signingConfig signingConfigs.debug
+            signingConfig keystore ? signingConfigs.project : signingConfigs.debug
         }
     }
 

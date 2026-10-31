@@ -37,7 +37,7 @@ func profileFrom(ctx context.Context) library.Profile {
 func (d Deps) requireProfiles(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if d.Library.DB == nil || len(d.Secret) == 0 {
-			writeJSON(w, http.StatusServiceUnavailable, errorBody{Error: "profiles not available"})
+			writeJSON(w, http.StatusServiceUnavailable, errorBody{Error: "profiles not available", Code: "unavailable"})
 			return
 		}
 		next.ServeHTTP(w, r)
@@ -51,7 +51,7 @@ func (d Deps) requireProfile(next http.Handler) http.Handler {
 		token := r.Header.Get(ProfileHeader)
 		id, _, _ := strings.Cut(token, ".")
 		if _, err := uuid.Parse(id); err != nil {
-			writeJSON(w, http.StatusUnauthorized, errorBody{Error: "choose a profile"})
+			writeJSON(w, http.StatusUnauthorized, errorBody{Error: "choose a profile", Code: "no_profile"})
 			return
 		}
 		p, hash, err := d.Library.ProfileAuth(r.Context(), id)
@@ -60,7 +60,7 @@ func (d Deps) requireProfile(next http.Handler) http.Handler {
 				d.writeError(w, r, err)
 				return
 			}
-			writeJSON(w, http.StatusUnauthorized, errorBody{Error: "choose a profile"})
+			writeJSON(w, http.StatusUnauthorized, errorBody{Error: "choose a profile", Code: "no_profile"})
 			return
 		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), profileKey{}, p)))

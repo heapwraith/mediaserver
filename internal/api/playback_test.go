@@ -1,9 +1,19 @@
 package api
 
 import (
+	"context"
+	"errors"
+	"fmt"
+	"log/slog"
 	"net/http"
+	"net/http/httptest"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 	"testing"
 
+	"mediaserver/internal/library"
 	"mediaserver/internal/stream"
 )
 
@@ -45,6 +55,57 @@ func TestPlayback(t *testing.T) {
 	} {
 		if status, body := do(t, srv, c.method, c.path, c.body); status != c.want {
 			t.Errorf("%s %s = %d %s, want %d", c.method, c.path, status, body, c.want)
+		}
+	}
+}
+
+// The frontend turns these codes into friendly messages (web/src/lib/api/errors.ts).
+func TestErrorCodes(t *testing.T) {
+	rel := "Filmes/Alien (1979)/Alien (1979).mkv"
+	srv, sc, fileID, _ := newLibraryServerDB(t, rel)
+	if _, err := sc.Scan(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	id := fileID(rel)
+	// The file goes away after the scan: the library still lists it.
+	if err := os.Remove(filepath.Join(sc.Root(), filepath.FromSlash(rel))); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []struct {
+		method, path, body string
+		want               int
+		code               string
+	}{
+		{http.MethodPost, "/api/media/" + id + "/playback", `{"caps": ["mkv", "h264", "aac"]}`, http.StatusGone, "file_missing"},
+		{http.MethodPost, "/api/media/" + id + "/playback", `{"caps": []}`, http.StatusGone, "file_missing"},
+		{http.MethodGet, "/api/media/" + id + "/stream", "", http.StatusGone, "file_missing"},
+		{http.MethodGet, "/api/media/0b7e3c1a-5d6f-4a8b-9c0d-1e2f3a4b5c6d", "", http.StatusNotFound, "not_found"},
+		{http.MethodGet, "/api/media/x", "", http.StatusBadRequest, "invalid"},
+	} {
+		status, body := do(t, srv, c.method, c.path, c.body)
+		if status != c.want || !strings.Contains(body, `"code":"`+c.code+`"`) {
+			t.Errorf("%s %s = %d %s, want %d %s", c.method, c.path, status, body, c.want, c.code)
+		}
+	}
+}
+
+func TestWriteErrorCodes(t *testing.T) {
+	d := Deps{Logger: slog.New(slog.DiscardHandler)}
+	for _, c := range []struct {
+		err  error
+		want int
+		code string
+	}{
+		{fmt.Errorf("start ffmpeg: %w", exec.ErrNotFound), http.StatusServiceUnavailable, "no_ffmpeg"},
+		{stream.ErrBusy, http.StatusServiceUnavailable, "busy"},
+		{fmt.Errorf("x: %w", library.ErrConflict), http.StatusConflict, "conflict"},
+		{errors.New("boom"), http.StatusInternalServerError, "internal"},
+	} {
+		w := httptest.NewRecorder()
+		r := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/x", nil)
+		d.writeError(w, r, c.err)
+		if w.Code != c.want || !strings.Contains(w.Body.String(), `"code":"`+c.code+`"`) {
+			t.Errorf("%v = %d %s, want %d %s", c.err, w.Code, w.Body.String(), c.want, c.code)
 		}
 	}
 }

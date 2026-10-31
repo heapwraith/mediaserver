@@ -69,7 +69,7 @@ func (d Deps) startSession(w http.ResponseWriter, r *http.Request) {
 	}
 	if left := d.pins.wait(id); left > 0 {
 		w.Header().Set("Retry-After", strconv.Itoa(int(math.Ceil(left.Seconds()))))
-		writeJSON(w, http.StatusTooManyRequests, errorBody{Error: "too many wrong PINs, wait a moment"})
+		writeJSON(w, http.StatusTooManyRequests, errorBody{Error: "too many wrong PINs, wait a moment", Code: "pin_locked"})
 		return
 	}
 	p, hash, err := d.Library.ProfileAuth(r.Context(), id)
@@ -80,10 +80,10 @@ func (d Deps) startSession(w http.ResponseWriter, r *http.Request) {
 	if hash != "" && !library.VerifyPIN(hash, b.PIN) {
 		if d.pins.fail(id) {
 			w.Header().Set("Retry-After", strconv.Itoa(int(pinLock.Seconds())))
-			writeJSON(w, http.StatusTooManyRequests, errorBody{Error: "too many wrong PINs, wait a moment"})
+			writeJSON(w, http.StatusTooManyRequests, errorBody{Error: "too many wrong PINs, wait a moment", Code: "pin_locked"})
 			return
 		}
-		writeJSON(w, http.StatusForbidden, errorBody{Error: "wrong PIN"})
+		writeJSON(w, http.StatusForbidden, errorBody{Error: "wrong PIN", Code: "wrong_pin"})
 		return
 	}
 	d.pins.reset(id)
@@ -99,7 +99,7 @@ func (d Deps) ownProfile(w http.ResponseWriter, r *http.Request) (string, bool) 
 		return "", false
 	}
 	if profileFrom(r.Context()).ID != id {
-		writeJSON(w, http.StatusForbidden, errorBody{Error: "choose this profile first"})
+		writeJSON(w, http.StatusForbidden, errorBody{Error: "choose this profile first", Code: "forbidden"})
 		return "", false
 	}
 	return id, true

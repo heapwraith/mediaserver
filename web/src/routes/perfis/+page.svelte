@@ -7,6 +7,8 @@
 	import { focusGroup, focusable } from '#lib/platform/nav.svelte.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import ErrorNotice from '#lib/ui/ErrorNotice.svelte';
+	import { describeError } from '#lib/api/errors.ts';
 	import PinPad from '#lib/ui/PinPad.svelte';
 
 	const MAX_PROFILES = 12; // internal/library/profiles.go
@@ -36,7 +38,7 @@
 			setSession(await startSession(p.id));
 			await goto(after(p));
 		} catch (e) {
-			error = e instanceof Error ? e.message : String(e);
+			error = describeError(e).title;
 		}
 	}
 
@@ -85,7 +87,7 @@
 			</div>
 		{/if}
 	{:catch e}
-		<p class="error">Não foi possível carregar os perfis: {e instanceof Error ? e.message : e}</p>
+		<ErrorNotice error={e} />
 	{/await}
 </div>
 

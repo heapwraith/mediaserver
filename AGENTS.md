@@ -61,6 +61,8 @@ internal/probe/         → wrapper do ffprobe (codecs, duração, faixas)
 internal/stream/        → direct play (Range) e transcodificação HLS
 internal/subtitles/     → legendas externas e embutidas, SRT→VTT
 internal/api/           → handlers HTTP, rotas, middlewares
+internal/service/       → subcomando `service`: systemd, launchd e Windows Service
+internal/sysinfo/       → CPU, memória e GPU para a página de status
 web/                    → SvelteKit (o build vai para web/build, embutido)
 web/src/shell/          → tela de conexão dos apps de TV (build em web/build-tv, vai nos pacotes)
 tv/tizen/               → empacotamento Samsung (.wgt)
@@ -270,6 +272,7 @@ make fmt        # golangci-lint fmt + oxfmt
 make check      # golangci-lint run + oxlint + svelte-check (não altera arquivos; usado no CI)
 make bench      # benchmarks do scanner e do stream
 make tv-tizen   # app Samsung (.wgt) em dist/tv; também tv-webos (.ipk) e tv-android (.apk)
+make load       # teste de carga (2 direct play + 1 conversão; a conversão precisa de FFmpeg)
 ```
 
 Variáveis principais:

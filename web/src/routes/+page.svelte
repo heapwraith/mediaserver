@@ -9,6 +9,7 @@
 	import Row from '#lib/ui/Row.svelte';
 	import { extraCard, homeCard, movieCard, seriesCard, type CardItem } from '#lib/ui/cards.ts';
 	import { movieHero, seriesHero, type HeroData } from '#lib/ui/hero.ts';
+	import ErrorNotice from '#lib/ui/ErrorNotice.svelte';
 
 	const recent = { sort: 'added', order: 'desc', limit: 20 } as const;
 	const noRows: Home = { continue: [], next: [] };
@@ -79,7 +80,7 @@
 		</div>
 	{/if}
 {:catch e}
-	<p class="error">Não foi possível carregar a biblioteca: {e instanceof Error ? e.message : e}</p>
+	<ErrorNotice error={e} />
 {/await}
 
 <style>
@@ -91,15 +92,13 @@
 		margin: 0;
 		font-size: 2.5rem;
 	}
-	.empty p,
-	.error {
+	.empty p {
 		margin: 1rem 0 2rem;
 		font-size: 1.25rem;
 		color: rgba(255, 255, 255, 0.6);
 	}
 	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
-	:global(html.tv) .empty p,
-	:global(html.tv) .error {
+	:global(html.tv) .empty p {
 		font-size: 1.5rem;
 	}
 </style>

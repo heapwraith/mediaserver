@@ -15,6 +15,7 @@
 		stopPlayback,
 		vttURL,
 	} from '#lib/api/client.ts';
+	import { UNSUPPORTED, describeError, type Problem } from '#lib/api/errors.ts';
 	import { session } from '#lib/api/session.svelte.ts';
 	import type { HomeItem, Media, Playback, Track } from '#lib/api/types.ts';
 	import { goBack } from '#lib/platform/back.ts';
@@ -121,7 +122,7 @@
 	let time = $state(0);
 	let duration = $state(0);
 	let waiting = $state(true);
-	let error = $state('');
+	let error: Problem | undefined = $state();
 	let visible = $state(true);
 	let hideTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -266,7 +267,7 @@
 		const token = ++playToken;
 		const el = video;
 		waiting = true;
-		error = '';
+		error = undefined;
 		source?.destroy();
 		source = undefined;
 		// Free the old FFmpeg first: the server limits concurrent transcodes.
@@ -279,10 +280,8 @@
 		} catch (e) {
 			if (token === playToken) {
 				waiting = false;
-				error =
-					e instanceof ApiError && e.status === 503
-						? 'O servidor está ocupado com outras conversões. Tente de novo em instantes.'
-						: unsupported;
+				// The server says why (file gone, busy, no FFmpeg…).
+				error = describeError(e instanceof ApiError && e.code !== '' ? e : UNSUPPORTED);
 			}
 			return;
 		}
@@ -315,7 +314,7 @@
 	function onFatal() {
 		if (retries >= MAX_RETRIES) {
 			waiting = false;
-			error = unsupported;
+			error = describeError(UNSUPPORTED);
 			return;
 		}
 		retries += 1;
@@ -326,7 +325,7 @@
 	function onVideoError() {
 		if (playback?.direct !== true) return; // HLS errors come through hls.js
 		if (retries >= MAX_RETRIES) {
-			error = unsupported;
+			error = describeError(UNSUPPORTED);
 			return;
 		}
 		retries += 1;
@@ -584,7 +583,6 @@
 			.filter(Boolean)
 			.join(' · ');
 
-	const unsupported = 'Não foi possível reproduzir este arquivo.';
 </script>
 
 <svelte:head><title>{title || 'Assistir'}</title></svelte:head>
@@ -651,8 +649,13 @@
 		{/key}
 	</video>
 
-	{#if waiting && error === ''}<div class="spinner" aria-label="Carregando"></div>{/if}
-	{#if error !== ''}<p class="error">{error}</p>{/if}
+	{#if waiting && error === undefined}<div class="spinner" aria-label="Carregando"></div>{/if}
+	{#if error !== undefined}
+		<div class="error" role="alert">
+			<p class="error-title">{error.title}</p>
+			<p class="error-hint">{error.hint}</p>
+		</div>
+	{/if}
 
 	{#if countdown !== null && next !== undefined}
 		{@const n = next}
@@ -1109,6 +1112,20 @@
 		right: 10vw;
 		margin: 0;
 		text-align: center;
+		font-size: 1.5rem;
+	}
+	.error p {
+		margin: 0;
+	}
+	.error-title {
+		font-weight: 600;
+	}
+	.error-hint {
+		margin-top: 0.75rem !important;
+		color: rgba(255, 255, 255, 0.6);
+		font-size: 1.25rem;
+	}
+	:global(html.tv) .error-hint {
 		font-size: 1.5rem;
 	}
 	.spinner {

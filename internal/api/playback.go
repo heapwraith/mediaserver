@@ -1,7 +1,6 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"slices"
@@ -17,7 +16,7 @@ import (
 func (d Deps) requireTranscoder(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if d.Transcoder == nil {
-			writeJSON(w, http.StatusServiceUnavailable, errorBody{Error: "transcoding not available"})
+			writeJSON(w, http.StatusServiceUnavailable, errorBody{Error: "transcoding not available", Code: "no_ffmpeg"})
 			return
 		}
 		next.ServeHTTP(w, r)
@@ -44,14 +43,7 @@ func (d Deps) playback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	switch {
-	case errors.Is(err, stream.ErrBusy):
-		writeJSON(w, http.StatusServiceUnavailable, errorBody{Error: "limite de conversões simultâneas atingido"})
-	case errors.Is(err, stream.ErrClosed):
-		writeJSON(w, http.StatusServiceUnavailable, errorBody{Error: "servidor encerrando"})
-	default:
-		d.writeError(w, r, err)
-	}
+	d.writeError(w, r, err)
 }
 
 func (d Deps) startPlayback(r *http.Request, id string, req stream.PlayRequest) (stream.Playback, error) {

@@ -47,7 +47,7 @@ func pageParams(r *http.Request) (library.Page, error) {
 func writeCachedJSON(w http.ResponseWriter, r *http.Request, v any) {
 	data, err := json.Marshal(v)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, errorBody{Error: "internal error"})
+		writeJSON(w, http.StatusInternalServerError, errorBody{Error: "internal error", Code: "internal"})
 		return
 	}
 	sum := sha256.Sum256(data)

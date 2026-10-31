@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -173,5 +174,22 @@ func TestLoadHelpAndVersion(t *testing.T) {
 	_, opts, err := Load([]string{"-version"}, envFrom(nil), io.Discard)
 	if err != nil || !opts.ShowVersion {
 		t.Fatalf("got opts=%+v err=%v, want ShowVersion", opts, err)
+	}
+}
+
+func TestEnvAsFlags(t *testing.T) {
+	env := map[string]string{"MEDIA_DIR": "/srv/Mídias", "PORT": "9000", "WATCH": "false"}
+	getenv := func(k string) string { return env[k] }
+	got := EnvAsFlags([]string{"--port", "8096"}, getenv)
+	want := []string{"-media-dir=/srv/Mídias", "-watch=false"}
+	if !slices.Equal(got, want) {
+		t.Errorf("EnvAsFlags = %q, want %q", got, want)
+	}
+	// Every pair names a real flag: Load accepts what it returns.
+	for _, e := range envFlags {
+		if _, _, err := Load([]string{"-" + e.flag + "=x"}, func(string) string { return "" }, io.Discard); err != nil &&
+			strings.Contains(err.Error(), "flag provided but not defined") {
+			t.Errorf("%s: no flag %s", e.env, e.flag)
+		}
 	}
 }

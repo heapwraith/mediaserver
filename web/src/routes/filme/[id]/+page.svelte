@@ -10,6 +10,7 @@
 	import Row from '#lib/ui/Row.svelte';
 	import { extraCard } from '#lib/ui/cards.ts';
 	import { moviePlay, movieHero } from '#lib/ui/hero.ts';
+	import ErrorNotice from '#lib/ui/ErrorNotice.svelte';
 
 	const data = $derived(
 		getMovie(page.params.id ?? '').then(async (m) => ({ movie: m, hero: await movieHero(m) })),
@@ -41,18 +42,5 @@
 	</Hero>
 	<Row id="extras" title="Extras" items={h.extras.map(extraCard)} />
 {:catch e}
-	<p class="error">Filme não encontrado ({e instanceof Error ? e.message : e}).</p>
+	<ErrorNotice error={e} />
 {/await}
-
-<style>
-	.error {
-		margin-top: 20vh;
-		text-align: center;
-		font-size: 1.25rem;
-		color: rgba(255, 255, 255, 0.6);
-	}
-	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
-	:global(html.tv) .error {
-		font-size: 1.5rem;
-	}
-</style>

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os/exec"
 	"uuid"
 
 	"github.com/go-chi/chi/v5"
@@ -35,15 +36,24 @@ func (d Deps) writeError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, context.Canceled):
 		// The client left (e.g. a TV row scrolled past a loading image).
+	case errors.Is(err, stream.ErrFileMissing):
+		writeJSON(w, http.StatusGone, errorBody{Error: "media file missing", Code: "file_missing"})
+	case errors.Is(err, exec.ErrNotFound):
+		d.Logger.WarnContext(r.Context(), "ffmpeg not found", "path", r.URL.Path, "err", err)
+		writeJSON(w, http.StatusServiceUnavailable, errorBody{Error: "ffmpeg not available", Code: "no_ffmpeg"})
+	case errors.Is(err, stream.ErrBusy):
+		writeJSON(w, http.StatusServiceUnavailable, errorBody{Error: "too many transcodes running", Code: "busy"})
+	case errors.Is(err, stream.ErrClosed):
+		writeJSON(w, http.StatusServiceUnavailable, errorBody{Error: "server shutting down", Code: "shutting_down"})
 	case errors.Is(err, scanner.ErrInvalid), errors.Is(err, library.ErrInvalid):
-		writeJSON(w, http.StatusBadRequest, errorBody{Error: err.Error()})
+		writeJSON(w, http.StatusBadRequest, errorBody{Error: err.Error(), Code: "invalid"})
 	case errors.Is(err, library.ErrConflict):
-		writeJSON(w, http.StatusConflict, errorBody{Error: err.Error()})
+		writeJSON(w, http.StatusConflict, errorBody{Error: err.Error(), Code: "conflict"})
 	case errors.Is(err, scanner.ErrNotFound), errors.Is(err, library.ErrNotFound), errors.Is(err, stream.ErrNotFound):
-		writeJSON(w, http.StatusNotFound, errorBody{Error: "not found"})
+		writeJSON(w, http.StatusNotFound, errorBody{Error: "not found", Code: "not_found"})
 	default:
 		d.Logger.ErrorContext(r.Context(), "request failed", "path", r.URL.Path, "err", err)
-		writeJSON(w, http.StatusInternalServerError, errorBody{Error: "internal error"})
+		writeJSON(w, http.StatusInternalServerError, errorBody{Error: "internal error", Code: "internal"})
 	}
 }
 

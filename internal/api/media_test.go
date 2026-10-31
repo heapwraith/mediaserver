@@ -169,8 +169,8 @@ func TestStreamEndpoint(t *testing.T) {
 	if err := os.Remove(filepath.Join(sc.Root(), filepath.FromSlash(trailer))); err != nil {
 		t.Fatal(err)
 	}
-	if status, _, _ := get(t, srv, "/api/media/"+fileID(trailer)+"/stream"); status != 404 {
-		t.Fatalf("deleted file = %d", status)
+	if status, _, _ := get(t, srv, "/api/media/"+fileID(trailer)+"/stream"); status != http.StatusGone {
+		t.Fatalf("deleted file = %d, want 410 (file_missing)", status)
 	}
 }
 

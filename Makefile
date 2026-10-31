@@ -24,7 +24,7 @@ TIZEN_PROFILE ?= mediaserver
 MEDIA_DIR ?= $(CURDIR)/media
 DEV_DIR   := .dev
 
-.PHONY: help dev build build-web build-go test fmt check bench clean web-deps web-stub tv tv-tizen tv-webos tv-android
+.PHONY: help dev build build-web build-go test fmt check bench load clean web-deps web-stub tv tv-tizen tv-webos tv-android
 
 help: ## List the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-10s %s\n", $$1, $$2}'
@@ -99,6 +99,9 @@ check: web-deps web-stub ## golangci-lint run + oxlint + oxfmt --check + svelte-
 bench: web-stub ## Benchmarks (scanner and stream, from Sprint 1 on)
 	$(GO) test -run='^$$' -bench=. -benchmem ./...
 
+load: web-stub ## Load test: 2 direct plays + 1 conversion at once (conversion needs FFmpeg)
+	MEDIASERVER_LOAD=1 $(GO) test -run='^TestLoad$$' -count=1 -v ./internal/api
+
 # --- TV apps (docs/tv/) ----------------------------------------------------
 # Each package holds only the connection page (web/build-tv); the interface
 # comes from the server (docs/adr/008-tv-apps.md).
@@ -121,7 +124,7 @@ tv-webos: tv ## LG .ipk (webOS CLI: npm i -g @webos-tools/cli)
 	@ls $(TV_DIST)/webos/*.ipk
 
 tv-android: tv ## Android TV / Google TV / Fire TV .apk (Android SDK, ANDROID_HOME)
-	cd tv/android && ./gradlew --no-daemon -q assembleRelease
+	cd tv/android && MEDIASERVER_VERSION=$(VERSION) ./gradlew --no-daemon -q assembleRelease
 	mkdir -p $(TV_DIST)
 	cp tv/android/app/build/outputs/apk/release/app-release.apk $(TV_DIST)/mediaserver-tv.apk
 	@ls $(TV_DIST)/mediaserver-tv.apk

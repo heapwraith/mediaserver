@@ -4,7 +4,7 @@
 	import { goto } from '$app/navigation';
 
 	import { fetchHealth } from '#lib';
-	import { scanStatus, startScan } from '#lib/api/client.ts';
+	import { downloadBackup, scanStatus, startScan } from '#lib/api/client.ts';
 	import { session } from '#lib/api/session.svelte.ts';
 	import type { ScanStatus } from '#lib/api/types.ts';
 	import { capabilities } from '#lib/platform/codecs.ts';
@@ -13,11 +13,12 @@
 	import { saveSettings, settings } from '#lib/platform/settings.svelte.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import ErrorNotice from '#lib/ui/ErrorNotice.svelte';
 
 	const POLL_MS = 1000;
 
 	let status: ScanStatus | undefined = $state();
-	let error = $state('');
+	let error: unknown = $state();
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	const health = fetchHealth().catch(() => undefined);
 
@@ -25,9 +26,9 @@
 		clearTimeout(timer);
 		try {
 			status = await scanStatus();
-			error = '';
+			error = undefined;
 		} catch (e) {
-			error = e instanceof Error ? e.message : String(e);
+			error = e;
 		}
 		if (status?.running === true) timer = setTimeout(() => void refresh(), POLL_MS);
 	}
@@ -35,7 +36,7 @@
 	onDestroy(() => clearTimeout(timer));
 
 	async function scan() {
-		await startScan().catch((e: unknown) => (error = e instanceof Error ? e.message : String(e)));
+		await startScan().catch((e: unknown) => (error = e));
 		await refresh();
 	}
 
@@ -53,6 +54,22 @@
 		android: 'Android TV',
 	}[platform];
 	const caps = capabilities();
+
+	// Backup of profiles, progress and Revisar corrections; restored from the
+	// command line with the server stopped (README: Backup e restauração).
+	let backupNote = $state('');
+	let backupError: unknown = $state();
+	async function backup() {
+		backupError = undefined;
+		backupNote = 'Preparando o backup…';
+		try {
+			const name = await downloadBackup();
+			backupNote = `Backup salvo: ${name}. Para restaurar, pare o servidor e rode: mediaserver restore ${name}`;
+		} catch (e) {
+			backupNote = '';
+			backupError = e;
+		}
+	}
 
 	const when = (iso?: string) => (iso === undefined ? '—' : new Date(iso).toLocaleString('pt-BR'));
 </script>
@@ -81,7 +98,7 @@
 			{status?.running === true ? 'Escaneando…' : 'Escanear agora'}
 		</Button>
 	</div>
-	{#if error}<p class="note">Erro: {error}</p>{/if}
+	{#if error !== undefined}<ErrorNotice {error} onretry={() => void refresh()} />{/if}
 	{#if status}
 		<dl>
 			<dt>Último scan</dt>
@@ -125,6 +142,19 @@
 			Trailer no fundo: {settings.backgroundTrailer ? 'sim' : 'não'}
 		</Button>
 	</div>
+</section>
+
+<section>
+	<h2>Servidor</h2>
+	<div class="bar" use:focusGroup={{ orientation: 'horizontal' }}>
+		<Button id="settings:status" onclick={() => goto('/status')}>Status do servidor</Button>
+		{#if !isTV}
+			<!-- A TV has nowhere to save the file. -->
+			<Button onclick={backup}>Baixar backup</Button>
+		{/if}
+	</div>
+	{#if backupNote !== ''}<p class="note">{backupNote}</p>{/if}
+	{#if backupError !== undefined}<ErrorNotice error={backupError} onretry={() => void backup()} />{/if}
 </section>
 
 <section>

@@ -19,6 +19,10 @@ import (
 // ErrNotFound is returned when a file does not exist or is outside the root.
 var ErrNotFound = errors.New("not found")
 
+// ErrFileMissing means the library knows the media but its file is gone from
+// MEDIA_DIR (moved or deleted before the next scan). It also matches ErrNotFound.
+var ErrFileMissing = errors.New("media file missing")
+
 // Resolver finds the relative path ('/' separators) of a playable media file.
 type Resolver interface {
 	PlayablePath(ctx context.Context, id string) (string, error)
@@ -72,6 +76,9 @@ func (s *Server) ServeMedia(w http.ResponseWriter, r *http.Request, id string) e
 // is reported as ErrNotFound.
 func openFile(root *os.Root, rel string) (*os.File, fs.FileInfo, error) {
 	f, err := root.Open(filepath.FromSlash(rel))
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, nil, fmt.Errorf("open %s: %w: %w", rel, ErrNotFound, ErrFileMissing)
+	}
 	if err != nil {
 		return nil, nil, fmt.Errorf("open %s: %w: %w", rel, ErrNotFound, err)
 	}

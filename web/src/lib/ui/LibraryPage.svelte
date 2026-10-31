@@ -5,6 +5,7 @@
 	import { focusGroup } from '../platform/nav.svelte';
 	import Button from './Button.svelte';
 	import Card from './Card.svelte';
+	import ErrorNotice from './ErrorNotice.svelte';
 	import Grid from './Grid.svelte';
 	import { movieCard, seriesCard, type CardItem } from './cards';
 
@@ -22,7 +23,7 @@
 	let total = $state(0);
 	let loading = $state(false);
 	let gen = 0; // ignores answers of a previous sort
-	let error = $state('');
+	let error: unknown = $state();
 
 	async function fetchPage(offset: number) {
 		const s = sorts[sortIdx] ?? sorts[0];
@@ -44,9 +45,9 @@
 			if (mine !== gen) return;
 			total = r.total;
 			items = reset ? r.items : [...items, ...r.items];
-			error = '';
+			error = undefined;
 		} catch (e) {
-			error = e instanceof Error ? e.message : String(e);
+			error = e;
 		} finally {
 			loading = false;
 		}
@@ -66,8 +67,8 @@
 		{/each}
 	</div>
 </div>
-{#if error}<p class="note">Erro: {error}</p>{/if}
-{#if !error && total === 0 && !loading}<p class="note">Nada por aqui ainda.</p>{/if}
+{#if error !== undefined}<ErrorNotice {error} onretry={() => void more(true)} />{/if}
+{#if error === undefined && total === 0 && !loading}<p class="note">Nada por aqui ainda.</p>{/if}
 
 <Grid id={`grid:${kind}`} {items} key={(c) => c.key} onopen={(c) => goto(c.href)} onend={() => more()}>
 	{#snippet cell(item, current)}

@@ -41,6 +41,13 @@ type Deps struct {
 	// Secret signs the profile sessions (library.Store.Secret). Profile and
 	// progress endpoints answer 503 without it.
 	Secret []byte
+	// DataDir holds the temporary copy of a backup (DATA_DIR) and the
+	// caches whose size the status page shows.
+	DataDir string
+	// Started is when the server started (uptime on the status page).
+	Started time.Time
+
+	admin *adminState
 
 	pins *pinLimiter
 }
@@ -48,6 +55,7 @@ type Deps struct {
 // NewRouter builds the HTTP handler of the server.
 func NewRouter(d Deps) http.Handler {
 	d.pins = newPinLimiter()
+	d.admin = &adminState{}
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(requestLogger(d.Logger))
@@ -115,13 +123,15 @@ func NewRouter(d Deps) http.Handler {
 				r.Put("/watched", d.putWatched)
 				r.Get("/series/{id}/progress", d.seriesProgress)
 				r.Get("/home", d.home)
+				r.Get("/admin/backup", d.backup)
+				r.Get("/admin/status", d.status)
 			})
 		})
 		r.NotFound(func(w http.ResponseWriter, _ *http.Request) {
-			writeJSON(w, http.StatusNotFound, errorBody{Error: "not found"})
+			writeJSON(w, http.StatusNotFound, errorBody{Error: "not found", Code: "not_found"})
 		})
 		r.MethodNotAllowed(func(w http.ResponseWriter, _ *http.Request) {
-			writeJSON(w, http.StatusMethodNotAllowed, errorBody{Error: "method not allowed"})
+			writeJSON(w, http.StatusMethodNotAllowed, errorBody{Error: "method not allowed", Code: "method_not_allowed"})
 		})
 	})
 
@@ -133,7 +143,7 @@ func NewRouter(d Deps) http.Handler {
 func (d Deps) requireScanner(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if d.Scanner == nil || d.StartScan == nil || d.Library.DB == nil || d.Stream == nil || d.Images == nil {
-			writeJSON(w, http.StatusServiceUnavailable, errorBody{Error: "library not available"})
+			writeJSON(w, http.StatusServiceUnavailable, errorBody{Error: "library not available", Code: "unavailable"})
 			return
 		}
 		next.ServeHTTP(w, r)

@@ -10,7 +10,7 @@ Servidor de streaming **local** para filmes, séries e animes. Um binário só (
 
 > `mediaserver` é um nome provisório. Regras do projeto em [`AGENTS.md`](AGENTS.md); planejamento em [`SPRINTS.md`](SPRINTS.md).
 
-**Sumário:** [Instalação](#instalação) · [Primeiro uso](#primeiro-uso) · [Organização das pastas](#organização-das-pastas) · [Assistindo](#assistindo) · [TVs](#tvs) · [Configuração](#configuração) · [Problemas comuns](#problemas-comuns) · [API](#api) · [Desenvolvimento](#desenvolvimento)
+**Sumário:** [Instalação](#instalação) · [Rodar como serviço](#rodar-como-serviço) · [Primeiro uso](#primeiro-uso) · [Organização das pastas](#organização-das-pastas) · [Assistindo](#assistindo) · [TVs](#tvs) · [Configuração](#configuração) · [Backup e restauração](#backup-e-restauração) · [Status do servidor](#status-do-servidor) · [Problemas comuns](#problemas-comuns) · [API](#api) · [Desenvolvimento](#desenvolvimento)
 
 ---
 
@@ -56,7 +56,7 @@ Abra **http://localhost:8080** no próprio PC, ou **http://IP-DO-PC:8080** em ou
 
 O banco, as imagens e o cache de conversão ficam em `./data` (mude com `-data-dir`). Para não repetir as opções, crie um [`config.toml`](#configuração) na pasta onde roda o binário.
 
-> Rodar como serviço (iniciar com o sistema) chega na Sprint 8. Até lá, deixe o terminal aberto, ou use o agendador do seu sistema.
+> Para o servidor iniciar sozinho com o computador, veja [Rodar como serviço](#rodar-como-serviço).
 
 ### 4. Liberar na rede
 
@@ -68,6 +68,35 @@ Outros aparelhos (celular, TV) precisam alcançar a porta 8080 do PC:
 - **WSL 2:** o WSL fica numa rede interna (172.x). Rode o binário Windows, ou ative `networkingMode=mirrored` no `%UserProfile%\.wslconfig`.
 
 Teste abrindo `http://IP-DO-PC:8080` no celular, conectado ao mesmo Wi-Fi.
+
+---
+
+## Rodar como serviço
+
+Para o servidor ligar junto com o computador e voltar sozinho se cair, instale como serviço. Rode **na pasta onde você roda o servidor** (é dela que vêm `./data` e o `config.toml`) e com as mesmas opções:
+
+```bash
+# Linux: com sudo, vira serviço do sistema (roda como o seu usuário).
+# Sem sudo, vira serviço do seu usuário: inicia quando você entra.
+sudo ./mediaserver-linux-amd64 service install -media-dir "/srv/midias"
+
+# macOS: inicia quando você entra (log em ~/Library/Logs/mediaserver.log)
+./mediaserver-darwin-arm64 service install -media-dir "$HOME/Movies"
+
+# Windows: abra o terminal como administrador (log em DATA_DIR\mediaserver.log)
+.\mediaserver-windows-amd64.exe service install -media-dir "D:\Midias"
+```
+
+| Comando | O que faz |
+|---|---|
+| `service install [opções]` | Instala e inicia. Confere a configuração na hora; variáveis de ambiente como `MEDIA_DIR` são gravadas como opções |
+| `service status` | `running`, `stopped`, `not installed`… |
+| `service stop` / `service start` | Para / inicia agora |
+| `service uninstall` | Remove o serviço (não apaga dados) |
+
+- **Atualizar o binário:** `service stop`, troque o arquivo, `service start`.
+- **Mudar as opções:** `service uninstall` e `install` de novo. Opções no `config.toml` valem no próximo `start`, sem reinstalar.
+- **Linux sem sudo:** para iniciar no boot mesmo sem você entrar, rode `sudo loginctl enable-linger $USER`. Os logs ficam em `journalctl --user -u mediaserver` (ou `journalctl -u mediaserver` com sudo).
 
 ---
 
@@ -199,6 +228,35 @@ No Windows, use barras normais ou dobradas no TOML: `media_dir = "D:/Midias"`.
 
 ---
 
+## Backup e restauração
+
+O banco guarda perfis, progresso e as correções da Revisar. A biblioteca em si é refeita por um scan, e seus vídeos nunca ficam no banco.
+
+- **Backup:** **Configurações → Baixar backup** (no navegador do PC). Ele baixa `mediaserver-AAAAMMDD-HHMM.db`, uma cópia consistente feita com o servidor rodando.
+- **Restaurar:** com o servidor **parado**, na mesma pasta e com as mesmas opções do servidor:
+
+  ```bash
+  ./mediaserver service stop                  # se for serviço
+  ./mediaserver restore mediaserver-20261101-0930.db
+  ./mediaserver service start
+  ```
+
+  O arquivo é conferido antes (precisa ser um banco do mediaserver, íntegro e de uma versão igual ou anterior). O banco atual fica guardado ao lado como `mediaserver.db.antes-<data>`.
+
+---
+
+## Status do servidor
+
+**Configurações → Status do servidor** mostra, atualizando sozinha:
+
+- CPU do servidor e do computador, memória e tempo ligado;
+- a aceleração de vídeo em uso (e o uso da GPU e do NVENC em placas NVIDIA);
+- as conversões em andamento e as vagas livres (`MAX_TRANSCODES`);
+- o tamanho dos caches e do banco;
+- o tamanho da biblioteca.
+
+---
+
 ## Problemas comuns
 
 | Sintoma | Causa provável e solução |
@@ -212,6 +270,7 @@ No Windows, use barras normais ou dobradas no TOML: `media_dir = "D:/Midias"`.
 | "limite de conversões simultâneas atingido" | Aumente `MAX_TRANSCODES` (cada conversão pesa na CPU/GPU) |
 | Legenda com acento quebrado | SRT em codificação rara: salve em UTF-8 |
 | HDR convertido parece desbotado | Ainda sem *tone mapping* (Backlog); prefira direct play num aparelho com HDR |
+| Servidor não liga como serviço | `mediaserver service status` e o log (`journalctl --user -u mediaserver`; macOS `~/Library/Logs/mediaserver.log`; Windows `DATA_DIR\mediaserver.log`) |
 | Esqueci o PIN | Ainda não há como redefinir (está no Backlog). Crie outro perfil; um perfil só pode ser editado ou apagado por ele mesmo |
 
 Logs: no terminal onde o servidor roda (`-env dev` para texto legível, `-log-level debug` para mais detalhes).
@@ -273,6 +332,17 @@ Listagens e detalhes respondem com `ETag` (o cliente revalida e recebe 304).
 | `PUT /api/watched` | Marca/desmarca episódio, temporada ou série como assistido |
 | `GET /api/series/{id}/progress` | Progresso de cada episódio |
 
+### Administração (com `X-Profile`)
+
+| Endpoint | O que faz |
+|---|---|
+| `GET /api/admin/backup` | Baixa uma cópia consistente do banco (`mediaserver-AAAAMMDD-HHMM.db`) |
+| `GET /api/admin/status` | CPU, memória, encoder, GPU NVIDIA, conversões ativas, caches e biblioteca |
+
+### Erros
+
+Toda resposta de erro é `{"error": "texto para logs", "code": "…"}`. Códigos: `file_missing` (410, o arquivo sumiu do disco), `no_ffmpeg` (503), `busy` (503, limite de conversões), `shutting_down` (503), `not_found` (404), `invalid` (400), `conflict` (409), `no_profile` (401), `wrong_pin` / `forbidden` (403), `pin_locked` (429), `unavailable` (503), `internal` (500).
+
 ---
 
 ## Desenvolvimento
@@ -297,6 +367,7 @@ make fmt        # formata Go e web
 make check      # lint + formatação + tipos + build do frontend (orçamento de 150 KB e CSS proibido)
 make bench      # benchmarks
 make tv         # tela de conexão dos apps de TV (web/build-tv)
+make load       # teste de carga: 2 direct play + 1 conversão (a conversão precisa de FFmpeg)
 make clean      # apaga as saídas de build
 ```
 

@@ -14,6 +14,7 @@ import type {
 	ReviewItem,
 	ScanStatus,
 	Series,
+	ServerStatus,
 	SeriesDetail,
 	SeriesKind,
 	SeriesProgress,
@@ -24,11 +25,16 @@ import type {
 /** Header of the profile session (internal/api/session.go). */
 export const PROFILE_HEADER = 'X-Profile';
 
-/** An error answered by the API ({"error": "..."}), or a network failure (status 0). */
+/**
+ * An error answered by the API ({"error": "...", "code": "..."}), or a
+ * network failure (status 0, code "offline"). lib/api/errors.ts turns the
+ * code into a message for people.
+ */
 export class ApiError extends Error {
 	constructor(
 		readonly status: number,
 		message: string,
+		readonly code: string = status === 0 ? 'offline' : '',
 	) {
 		super(message);
 		this.name = 'ApiError';
@@ -55,11 +61,12 @@ export async function api<T>(
 	// The session ended (profile deleted, PIN changed): choose a profile again.
 	if (res.status === 401) clearSession();
 	if (!res.ok) {
-		const message =
-			typeof body === 'object' && body !== null && 'error' in body && typeof body.error === 'string'
-				? body.error
-				: `HTTP ${res.status}`;
-		throw new ApiError(res.status, message);
+		const field = (k: string) => {
+			const v: unknown =
+				typeof body === 'object' && body !== null ? Reflect.get(body, k) : undefined;
+			return typeof v === 'string' ? v : '';
+		};
+		throw new ApiError(res.status, field('error') || `HTTP ${res.status}`, field('code'));
 	}
 	// The API is served by this same binary: its shapes are lib/api/types.ts.
 	// oxlint-disable-next-line typescript/no-unsafe-type-assertion
@@ -165,3 +172,35 @@ export const saveProgress = (
 export const setWatched = (t: WatchedTarget) => api<unknown>('/api/watched', json('PUT', t));
 export const seriesProgress = (id: string) => api<SeriesProgress>(`/api/series/${id}/progress`);
 export const nextEpisode = (mediaId: string) => api<HomeItem>(`/api/media/${mediaId}/next`);
+
+export const serverStatus = () => api<ServerStatus>('/api/admin/status');
+
+/**
+ * Downloads a backup of the database. It needs the profile header, so it is
+ * fetched and saved from a blob instead of followed as a link.
+ */
+export async function downloadBackup(fetchFn: typeof fetch = fetch): Promise<string> {
+	let res: Response;
+	try {
+		res = await fetchFn('/api/admin/backup', { headers: { [PROFILE_HEADER]: session.token } });
+	} catch {
+		throw new ApiError(0, 'servidor indisponível');
+	}
+	if (!res.ok) {
+		const body: unknown = await res.json().catch(() => null);
+		const code = typeof body === 'object' && body !== null ? Reflect.get(body, 'code') : undefined;
+		throw new ApiError(res.status, `HTTP ${res.status}`, typeof code === 'string' ? code : '');
+	}
+	const name =
+		/filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ??
+		'mediaserver.db';
+	const url = URL.createObjectURL(await res.blob());
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = name;
+	document.body.append(a);
+	a.click();
+	a.remove();
+	setTimeout(() => URL.revokeObjectURL(url), 60_000);
+	return name;
+}

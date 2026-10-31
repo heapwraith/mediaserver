@@ -114,7 +114,7 @@ func TestStaticAndFallback(t *testing.T) {
 		{"traversal stays inside", "/../../etc/passwd", 200, "<title>mediaserver</title>", "no-cache"},
 		{"encoded traversal stays inside", "/%2e%2e/%2e%2e/etc/passwd", 200, "<title>mediaserver</title>", "no-cache"},
 		{"traversal to a file is 404", "/../../etc/hosts.txt", 404, "", ""},
-		{"unknown api is JSON 404", "/api/nope", 404, `{"error":"not found"}`, ""},
+		{"unknown api is JSON 404", "/api/nope", 404, `{"error":"not found","code":"not_found"}`, ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

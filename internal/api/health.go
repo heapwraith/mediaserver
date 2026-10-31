@@ -15,8 +15,11 @@ type healthBody struct {
 	DB      string `json:"db"`
 }
 
+// errorBody is every error answer. Code is stable (the frontend turns it into
+// a message, web/src/lib/api/errors.ts); Error is for people reading logs.
 type errorBody struct {
 	Error string `json:"error"`
+	Code  string `json:"code"`
 }
 
 // healthHandler answers GET /api/health. It returns 503 when the database

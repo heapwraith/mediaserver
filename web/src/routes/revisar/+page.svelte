@@ -12,6 +12,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import Grid from '#lib/ui/Grid.svelte';
 	import { episodeLabel } from '#lib/ui/cards.ts';
+	import { describeError } from '#lib/api/errors.ts';
 
 	const reasons: Record<string, string> = {
 		no_year: 'Sem ano nem episódio no nome',
@@ -43,7 +44,10 @@
 	let splitting: { series: Series; episodes: Episode[]; files: string[]; title: string } | undefined =
 		$state();
 
-	const fail = (e: unknown) => (message = `Erro: ${e instanceof Error ? e.message : String(e)}`);
+	const fail = (e: unknown) => {
+		const p = describeError(e);
+		message = `${p.title}. ${p.hint}`;
+	};
 
 	async function reload() {
 		try {

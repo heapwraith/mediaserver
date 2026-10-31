@@ -114,7 +114,20 @@ type Transcoder struct {
 	wg       sync.WaitGroup
 }
 
+// SessionInfo describes a running FFmpeg session (the status page).
+type SessionInfo struct {
+	MediaID string    `json:"media_id"`
+	Video   string    `json:"video"` // copy | h264
+	Audio   string    `json:"audio"` // copy | aac
+	Burned  bool      `json:"burned"`
+	Encode  bool      `json:"encode"` // converts the video (holds a slot)
+	Started time.Time `json:"started"`
+	// LastRequest is when a player last asked for this session.
+	LastRequest time.Time `json:"last_request,omitzero"`
+}
+
 type session struct {
+	info    SessionInfo
 	key     string
 	dir     string
 	encode  bool // holds a slot
@@ -199,14 +212,17 @@ func (t *Transcoder) Start(ctx context.Context, m library.Media, rel string, req
 	if req.Burn != nil {
 		plan.Burn, workDir = req.Burn.File, req.Burn.Dir
 	}
+	// os.Root refuses anything outside MEDIA_DIR (symlinks included).
+	// Checked for direct play too: the player then says the file is gone.
+	info, err := t.root.Stat(filepath.FromSlash(rel))
+	if errors.Is(err, fs.ErrNotExist) {
+		return Playback{}, fmt.Errorf("play %s: %w: %w", m.ID, ErrNotFound, ErrFileMissing)
+	}
+	if err != nil || !info.Mode().IsRegular() {
+		return Playback{}, fmt.Errorf("play %s: %w", m.ID, ErrNotFound)
+	}
 	if plan.Direct {
 		return Playback{Direct: true, URL: "/api/media/" + m.ID + "/stream", Start: start}, nil
-	}
-
-	// os.Root refuses anything outside MEDIA_DIR (symlinks included).
-	info, err := t.root.Stat(filepath.FromSlash(rel))
-	if err != nil || !info.Mode().IsRegular() {
-		return Playback{}, fmt.Errorf("transcode %s: %w", m.ID, ErrNotFound)
 	}
 	src := filepath.Join(t.rootDir, filepath.FromSlash(rel))
 	start = math.Floor(start) // whole seconds: more cache hits
@@ -218,7 +234,8 @@ func (t *Transcoder) Start(ctx context.Context, m library.Media, rel string, req
 	key := hex.EncodeToString(sum[:16])
 	// Built before taking the lock: the first call may wait for the GPU detection.
 	args := t.args(src, plan, start, filepath.Join(t.dir, key))
-	if err := t.ensure(ctx, key, args, workDir, plan.Video != "copy"); err != nil {
+	sinfo := SessionInfo{MediaID: m.ID, Video: plan.Video, Audio: plan.Audio, Burned: plan.Burn != "", Encode: plan.Video != "copy"}
+	if err := t.ensure(ctx, key, args, workDir, sinfo); err != nil {
 		return Playback{}, err
 	}
 	return Playback{
@@ -250,7 +267,8 @@ func (t *Transcoder) keyframe(ctx context.Context, src string, at float64) float
 
 // ensure reuses the running or complete session key, or starts FFmpeg.
 // workDir is FFmpeg's working directory ("" = the server's).
-func (t *Transcoder) ensure(ctx context.Context, key string, args []string, workDir string, encode bool) error {
+func (t *Transcoder) ensure(ctx context.Context, key string, args []string, workDir string, info SessionInfo) error {
+	encode := info.Encode
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if t.closed {
@@ -298,7 +316,8 @@ func (t *Transcoder) ensure(ctx context.Context, key string, args []string, work
 		release()
 		return fmt.Errorf("start ffmpeg: %w", err)
 	}
-	s := &session{key: key, dir: dir, encode: encode, cancel: cancel, done: make(chan struct{})}
+	info.Started = time.Now()
+	s := &session{info: info, key: key, dir: dir, encode: encode, cancel: cancel, done: make(chan struct{})}
 	s.touch()
 	t.sessions[key] = s
 	t.log.Info("transcode started", "key", key, "encode", encode)
@@ -528,3 +547,29 @@ func (c *capped) Write(p []byte) (int, error) {
 }
 
 func (c *capped) String() string { return string(c.buf) }
+
+// Stats lists the running FFmpeg sessions, oldest first.
+func (t *Transcoder) Stats() []SessionInfo {
+	t.mu.Lock()
+	out := make([]SessionInfo, 0, len(t.sessions))
+	for _, s := range t.sessions {
+		info := s.info
+		if ns := s.last.Load(); ns > 0 {
+			info.LastRequest = time.Unix(0, ns)
+		}
+		out = append(out, info)
+	}
+	t.mu.Unlock()
+	slices.SortFunc(out, func(a, b SessionInfo) int { return a.Started.Compare(b.Started) })
+	return out
+}
+
+// Slots reports the video conversions running and the limit (MAX_TRANSCODES).
+func (t *Transcoder) Slots() (used, limit int) { return len(t.slots), cap(t.slots) }
+
+// Encoder is the video encoder in use: nvenc, qsv, amf, vaapi, videotoolbox or cpu.
+// It waits for the detection at startup.
+func (t *Transcoder) Encoder() string { return t.encoder().Name }
+
+// Cache is the HLS cache folder and its size limit in bytes.
+func (t *Transcoder) Cache() (dir string, limit int64) { return t.dir, t.cache }

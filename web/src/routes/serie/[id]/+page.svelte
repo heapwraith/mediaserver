@@ -14,6 +14,7 @@
 	import { episodeLabel, episodeTitle, extraCard, formatDuration, playHref } from '#lib/ui/cards.ts';
 	import { seriesHero, seriesPlay } from '#lib/ui/hero.ts';
 	import { fraction, remaining } from '#lib/ui/progress.ts';
+	import ErrorNotice from '#lib/ui/ErrorNotice.svelte';
 
 	const id = $derived(page.params.id ?? '');
 	const data = $derived(seriesHero(id));
@@ -135,7 +136,7 @@
 		{/key}
 	{/if}
 {:catch e}
-	<p class="error">Série não encontrada ({e instanceof Error ? e.message : e}).</p>
+	<ErrorNotice error={e} />
 {/await}
 
 <style>
@@ -204,16 +205,9 @@
 			0 12px 30px rgba(0, 0, 0, 0.5),
 			0 0 0 3px #4c8dff;
 	}
-	.error {
-		margin-top: 20vh;
-		text-align: center;
-		font-size: 1.25rem;
-		color: rgba(255, 255, 255, 0.6);
-	}
 	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
 	:global(html.tv) .label,
-	:global(html.tv) .mark,
-	:global(html.tv) .error {
+	:global(html.tv) .mark {
 		font-size: 1.5rem;
 	}
 </style>

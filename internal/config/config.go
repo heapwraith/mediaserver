@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/pelletier/go-toml/v2"
 )
@@ -295,4 +296,49 @@ func checkReadableDir(path string) error {
 		return fmt.Errorf("read %s: %w", path, err)
 	}
 	return nil
+}
+
+// envFlags maps each environment variable to its flag (Load reads both).
+var envFlags = []struct{ env, flag string }{
+	{"CONFIG_FILE", "config"},
+	{"MEDIA_DIR", "media-dir"},
+	{"DATA_DIR", "data-dir"},
+	{"HOST", "host"},
+	{"PORT", "port"},
+	{"FFMPEG_PATH", "ffmpeg"},
+	{"FFPROBE_PATH", "ffprobe"},
+	{"HWACCEL", "hwaccel"},
+	{"APP_ENV", "env"},
+	{"LOG_LEVEL", "log-level"},
+	{"SCAN_WORKERS", "scan-workers"},
+	{"WATCH", "watch"},
+	{"SCAN_ON_START", "scan-on-start"},
+	{"MAX_TRANSCODES", "max-transcodes"},
+	{"TRANSCODE_CACHE_MB", "transcode-cache-mb"},
+}
+
+// EnvAsFlags returns, as flags, the settings made through environment
+// variables: a service started by the system does not inherit the shell's
+// environment (`mediaserver service install`). Flags already in args win.
+func EnvAsFlags(args []string, getenv func(string) string) []string {
+	var out []string
+	for _, e := range envFlags {
+		v := getenv(e.env)
+		if v == "" || HasFlag(args, e.flag) {
+			continue
+		}
+		out = append(out, "-"+e.flag+"="+v)
+	}
+	return out
+}
+
+// HasFlag reports whether args set the flag name (-name, --name, -name=…).
+func HasFlag(args []string, name string) bool {
+	for _, a := range args {
+		a = strings.TrimPrefix(strings.TrimPrefix(a, "-"), "-")
+		if a == name || strings.HasPrefix(a, name+"=") {
+			return true
+		}
+	}
+	return false
 }

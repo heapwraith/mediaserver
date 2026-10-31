@@ -18,7 +18,7 @@ import (
 func (d Deps) requireSubtitles(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if d.Subtitles == nil {
-			writeJSON(w, http.StatusServiceUnavailable, errorBody{Error: "subtitles not available"})
+			writeJSON(w, http.StatusServiceUnavailable, errorBody{Error: "subtitles not available", Code: "unavailable"})
 			return
 		}
 		next.ServeHTTP(w, r)

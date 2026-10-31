@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { ApiError, api, query } from './client';
+import { api, query } from './client';
 import { imageSrcset } from './images';
 
 describe('api', () => {
@@ -11,14 +11,18 @@ describe('api', () => {
 
 	it('turns {"error"} answers into ApiError', async () => {
 		const fetchFn = vi.fn<typeof fetch>(async () =>
-			Response.json({ error: 'not found' }, { status: 404 }),
+			Response.json({ error: 'not found', code: 'not_found' }, { status: 404 }),
 		);
-		await expect(api('/api/x', {}, fetchFn)).rejects.toEqual(new ApiError(404, 'not found'));
+		await expect(api('/api/x', {}, fetchFn)).rejects.toMatchObject({
+			status: 404,
+			message: 'not found',
+			code: 'not_found',
+		});
 	});
 
 	it('reports network failures as status 0', async () => {
 		const fetchFn = vi.fn<typeof fetch>(async () => Promise.reject(new TypeError('offline')));
-		await expect(api('/api/x', {}, fetchFn)).rejects.toMatchObject({ status: 0 });
+		await expect(api('/api/x', {}, fetchFn)).rejects.toMatchObject({ status: 0, code: 'offline' });
 	});
 });
 

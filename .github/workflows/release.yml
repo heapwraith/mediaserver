@@ -1,0 +1,106 @@
+# Builds a release (docs/release.md): the 6 server binaries, the Android TV
+# .apk and the LG .ipk, with SHA256SUMS.
+# - A tag v* creates a DRAFT GitHub release with them (published by hand,
+#   after the Samsung .wgt is added: it needs the owner's Samsung certificate).
+# - Run by hand (workflow_dispatch): only the build, kept as a workflow
+#   artifact; nothing is released.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # git describe needs the tags (VERSION)
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            tools.sum
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Android SDK (platform 36)
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" > /dev/null
+
+      - name: Checks and tests
+        run: |
+          make check
+          make test
+
+      - name: Server binaries (6, no CGO)
+        run: make build
+
+      - name: LG webOS (.ipk)
+        run: |
+          npm install --global @webos-tools/cli@3
+          make tv-webos
+
+      - name: Android TV (.apk)
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          MEDIASERVER_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          MEDIASERVER_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          MEDIASERVER_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          # The project key keeps updates installable over the old app;
+          # without the secrets the APK is debug-signed (and says so).
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            export MEDIASERVER_KEYSTORE="$RUNNER_TEMP/release.jks"
+          else
+            echo "::warning::ANDROID_KEYSTORE_B64 not set: the APK is signed with a throwaway debug key"
+          fi
+          make tv-android
+
+      - name: Collect files and checksums
+        run: |
+          mkdir -p out
+          cp dist/mediaserver-* out/
+          cp dist/tv/mediaserver-tv.apk out/
+          cp dist/tv/webos/*.ipk out/
+          (cd out && sha256sum * > SHA256SUMS)
+          ls -la out
+          ./out/mediaserver-linux-amd64 -version
+
+      - name: Keep the build (manual run)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v5
+        with:
+          name: mediaserver-${{ github.sha }}
+          path: out/
+          retention-days: 7
+
+      - name: Draft release (tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" out/* --draft --verify-tag \
+            --title "mediaserver $TAG" --notes-file docs/release-notes.md

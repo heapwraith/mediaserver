@@ -1,6 +1,6 @@
 # SPRINTS.md
 
-Planejamento do projeto. **Sprint ativa: 7.** (A Sprint 6 aguarda só o aceite manual reservado ao usuário.)
+Planejamento do projeto. **Sprint ativa: 8.** (As sprints 6 e 7 aguardam só os aceites manuais reservados ao usuário.)
 
 Regras:
 - Marcar `[x]` só quando o critério de aceite da tarefa for cumprido.
@@ -214,13 +214,15 @@ Implementação e verificação automática concluídas ([ADR 008](docs/adr/008-
 
 **Objetivo:** versão 1.0 estável para uso diário.
 
-- [ ] Rodar como serviço com início automático: **Windows Service**, **systemd** (Linux) e **launchd** (macOS)
-- [ ] Backup e restauração do banco (`/api/admin/backup`)
-- [ ] Página de status: uso de CPU/GPU, transcodificações ativas, tamanho do cache
-- [ ] Tratamento de erros amigável no frontend (arquivo sumiu, codec não suportado)
-- [ ] Testes de carga: 3 streams simultâneos (2 direct play + 1 transcodificado)
+- [x] Rodar como serviço com início automático: **Windows Service**, **systemd** (Linux) e **launchd** (macOS) — `mediaserver service install`; instalação real testada no Linux, Windows e macOS compilados e testados por unidade (falta instalar numa máquina real)
+- [x] Backup e restauração do banco (`/api/admin/backup`) — backup em Configurações, restauração com `mediaserver restore`
+- [x] Página de status: uso de CPU/GPU, transcodificações ativas, tamanho do cache
+- [x] Tratamento de erros amigável no frontend (arquivo sumiu, codec não suportado)
+- [ ] Testes de carga: 3 streams simultâneos (2 direct play + 1 transcodificado) — `make load` pronto; parte direct play aprovada aqui, a conversão precisa de FFmpeg (rodar no seu PC)
 - [x] `README.md` completo: instalação, configuração, convenção de pastas
-- [ ] Release `v1.0.0` com binários Windows, Linux e macOS + pacotes das TVs (`.wgt`, `.ipk`, `.apk`)
+- [ ] Release `v1.0.0` com binários Windows, Linux e macOS + pacotes das TVs (`.wgt`, `.ipk`, `.apk`) — workflow e passos prontos ([docs/release.md](docs/release.md)); a tag sai depois do aceite
+
+Implementação e verificação automática concluídas ([ADR 009](docs/adr/009-uso-diario.md), [Verificação da Sprint 8](docs/sprint-8-verificacao.md)). Pendente: teste de carga com FFmpeg, serviço no Windows/macOS reais, 7 dias de uso e a tag v1.0.0.
 
 **Aceite**
 - 7 dias de uso contínuo sem reiniciar e sem vazamento de memória

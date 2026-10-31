@@ -16,6 +16,9 @@ import (
 	_ "modernc.org/sqlite" // pure Go SQLite driver (no CGO)
 )
 
+// FileName is the database file inside DATA_DIR.
+const FileName = "mediaserver.db"
+
 // pragmas are applied to every new connection by the driver.
 var pragmas = []string{
 	"journal_mode(WAL)",

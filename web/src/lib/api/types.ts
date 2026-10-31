@@ -227,3 +227,35 @@ export interface WatchedTarget {
 	series_id?: string;
 	watched: boolean;
 }
+
+/** A running FFmpeg session (GET /api/admin/status). */
+export interface SessionStatus {
+	media_id: string;
+	file: string;
+	video: string; // copy | h264
+	audio: string; // copy | aac
+	burned: boolean;
+	encode: boolean;
+	started: string;
+	last_request?: string;
+}
+
+export interface ServerStatus {
+	version: string;
+	started_at: string;
+	uptime_s: number;
+	cpu: { process: number; system: number | null };
+	memory: { bytes: number; heap: number };
+	encoder: string;
+	gpus: { name: string; utilization: number; encoder: number }[] | null;
+	sessions: SessionStatus[];
+	slots: { used: number; limit: number };
+	disk: {
+		transcode: number;
+		transcode_limit: number;
+		images: number;
+		subtitles: number;
+		database: number;
+	};
+	library: { movies: number; series: number; animes: number; files: number; review: number };
+}

@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
@@ -39,8 +40,19 @@ func main() {
 
 func run() int {
 	start := time.Now()
+	if code, ok := command(os.Args[1:], os.Stdout, os.Stderr); ok {
+		return code
+	}
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	return serveMain(ctx, os.Args[1:], start, false)
+}
 
-	cfg, opts, err := config.Load(os.Args[1:], os.Getenv, os.Stderr)
+// serveMain loads the configuration from args and runs the server until ctx
+// ends. logFile: logs go to DATA_DIR/mediaserver.log instead of stderr (a
+// Windows service has no console).
+func serveMain(ctx context.Context, args []string, start time.Time, logFile bool) int {
+	cfg, opts, err := config.Load(args, os.Getenv, os.Stderr)
 	switch {
 	case errors.Is(err, config.ErrHelp):
 		return 0
@@ -52,10 +64,17 @@ func run() int {
 		return 0
 	}
 
-	logger := newLogger(os.Stderr, cfg.Env, cfg.LogLevel)
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
+	var out io.Writer = os.Stderr
+	if logFile {
+		f, err := openLogFile(cfg.DataDir)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "mediaserver: log file:", err)
+			return 1
+		}
+		defer f.Close()
+		out = f
+	}
+	logger := newLogger(out, cfg.Env, cfg.LogLevel)
 	if err := serve(ctx, cfg, logger, start); err != nil {
 		logger.Error("server stopped with error", "err", err)
 		return 1
@@ -68,7 +87,7 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 		return fmt.Errorf("create data dir %s: %w", cfg.DataDir, err)
 	}
 
-	dbPath := filepath.Join(cfg.DataDir, "mediaserver.db")
+	dbPath := filepath.Join(cfg.DataDir, db.FileName)
 	conn, err := db.Open(ctx, dbPath)
 	if err != nil {
 		return err
@@ -150,6 +169,7 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 			Scanner: lib, StartScan: func() bool { return lib.Start(ctx) },
 			Library: store, Stream: &stream.Server{Root: mediaRoot, Files: store}, Images: images,
 			Transcoder: transcoder, Subtitles: subs, Secret: secret,
+			DataDir: cfg.DataDir, Started: start,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       2 * time.Minute,

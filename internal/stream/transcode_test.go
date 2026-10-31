@@ -256,3 +256,20 @@ func TestTranscodeBurn(t *testing.T) {
 		t.Fatalf("burned session failed: %q", body)
 	}
 }
+
+func TestTranscoderStats(t *testing.T) {
+	tr := &Transcoder{slots: make(chan struct{}, 2), sessions: map[string]*session{}}
+	old := time.Now().Add(-time.Minute)
+	a := &session{info: SessionInfo{MediaID: "b", Video: "h264", Encode: true, Started: time.Now()}}
+	a.touch()
+	tr.sessions["a"] = a
+	tr.sessions["b"] = &session{info: SessionInfo{MediaID: "a", Video: "copy", Started: old}}
+	tr.slots <- struct{}{}
+	st := tr.Stats()
+	if len(st) != 2 || st[0].MediaID != "a" || st[1].MediaID != "b" || st[1].LastRequest.IsZero() || !st[0].LastRequest.IsZero() {
+		t.Errorf("stats = %+v", st)
+	}
+	if used, limit := tr.Slots(); used != 1 || limit != 2 {
+		t.Errorf("slots = %d/%d", used, limit)
+	}
+}
