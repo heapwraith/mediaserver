@@ -1,0 +1,77 @@
+# golangci-lint v2 (pinned in tools.mod). Run through `make check` / `make fmt`.
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  default: standard # errcheck, govet, ineffassign, staticcheck, unused
+  enable:
+    # AGENTS.md §9 minimum set
+    - gosec
+    - modernize
+    - revive
+    - perfsprint
+    - prealloc
+    - bodyclose
+    - contextcheck
+    # cheap extras that catch real bugs
+    - errorlint
+    - nilerr
+    - noctx
+    - sqlclosecheck
+    - rowserrcheck
+    - usestdlibvars
+    - copyloopvar
+  settings:
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment # readability over a few bytes
+        - shadow # `if err := ...` shadowing is idiomatic
+    revive:
+      rules:
+        - name: exported
+        - name: package-comments
+        - name: var-naming
+        - name: indent-error-flow
+        - name: error-strings
+        - name: error-return
+        - name: errorf
+        - name: blank-imports
+        - name: context-as-argument
+        - name: unused-parameter
+        - name: unreachable-code
+        - name: redefines-builtin-id
+    gosec:
+      excludes:
+        - G104 # unhandled errors: covered by errcheck
+  exclusions:
+    generated: strict
+    presets:
+      - std-error-handling # e.g. unchecked (*os.File).Close in defers
+    rules:
+      - path: _test\.go
+        linters: [gosec]
+
+formatters:
+  enable:
+    - gofumpt
+    - gci
+  settings:
+    gofumpt:
+      # The module name has no dot, so gofumpt would take it for the stdlib.
+      module-path: mediaserver
+      extra:
+        group-params: true
+        clothe-returns: true
+    gci:
+      sections:
+        - standard
+        - default
+        - localmodule
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

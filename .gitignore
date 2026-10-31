@@ -1,0 +1,28 @@
+# Build outputs
+/dist/
+/.dev/
+/web/build/
+/web/.svelte-kit/
+/web/node_modules/
+/web/vite.config.ts.timestamp-*
+
+# Runtime data (database, caches) and local media for `make dev`
+/data/
+/media/
+*.db
+*.db-shm
+*.db-wal
+
+# Local config
+/config.toml
+.env
+.env.*
+
+# Claude Code local settings
+/.claude/settings.local.json
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

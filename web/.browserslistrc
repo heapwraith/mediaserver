@@ -1,0 +1,6 @@
+# Single source of browser targets for JS (Vite) and CSS (Lightning CSS).
+# Floor: Chromium 76 (Samsung Tizen 6.0 / LG webOS 6, TVs from 2021). See AGENTS.md §6.
+chrome >= 76
+safari >= 15
+firefox >= 115
+edge >= 115
