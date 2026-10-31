@@ -278,6 +278,8 @@ PORT=8080
 FFMPEG_PATH=ffmpeg
 FFPROBE_PATH=ffprobe
 HWACCEL=auto             # auto | nvenc | qsv | amf | vaapi | videotoolbox | none
+MAX_TRANSCODES=2         # conversões de vídeo simultâneas (remux não conta)
+TRANSCODE_CACHE_MB=10240 # cache de HLS em DATA_DIR/transcode (LRU)
 ```
 
 ## 11. Fluxo de trabalho

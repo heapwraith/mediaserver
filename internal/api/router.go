@@ -33,6 +33,8 @@ type Deps struct {
 	Library library.Store
 	Stream  *stream.Server
 	Images  *stream.Images
+	// Transcoder powers the playback decision and the HLS sessions.
+	Transcoder *stream.Transcoder
 	// Secret signs the profile sessions (library.Store.Secret). Profile and
 	// progress endpoints answer 503 without it.
 	Secret []byte
@@ -82,6 +84,12 @@ func NewRouter(d Deps) http.Handler {
 			}))
 			r.Get("/media/{id}/stream", d.streamMedia)
 			r.Get("/images/{id}", d.image)
+			r.Group(func(r chi.Router) {
+				r.Use(d.requireTranscoder)
+				r.Post("/media/{id}/playback", d.playback)
+				r.Get("/transcode/{key}/{file}", d.transcodeFile)
+				r.Delete("/transcode/{key}", d.stopTranscode)
+			})
 		})
 		r.Group(func(r chi.Router) {
 			r.Use(d.requireProfiles)
@@ -122,7 +130,8 @@ func (d Deps) requireScanner(next http.Handler) http.Handler {
 	})
 }
 
-// requestLogger logs each request: API calls at info, static files at debug.
+// requestLogger logs each request: API calls at info; static files and HLS
+// segments (one every few seconds per viewer) at debug.
 func requestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -131,7 +140,7 @@ func requestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 			next.ServeHTTP(ww, r)
 
 			level := slog.LevelDebug
-			if strings.HasPrefix(r.URL.Path, "/api/") {
+			if strings.HasPrefix(r.URL.Path, "/api/") && !strings.HasPrefix(r.URL.Path, "/api/transcode/") {
 				level = slog.LevelInfo
 			}
 			logger.LogAttrs(r.Context(), level, "http request",

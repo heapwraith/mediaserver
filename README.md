@@ -65,6 +65,8 @@ Prioridade: **flags > variáveis de ambiente > `config.toml`** (na pasta atual, 
 | `-scan-workers` | `SCAN_WORKERS` | `scan_workers` | `0` (= nº de CPUs) |
 | `-watch` | `WATCH` | `watch` | `true` (detecta arquivos novos sozinho) |
 | `-scan-on-start` | `SCAN_ON_START` | `scan_on_start` | `true` |
+| `-max-transcodes` | `MAX_TRANSCODES` | `max_transcodes` | `2` (conversões de vídeo simultâneas; remux não conta) |
+| `-transcode-cache-mb` | `TRANSCODE_CACHE_MB` | `transcode_cache_mb` | `10240` (cache de HLS em `DATA_DIR/transcode`) |
 
 Exemplo de `config.toml`:
 

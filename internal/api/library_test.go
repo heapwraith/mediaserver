@@ -65,11 +65,18 @@ func newLibraryServerDB(t *testing.T, files ...string) (*httptest.Server, *scann
 	if err != nil {
 		t.Fatal(err)
 	}
+	transcoder, err := stream.NewTranscoder(t.Context(), stream.TranscoderOptions{
+		Root: mediaRoot, FFmpeg: "ffmpeg", FFprobe: "ffprobe", Dir: t.TempDir(), HWAccel: "none",
+		MaxTranscodes: 1, CacheBytes: 1 << 30, Logger: slog.New(slog.DiscardHandler),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	srv := httptest.NewServer(NewRouter(Deps{
 		Logger: slog.New(slog.DiscardHandler), DB: conn, Version: "test",
 		Scanner: sc, StartScan: func() bool { return sc.Start(ctx) },
 		Library: store, Stream: &stream.Server{Root: mediaRoot, Files: store}, Images: images,
-		Secret: []byte("test-secret-0123456789abcdef"),
+		Transcoder: transcoder, Secret: []byte("test-secret-0123456789abcdef"),
 	}))
 	t.Cleanup(srv.Close)
 	fileID := func(rel string) string {

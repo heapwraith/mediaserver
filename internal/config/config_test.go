@@ -120,6 +120,8 @@ func TestLoadErrors(t *testing.T) {
 		{"bad env", []string{"-media-dir", media, "-env", "staging"}, nil, "invalid APP_ENV"},
 		{"bad log level", []string{"-media-dir", media, "-log-level", "trace"}, nil, "invalid LOG_LEVEL"},
 		{"bad scan workers", []string{"-media-dir", media, "-scan-workers", "100"}, nil, "invalid SCAN_WORKERS"},
+		{"bad max transcodes", []string{"-media-dir", media, "-max-transcodes", "0"}, nil, "invalid MAX_TRANSCODES"},
+		{"small transcode cache", []string{"-media-dir", media}, map[string]string{"TRANSCODE_CACHE_MB": "100"}, "invalid TRANSCODE_CACHE_MB"},
 		{"bad watch env", []string{"-media-dir", media}, map[string]string{"WATCH": "maybe"}, "env WATCH"},
 		{"explicit config missing", []string{"-config", filepath.Join(root, "none.toml")}, nil, "read config"},
 		{"unknown toml key", []string{"-config", badToml, "-media-dir", media}, nil, "parse config"},
@@ -145,6 +147,20 @@ func TestLoadScannerOptions(t *testing.T) {
 	cfg, _, err = Load([]string{"-media-dir", media, "-watch=false", "-scan-workers", "3"},
 		envFrom(map[string]string{"SCAN_ON_START": "false", "WATCH": "true", "SCAN_WORKERS": "8"}), io.Discard)
 	if err != nil || cfg.Watch || cfg.ScanOnStart || cfg.ScanWorkers != 3 {
+		t.Fatalf("flags/env: %+v %v", cfg, err)
+	}
+}
+
+func TestLoadTranscodeOptions(t *testing.T) {
+	media := t.TempDir()
+	t.Chdir(media)
+	cfg, _, err := Load([]string{"-media-dir", media}, envFrom(nil), io.Discard)
+	if err != nil || cfg.MaxTranscodes != 2 || cfg.TranscodeCacheMB != 10240 {
+		t.Fatalf("defaults: %+v %v", cfg, err)
+	}
+	cfg, _, err = Load([]string{"-media-dir", media, "-max-transcodes", "4"},
+		envFrom(map[string]string{"MAX_TRANSCODES": "8", "TRANSCODE_CACHE_MB": "2048"}), io.Discard)
+	if err != nil || cfg.MaxTranscodes != 4 || cfg.TranscodeCacheMB != 2048 {
 		t.Fatalf("flags/env: %+v %v", cfg, err)
 	}
 }

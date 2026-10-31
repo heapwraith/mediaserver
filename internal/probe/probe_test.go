@@ -12,7 +12,7 @@ import (
 const mkvJSON = `{
   "streams": [
     {"index": 0, "codec_type": "video", "codec_name": "hevc", "width": 3840, "height": 2160,
-     "color_transfer": "smpte2084", "disposition": {"default": 1}},
+     "pix_fmt": "yuv420p10le", "color_transfer": "smpte2084", "disposition": {"default": 1}},
     {"index": 1, "codec_type": "audio", "codec_name": "dts", "channels": 6,
      "disposition": {"default": 0}, "tags": {"language": "eng", "title": "DTS-HD MA"}},
     {"index": 2, "codec_type": "audio", "codec_name": "aac", "channels": 2,
@@ -40,6 +40,7 @@ func TestParse(t *testing.T) {
 		{"bitrate", res.Bitrate, int64(12000000)},
 		{"video codec", res.VideoCodec, "hevc"},
 		{"resolution", [2]int{res.Width, res.Height}, [2]int{3840, 2160}},
+		{"bit depth", res.VideoBits, 10},
 		{"hdr", res.HDR, "hdr10"},
 		{"default audio codec", res.AudioCodec, "aac"},
 		{"audio tracks", len(res.Audio), 2},

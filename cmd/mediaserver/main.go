@@ -115,6 +115,23 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 		return err
 	}
 
+	transcoder, err := stream.NewTranscoder(ctx, stream.TranscoderOptions{
+		Root: mediaRoot, FFmpeg: cfg.FFmpegPath, FFprobe: cfg.FFprobePath,
+		Dir: filepath.Join(cfg.DataDir, "transcode"), HWAccel: cfg.HWAccel,
+		MaxTranscodes: cfg.MaxTranscodes, CacheBytes: int64(cfg.TranscodeCacheMB) << 20,
+		Logger: logger.With("component", "transcode"),
+	})
+	if err != nil {
+		return err
+	}
+	// Stops every FFmpeg when ctx ends; waited for before closing MEDIA_DIR.
+	var bg sync.WaitGroup
+	bg.Go(func() { transcoder.Run(ctx) })
+	defer func() {
+		cancel()
+		bg.Wait()
+	}()
+
 	assets, err := web.Assets()
 	if err != nil {
 		return fmt.Errorf("load frontend: %w", err)
@@ -126,7 +143,7 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 			Logger: logger, DB: conn, Version: version, Web: assets,
 			Scanner: lib, StartScan: func() bool { return lib.Start(ctx) },
 			Library: store, Stream: &stream.Server{Root: mediaRoot, Files: store}, Images: images,
-			Secret: secret,
+			Transcoder: transcoder, Secret: secret,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       2 * time.Minute,

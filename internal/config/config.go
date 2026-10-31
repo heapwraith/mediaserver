@@ -44,6 +44,10 @@ type Config struct {
 	ScanWorkers int    `toml:"scan_workers"`  // 0 = number of CPUs
 	Watch       bool   `toml:"watch"`         // watch MEDIA_DIR for changes
 	ScanOnStart bool   `toml:"scan_on_start"` // incremental scan at startup
+	// MaxTranscodes limits the concurrent video encodes (remuxes are free).
+	MaxTranscodes int `toml:"max_transcodes"`
+	// TranscodeCacheMB is the size of DATA_DIR/transcode (oldest deleted first).
+	TranscodeCacheMB int `toml:"transcode_cache_mb"`
 }
 
 // Default returns the built-in defaults.
@@ -59,6 +63,9 @@ func Default() Config {
 		LogLevel:    "info",
 		Watch:       true,
 		ScanOnStart: true,
+
+		MaxTranscodes:    2,
+		TranscodeCacheMB: 10240,
 	}
 }
 
@@ -98,6 +105,8 @@ func Load(args []string, getenv func(string) string, output io.Writer) (Config, 
 	fset.IntVar(&fv.ScanWorkers, "scan-workers", fv.ScanWorkers, "concurrent hash/probe workers, 0 = CPUs (env SCAN_WORKERS)")
 	fset.BoolVar(&fv.Watch, "watch", fv.Watch, "watch the media folder for changes (env WATCH)")
 	fset.BoolVar(&fv.ScanOnStart, "scan-on-start", fv.ScanOnStart, "scan the media folder at startup (env SCAN_ON_START)")
+	fset.IntVar(&fv.MaxTranscodes, "max-transcodes", fv.MaxTranscodes, "concurrent video transcodes (env MAX_TRANSCODES)")
+	fset.IntVar(&fv.TranscodeCacheMB, "transcode-cache-mb", fv.TranscodeCacheMB, "transcode cache size in MB (env TRANSCODE_CACHE_MB)")
 	fset.BoolVar(&opts.ShowVersion, "version", false, "print version and exit")
 	if err := fset.Parse(args); err != nil {
 		return cfg, opts, err
@@ -150,6 +159,10 @@ func Load(args []string, getenv func(string) string, output io.Writer) (Config, 
 			cfg.Watch = fv.Watch
 		case "scan-on-start":
 			cfg.ScanOnStart = fv.ScanOnStart
+		case "max-transcodes":
+			cfg.MaxTranscodes = fv.MaxTranscodes
+		case "transcode-cache-mb":
+			cfg.TranscodeCacheMB = fv.TranscodeCacheMB
 		}
 	})
 
@@ -191,7 +204,10 @@ func applyEnv(cfg *Config, getenv func(string) string) error {
 			*dst = v
 		}
 	}
-	ints := map[string]*int{"PORT": &cfg.Port, "SCAN_WORKERS": &cfg.ScanWorkers}
+	ints := map[string]*int{
+		"PORT": &cfg.Port, "SCAN_WORKERS": &cfg.ScanWorkers,
+		"MAX_TRANSCODES": &cfg.MaxTranscodes, "TRANSCODE_CACHE_MB": &cfg.TranscodeCacheMB,
+	}
 	for key, dst := range ints {
 		if v := getenv(key); v != "" {
 			n, err := strconv.Atoi(v)
@@ -241,6 +257,12 @@ func (c *Config) Validate() error {
 	}
 	if c.ScanWorkers < 0 || c.ScanWorkers > 64 {
 		return fmt.Errorf("invalid SCAN_WORKERS %d: must be 0-64 (0 = number of CPUs)", c.ScanWorkers)
+	}
+	if c.MaxTranscodes < 1 || c.MaxTranscodes > 16 {
+		return fmt.Errorf("invalid MAX_TRANSCODES %d: must be 1-16", c.MaxTranscodes)
+	}
+	if c.TranscodeCacheMB < 512 {
+		return fmt.Errorf("invalid TRANSCODE_CACHE_MB %d: must be at least 512", c.TranscodeCacheMB)
 	}
 	if !slices.Contains(hwAccelModes, c.HWAccel) {
 		return fmt.Errorf("invalid HWACCEL %q: want one of %v", c.HWAccel, hwAccelModes)

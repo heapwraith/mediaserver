@@ -7,6 +7,7 @@ import type {
 	List,
 	Media,
 	Movie,
+	Playback,
 	Profile,
 	ProfileInput,
 	Progress,
@@ -94,6 +95,15 @@ export const movieExtras = (id: string) => api<Extra[]>(`/api/movies/${id}/extra
 export const seriesExtras = (id: string) => api<Extra[]>(`/api/series/${id}/extras`);
 export const getMedia = (id: string) => api<Media>(`/api/media/${id}`);
 export const streamURL = (mediaId: string) => `/api/media/${mediaId}/stream`;
+/** Direct play or HLS, decided by the server from what this device plays. */
+export const startPlayback = (mediaId: string, caps: string[], audio: number, start: number) =>
+	api<Playback>(`/api/media/${mediaId}/playback`, {
+		method: 'POST',
+		body: JSON.stringify({ caps, audio, start }),
+	});
+/** Stops an HLS session (its FFmpeg); keepalive survives the page closing. */
+export const stopPlayback = (p: Playback) =>
+	api<unknown>(p.url.replace(/\/index\.m3u8$/, ''), { method: 'DELETE', keepalive: true });
 
 export const scanStatus = () => api<ScanStatus>('/api/library/scan');
 export const startScan = () => api<{ started: boolean }>('/api/library/scan', { method: 'POST' });

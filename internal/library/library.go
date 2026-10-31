@@ -337,6 +337,7 @@ type Media struct {
 	Width      int            `json:"width,omitzero"`
 	Height     int            `json:"height,omitzero"`
 	VideoCodec string         `json:"video_codec,omitzero"`
+	VideoBits  int            `json:"video_bits,omitzero"`
 	AudioCodec string         `json:"audio_codec,omitzero"`
 	HDR        string         `json:"hdr,omitzero"`
 	Bitrate    int64          `json:"bitrate,omitzero"`
@@ -377,8 +378,11 @@ func (s Store) MediaByID(ctx context.Context, id string) (Media, error) {
 	m.FileName = path.Base(rel)
 	m.Audio = []probe.Track{}
 	if probeJSON.Valid {
-		if res, err := probe.Parse([]byte(probeJSON.String), path.Ext(rel)); err == nil && res.Audio != nil {
-			m.Audio = res.Audio
+		if res, err := probe.Parse([]byte(probeJSON.String), path.Ext(rel)); err == nil {
+			if res.Audio != nil {
+				m.Audio = res.Audio
+			}
+			m.VideoBits = res.VideoBits
 		}
 	}
 	m.Subtitles = []SubtitleInfo{}

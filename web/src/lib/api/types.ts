@@ -74,6 +74,17 @@ export interface Track {
 	default?: boolean;
 }
 
+/** How to play a file (internal/stream/transcode.go Playback). */
+export interface Playback {
+	/** The file itself (true) or an HLS session. */
+	direct: boolean;
+	url: string;
+	/** Seconds: media time of the stream's time 0 (HLS), or where to seek (direct). */
+	start: number;
+	video?: 'copy' | 'h264';
+	audio?: 'copy' | 'aac';
+}
+
 export interface Media {
 	id: string;
 	kind: string;
@@ -85,6 +96,7 @@ export interface Media {
 	width?: number;
 	height?: number;
 	video_codec?: string;
+	video_bits?: number;
 	audio_codec?: string;
 	hdr?: string;
 	audio: Track[];

@@ -36,8 +36,9 @@ type Result struct {
 	Width      int     `json:"width"`
 	Height     int     `json:"height"`
 	VideoCodec string  `json:"video_codec"`
-	HDR        string  `json:"hdr,omitempty"` // hdr10, hlg, dolby_vision
-	AudioCodec string  `json:"audio_codec"`   // default (or first) audio track
+	VideoBits  int     `json:"video_bits,omitzero"` // bit depth of the video (8, 10, 12)
+	HDR        string  `json:"hdr,omitempty"`       // hdr10, hlg, dolby_vision
+	AudioCodec string  `json:"audio_codec"`         // default (or first) audio track
 	Audio      []Track `json:"audio"`
 	Subtitles  []Track `json:"subtitles"`
 	// Raw is the full ffprobe JSON (kept for tracks/chapters in later sprints).
@@ -98,6 +99,7 @@ type ffStream struct {
 	Width         int    `json:"width"`
 	Height        int    `json:"height"`
 	Channels      int    `json:"channels"`
+	PixFmt        string `json:"pix_fmt"`
 	ColorTransfer string `json:"color_transfer"`
 	SideDataList  []struct {
 		SideDataType string `json:"side_data_type"`
@@ -150,6 +152,7 @@ func Parse(data []byte, ext string) (*Result, error) {
 			}
 			res.VideoCodec = s.CodecName
 			res.Width, res.Height = s.Width, s.Height
+			res.VideoBits = bitDepth(s.PixFmt)
 			res.HDR = hdr(s)
 		case "audio":
 			t := track(s)
@@ -180,6 +183,19 @@ func track(s ffStream) Track {
 		Default:  s.Disposition.Default == 1,
 		Forced:   s.Disposition.Forced == 1,
 	}
+}
+
+// bitDepth reads the bit depth from a pixel format (yuv420p10le, p010le…).
+func bitDepth(pixFmt string) int {
+	switch {
+	case pixFmt == "":
+		return 0
+	case strings.Contains(pixFmt, "12"):
+		return 12
+	case strings.Contains(pixFmt, "10"):
+		return 10
+	}
+	return 8
 }
 
 func hdr(s ffStream) string {

@@ -1,6 +1,6 @@
 # SPRINTS.md
 
-Planejamento do projeto. **Sprint ativa: 4.**
+Planejamento do projeto. **Sprint ativa: 5.**
 
 Regras:
 - Marcar `[x]` só quando o critério de aceite da tarefa for cumprido.
@@ -141,15 +141,15 @@ Duração sugerida: 1 semana por sprint (ajustável).
 
 **Objetivo:** qualquer arquivo toca em qualquer cliente.
 
-- [ ] Detecção de capacidade do cliente (o frontend envia codecs suportados via `MediaSource.isTypeSupported`)
-- [ ] Decisão: direct play → remux (só troca o contêiner) → transcodificação (áudio e/ou vídeo)
-- [ ] Detecção de hardware na inicialização: NVENC, QSV, AMF, VAAPI ou VideoToolbox, com CPU como fallback (`HWACCEL=auto`)
-- [ ] Geração de HLS **fMP4** sob demanda, segmentos de 4–6 s
-- [ ] *Seek* para trechos ainda não transcodificados (reiniciar o FFmpeg no ponto certo)
-- [ ] Cache de segmentos em `DATA_DIR/transcode`, com limite de tamanho e limpeza por LRU
-- [ ] Encerrar o FFmpeg quando o cliente para de pedir segmentos (timeout)
-- [ ] Limite de transcodificações simultâneas (configurável)
-- [ ] Escolha de faixa de áudio na transcodificação (ex.: áudio japonês em anime)
+- [x] Detecção de capacidade do cliente (o frontend envia codecs suportados via `MediaSource.isTypeSupported`)
+- [x] Decisão: direct play → remux (só troca o contêiner) → transcodificação (áudio e/ou vídeo)
+- [x] Detecção de hardware na inicialização: NVENC, QSV, AMF, VAAPI ou VideoToolbox, com CPU como fallback (`HWACCEL=auto`)
+- [x] Geração de HLS **fMP4** sob demanda, segmentos de 4–6 s
+- [x] *Seek* para trechos ainda não transcodificados (reiniciar o FFmpeg no ponto certo)
+- [x] Cache de segmentos em `DATA_DIR/transcode`, com limite de tamanho e limpeza por LRU
+- [x] Encerrar o FFmpeg quando o cliente para de pedir segmentos (timeout)
+- [x] Limite de transcodificações simultâneas (configurável)
+- [x] Escolha de faixa de áudio na transcodificação (ex.: áudio japonês em anime)
 
 **Aceite**
 - MKV HEVC 10-bit + áudio DTS toca no Chrome, no Firefox e no Safari
@@ -233,3 +233,7 @@ Duração sugerida: 1 semana por sprint (ajustável).
 - Scanner: arquivo ainda "em cópia" no scan de inicialização só é reprocessado quando chega outro evento do disco; reagendar um scan quando `pending > 0`
 - Imagens: pré-gerar após o scan (cor dominante disponível já na 1ª listagem) e limpar o cache de itens removidos
 - Frontend: migrar os estilos dos componentes (hoje em `<style>`) para classes UnoCSS com os tokens do tema (AGENTS.md §9)
+- Transcodificação: *tone mapping* HDR→SDR (hoje um HDR convertido para H.264 fica desbotado)
+- Transcodificação: manter 5.1 quando o cliente suporta (hoje o áudio convertido é AAC estéreo)
+- Transcodificação: pausar o FFmpeg quando ele está muito à frente do player (*throttling*)
+- Transcodificação: matar os FFmpeg filhos se o servidor cair à força (Job Object no Windows, `Pdeathsig` no Linux); no encerramento normal nada sobra

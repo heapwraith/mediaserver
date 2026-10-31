@@ -1,11 +1,20 @@
 <script lang="ts">
-	import { onDestroy, onMount } from 'svelte';
+	import { onDestroy, onMount, untrack } from 'svelte';
 
 	import { goto } from '$app/navigation';
 
-	import { getMedia, getProgress, nextEpisode, saveProgress, streamURL } from '#lib/api/client.ts';
-	import type { HomeItem, Media, Track } from '#lib/api/types.ts';
+	import {
+		ApiError,
+		getMedia,
+		getProgress,
+		nextEpisode,
+		saveProgress,
+		startPlayback,
+		stopPlayback,
+	} from '#lib/api/client.ts';
+	import type { HomeItem, Media, Playback, Track } from '#lib/api/types.ts';
 	import { goBack } from '#lib/platform/back.ts';
+	import { CONTAINERS, capabilities } from '#lib/platform/codecs.ts';
 	import {
 		enterFullscreen,
 		exitFullscreen,
@@ -19,10 +28,16 @@
 	import { settings } from '#lib/platform/settings.svelte.ts';
 	import { homeTitle, playHref } from '#lib/ui/cards.ts';
 	import { nextCountdown, resumeAt, shouldSave, MIN_SAVE_S } from '#lib/ui/progress.ts';
+	import { attach, type Source } from '#lib/ui/source.ts';
 	import { clock } from '#lib/ui/time.ts';
 
 	// Own player on the native <video> (ADR 004): Chromium 76 safe; hls.js
-	// (Sprint 5) and JASSUB (Sprint 6) attach to this same element.
+	// and JASSUB (Sprint 6) attach to this same element.
+	//
+	// The server decides direct play or HLS from this device's codecs (ADR
+	// 006). An HLS session starts at `offset` seconds of the media: the real
+	// time is offset + currentTime, and seeking past what is ready (or
+	// switching the audio track) asks for a new session there.
 	//
 	// Remote: left/right ±10 s, Enter play/pause. Up goes to the top bar
 	// (Voltar · Legendas · Áudio · Volume), where left/right pick and Enter
@@ -35,8 +50,8 @@
 	const HIDE_MS = 3000;
 	const SEEK_S = 10;
 	const VOLUME_STEP = 0.1;
+	const MAX_RETRIES = 2;
 
-	type AudioTrackList = { length: number; [n: number]: { enabled: boolean } | undefined };
 	type Tool = 'back' | 'subs' | 'audio' | 'volume' | 'fullscreen';
 	type Panel = '' | 'subs' | 'audio' | 'volume';
 	type Subtitle = Media['subtitles'][number];
@@ -61,8 +76,12 @@
 	function syncFullscreen() {
 		fullscreen = isFullscreen();
 	}
-	// Leaving the page (tab closed, app sent to the background) saves the position.
-	const hide = () => persist(true);
+	// Leaving the page (tab closed, app sent to the background) saves the
+	// position; closing it also stops the HLS session.
+	const hide = () => {
+		persist(true);
+		stopSession();
+	};
 	function visibility() {
 		if (document.visibilityState === 'hidden') persist(true);
 	}
@@ -78,6 +97,10 @@
 			window.removeEventListener('pagehide', hide);
 			document.removeEventListener('visibilitychange', visibility);
 			persist(true);
+			playToken += 1; // a play() still loading must not attach anymore
+			source?.destroy();
+			source = undefined;
+			stopSession();
 			void exitFullscreen();
 		};
 	});
@@ -147,22 +170,109 @@
 		save(VOLUME_KEY, { volume, muted });
 	}
 
-	// Switching audio needs the AudioTrackList API (Safari); elsewhere it
-	// comes with the transcoding (Sprint 5).
-	const audioTracks = $derived(
-		(video as (HTMLVideoElement & { audioTracks?: AudioTrackList }) | undefined)?.audioTracks,
-	);
-
 	async function loadTracks(id: string) {
 		const m = await getMedia(id).catch(() => undefined);
 		if (m === undefined) return;
 		audio = m.audio;
+		// The default track (or the first), like the server picks it.
 		audioSel = Math.max(
 			0,
 			audio.findIndex((t) => t.default === true),
 		);
+		if (audioIndex < 0) audioIndex = audio[audioSel]?.index ?? -1;
 		subs = m.subtitles;
 		if (duration === 0 && m.duration_ms !== undefined) duration = m.duration_ms / 1000;
+	}
+
+	// --- Playback: direct play or an HLS session (ADR 006) ---
+	let playback: Playback | undefined;
+	let source: Source | undefined;
+	let offset = 0;
+	let audioIndex = -1; // ffprobe index of the audio track playing (-1: default)
+	let pendingSeek: number | undefined; // direct play: seek once the metadata loads
+	let retries = 0;
+	let playToken = 0; // only the latest play() attaches
+
+	/** Stops the current HLS session on the server (frees its FFmpeg). */
+	function stopSession() {
+		if (playback !== undefined && !playback.direct) stopPlayback(playback).catch(() => undefined);
+		playback = undefined;
+	}
+
+	/** Plays from `at` seconds with the audio track `track`; caps: what to declare. */
+	async function play(at: number, track = audioIndex, caps = capabilities()) {
+		if (video === undefined) return;
+		const token = ++playToken;
+		const el = video;
+		waiting = true;
+		error = '';
+		source?.destroy();
+		source = undefined;
+		// Free the old FFmpeg first: the server limits concurrent transcodes.
+		const old = playback;
+		playback = undefined;
+		if (old !== undefined && !old.direct) await stopPlayback(old).catch(() => undefined);
+		let p: Playback;
+		try {
+			p = await startPlayback(mediaId, caps, track, at);
+		} catch (e) {
+			if (token === playToken) {
+				waiting = false;
+				error =
+					e instanceof ApiError && e.status === 503
+						? 'O servidor está ocupado com outras conversões. Tente de novo em instantes.'
+						: unsupported;
+			}
+			return;
+		}
+		if (token !== playToken) {
+			if (!p.direct) stopPlayback(p).catch(() => undefined);
+			return;
+		}
+		playback = p;
+		audioIndex = track;
+		offset = p.direct ? 0 : p.start;
+		pendingSeek = p.direct && p.start > 0 ? p.start : undefined;
+		time = p.start;
+		const s = await attach(el, p, onFatal);
+		if (token === playToken) source = s;
+		else s.destroy();
+	}
+
+	// Starts once the saved position is known.
+	let started = false;
+	$effect(() => {
+		if (resume !== undefined && video !== undefined && !started) {
+			started = true;
+			const at = resume;
+			untrack(() => void play(at));
+		}
+	});
+
+	/** The HLS stream broke (session stopped, server restarted): resume here. */
+	function onFatal() {
+		if (retries >= MAX_RETRIES) {
+			waiting = false;
+			error = unsupported;
+			return;
+		}
+		retries += 1;
+		void play(time);
+	}
+
+	/** The file itself failed: try once more through HLS (no container declared). */
+	function onVideoError() {
+		if (playback?.direct !== true) return; // HLS errors come through hls.js
+		if (retries >= MAX_RETRIES) {
+			error = unsupported;
+			return;
+		}
+		retries += 1;
+		void play(
+			time,
+			audioIndex,
+			capabilities().filter((c) => !CONTAINERS.includes(c)),
+		);
 	}
 	$effect(() => {
 		void loadTracks(mediaId);
@@ -201,7 +311,10 @@
 	}
 
 	function onTime() {
-		time = video?.currentTime ?? 0;
+		// Between sessions, or before the first seek of a direct play, the
+		// element's time is not the media's.
+		if (video === undefined || source === undefined || pendingSeek !== undefined) return;
+		time = offset + video.currentTime;
 		if (!paused && shouldSave(time, lastSave, Date.now())) persist();
 	}
 
@@ -245,10 +358,21 @@
 	}
 
 	function seek(delta: number) {
-		if (video === undefined) return;
-		const end = duration || video.duration || 0;
-		video.currentTime = Math.min(Math.max(0, video.currentTime + delta), end);
+		seekTo(time + delta);
+	}
+
+	/** Seeks to media second t: in place when it is ready, else a new HLS session there. */
+	function seekTo(t: number) {
 		show();
+		if (video === undefined || playback === undefined || source === undefined) return;
+		const end = duration > 0 ? duration : Infinity;
+		const at = Math.min(Math.max(0, t), end);
+		if (playback.direct) video.currentTime = at;
+		// Past what hls.js knows of the session the browser clamps the seek:
+		// a new session starts there instead (~0.2 s for a remux).
+		else if (at >= offset && at <= source.end()) video.currentTime = at - offset;
+		else void play(at);
+		time = at;
 	}
 
 	function open(p: Exclude<Panel, ''>) {
@@ -262,15 +386,12 @@
 		else open(t);
 	}
 
+	/** Another audio track: the server remuxes/converts with it from here. */
 	function chooseAudio(i: number) {
 		audioSel = i;
-		if (audioTracks !== undefined) {
-			for (let n = 0; n < audioTracks.length; n++) {
-				const t = audioTracks[n];
-				if (t !== undefined) t.enabled = n === i;
-			}
-		}
 		panel = '';
+		const t = audio[i];
+		if (t !== undefined && t.index !== audioIndex) void play(time, t.index);
 		show();
 	}
 
@@ -346,12 +467,9 @@
 		} else toggle();
 	}
 
-	function seekTo(e: MouseEvent) {
+	function seekClick(e: MouseEvent) {
 		const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-		if (video !== undefined && duration > 0) {
-			video.currentTime = ((e.clientX - r.left) / r.width) * duration;
-		}
-		show();
+		if (duration > 0) seekTo(((e.clientX - r.left) / r.width) * duration);
 	}
 
 	function trackName(t: Track): string {
@@ -363,8 +481,7 @@
 
 	const subName = (s: Subtitle) => s.title ?? s.language?.toUpperCase() ?? s.codec.toUpperCase();
 
-	const unsupported =
-		'Este navegador não reproduz o formato deste arquivo. A conversão automática chega numa próxima versão.';
+	const unsupported = 'Não foi possível reproduzir este arquivo.';
 </script>
 
 <svelte:head><title>{title || 'Assistir'}</title></svelte:head>
@@ -382,7 +499,6 @@
 	<!-- svelte-ignore a11y_media_has_caption -->
 	<video
 		bind:this={video}
-		src={resume === undefined ? undefined : streamURL(mediaId)}
 		autoplay
 		playsinline
 		onplay={() => (paused = false)}
@@ -394,11 +510,15 @@
 		ontimeupdate={onTime}
 		onloadedmetadata={() => {
 			if (video !== undefined) {
-				if (Number.isFinite(video.duration)) duration = video.duration;
+				// An HLS session covers only part of the file: keep the API duration.
+				if (playback?.direct === true && Number.isFinite(video.duration)) {
+					duration = video.duration;
+				}
 				video.volume = volume;
 				video.muted = muted;
-				if (resume !== undefined && resume > 0 && video.currentTime < 1) {
-					video.currentTime = Math.min(resume, Math.max(0, (video.duration || resume) - 1));
+				if (pendingSeek !== undefined) {
+					video.currentTime = Math.min(pendingSeek, Math.max(0, (video.duration || pendingSeek) - 1));
+					pendingSeek = undefined;
 				}
 			}
 			show();
@@ -407,10 +527,11 @@
 		onwaiting={() => (waiting = true)}
 		onplaying={() => {
 			waiting = false;
+			retries = 0;
 			show();
 		}}
 		oncanplay={() => (waiting = false)}
-		onerror={() => (error = unsupported)}
+		onerror={onVideoError}
 		onclick={onVideoClick}
 	></video>
 
@@ -550,12 +671,6 @@
 							{trackName(t)}
 						</div>
 					{/each}
-					{#if audioTracks === undefined}
-						<p class="hint">
-							Este navegador toca só a faixa padrão. A troca de áudio chega com a conversão
-							automática.
-						</p>
-					{/if}
 				</div>
 			{:else if panel === 'subs'}
 				<div class="panel" role="listbox" aria-label="Legendas">
@@ -621,7 +736,7 @@
 				aria-valuemin={0}
 				aria-valuemax={Math.round(duration)}
 				tabindex="-1"
-				onclick={seekTo}
+				onclick={seekClick}
 			>
 				<div
 					class="fill"
