@@ -13,6 +13,21 @@ Servidor de streaming **local** para filmes, séries e animes. Um binário só (
 
 O `golangci-lint` não precisa ser instalado: a versão fixada em `tools.mod` roda via `go tool`.
 
+FFmpeg/ffprobe 9+ é opcional para desenvolver: sem ele, o teste com vídeo real é pulado e o servidor indexa só pelo nome. Coloque a pasta `bin` do FFmpeg no PATH (ou use `FFPROBE_PATH`/`FFMPEG_PATH`).
+
+### Windows
+
+- Rode os comandos `make` no **Git Bash** (vem com o [Git for Windows](https://git-scm.com/download/win)). O `make` pode ser instalado com `winget install ezwinports.make`.
+- Para o `go test -race`, instale o gcc (ex.: MSYS2 + `pacman -S mingw-w64-ucrt-x86_64-gcc`, com a pasta `bin` no PATH). Sem gcc, o `make test` roda os testes **sem** `-race` e avisa.
+- O repositório força fim de linha LF (`.gitattributes`); não precisa mexer no `core.autocrlf`.
+
+### macOS
+
+- Instale as ferramentas de linha de comando: `xcode-select --install` (traz `make`, `git` e o `clang` usado pelo `-race`).
+- Go e Node pelo instalador oficial ou Homebrew (`brew install go node`).
+
+O CI (`.github/workflows/ci.yml`) roda `make check` e `make test` em Linux, Windows e macOS a cada push.
+
 ## Comandos
 
 ```bash

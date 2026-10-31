@@ -1,7 +1,9 @@
 # mediaserver — developer commands (AGENTS.md §10).
-# Requires: Go 1.27, Node 24+, make. golangci-lint is pinned in tools.mod.
+# Requires: Go 1.27, Node 24+, make and bash (on Windows: run from Git Bash).
+# golangci-lint is pinned in tools.mod.
 
-SHELL        := /bin/bash
+# "bash" (not /bin/bash) so Windows make finds Git Bash in the PATH.
+SHELL        := bash
 .SHELLFLAGS  := -eu -o pipefail -c
 .DEFAULT_GOAL := help
 
@@ -11,6 +13,7 @@ GO        ?= go
 NPM       := npm --prefix web
 LINT      := $(GO) tool -modfile=tools.mod golangci-lint
 DIST      := dist
+EXE       := $(shell $(GO) env GOEXE)
 PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64
 
 # make dev
@@ -45,8 +48,8 @@ dev: web-deps web-stub ## Backend with reload (Go) + Vite dev server on :5173
 	$(NPM) run dev & \
 	while true; do \
 		touch $(DEV_DIR)/stamp; \
-		if $(GO) build -o $(DEV_DIR)/mediaserver ./cmd/mediaserver; then \
-			APP_ENV=dev MEDIA_DIR="$(MEDIA_DIR)" DATA_DIR=$(DEV_DIR)/data $(DEV_DIR)/mediaserver & pid=$$!; \
+		if $(GO) build -o $(DEV_DIR)/mediaserver$(EXE) ./cmd/mediaserver; then \
+			APP_ENV=dev MEDIA_DIR="$(MEDIA_DIR)" DATA_DIR=$(DEV_DIR)/data $(DEV_DIR)/mediaserver$(EXE) & pid=$$!; \
 		else pid=; fi; \
 		until [ -n "$$(find cmd internal migrations web/embed.go -newer $(DEV_DIR)/stamp \( -name '*.go' -o -name '*.sql' \) 2>/dev/null | head -1)" ]; do sleep 1; done; \
 		echo "--- change detected, restarting backend"; \
@@ -67,9 +70,16 @@ build-go: web-stub
 		CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch $(GO) build -trimpath -ldflags "$(LDFLAGS)" -o $$out ./cmd/mediaserver; \
 	done
 
-# -race needs CGO; it is only enabled for tests; release binaries stay CGO-free.
+# -race needs CGO and a C compiler (gcc/clang). It is only used by the tests;
+# release binaries stay CGO-free. Without a C compiler the tests run without -race.
 test: web-deps web-stub ## go test -race + vitest
-	CGO_ENABLED=1 $(GO) test -race ./...
+	@if command -v "$$($(GO) env CC)" >/dev/null 2>&1; then \
+		echo "CGO_ENABLED=1 $(GO) test -race ./..."; \
+		CGO_ENABLED=1 $(GO) test -race ./...; \
+	else \
+		echo "warning: no C compiler ($$($(GO) env CC)) found: running tests WITHOUT -race (install gcc or clang to enable it)"; \
+		CGO_ENABLED=0 $(GO) test ./...; \
+	fi
 	$(NPM) test
 
 fmt: web-deps ## golangci-lint fmt + oxfmt

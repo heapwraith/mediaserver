@@ -1,0 +1,13 @@
+# Always LF in the repository and in working copies, on every OS.
+# (gofumpt/oxfmt reject CRLF, and Git for Windows converts to CRLF by default.)
+* text=auto eol=lf
+
+# Binary files: never touch them.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.webp binary
+*.ico  binary
+*.woff2 binary
+*.mkv  binary
+*.mp4  binary
