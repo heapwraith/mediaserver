@@ -59,6 +59,9 @@ func NewRouter(d Deps) http.Handler {
 			r.Get("/series/{id}", byID(d, func(d Deps, r *http.Request, id string) (library.SeriesDetail, error) {
 				return d.Library.SeriesByID(r.Context(), id)
 			}))
+			r.Get("/movies/{id}", byID(d, func(d Deps, r *http.Request, id string) (library.Movie, error) {
+				return d.Library.MovieByID(r.Context(), id)
+			}))
 			r.Get("/movies/{id}/extras", byID(d, func(d Deps, r *http.Request, id string) ([]library.Extra, error) {
 				return d.Library.MovieExtras(r.Context(), id)
 			}))

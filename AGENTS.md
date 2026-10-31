@@ -38,7 +38,7 @@ Servidor de streaming **local** e próprio para **filmes, séries e animes**, co
 | Mídia | **FFmpeg / ffprobe 9.0+** (binários locais) | Detecta a GPU: NVENC (NVIDIA), QSV (Intel), AMF (AMD/Windows), VAAPI (Linux), VideoToolbox (macOS) → CPU |
 | Frontend | **SvelteKit 3** (`adapter-static`) + **Svelte 5** + TypeScript | Config no `vite.config.ts` (sem `svelte.config.js`). Build embutido via `embed.FS` |
 | Navegação por controle | **lrud** (BBC), via *action* do Svelte | Navegação espacial independente de framework, feita para TV |
-| Player | **Video.js 10** (`@videojs/html`) + **hls.js** | Sucessor do Vidstack. **JASSUB** pra legendas ASS |
+| Player | **Player próprio** sobre o `<video>` nativo + **hls.js** (Sprint 5) | O Video.js 10 exige Chrome 111+ (ADR 004). **JASSUB** pra legendas ASS |
 | TV | Mesmo frontend empacotado: `.wgt` (Tizen), `.ipk` (webOS), `.apk` (Android TV/Fire TV, WebView) | Navegação por controle remoto; um código só |
 | Qualidade (Go) | **golangci-lint v2** (`run` + `fmt`) + `go fix` | Um só binário roda staticcheck, govet, gosec, modernize e formata com gofumpt + gci |
 | Estilo | **UnoCSS 66.x** (`preset-wind3` + `preset-legacy-compat`) + **Lightning CSS** | Classes estilo Tailwind geradas só no build (zero JS na TV). O Lightning CSS converte o CSS final pros alvos do browserslist. **Não** usar Tailwind v4 nem `preset-wind4` (exigem Chrome 111+) |

@@ -35,7 +35,7 @@ make dev      # backend com reload (:8080) + Vite (http://localhost:5173)
 make build    # frontend + 6 binários em dist/ (Windows, Linux, macOS × amd64, arm64)
 make test     # go test -race + vitest
 make fmt      # formata Go e web
-make check    # lint + formatação + tipos (não altera arquivos)
+make check    # lint + formatação + tipos + build do frontend (orçamento de 150 KB e CSS proibido)
 make bench    # benchmarks
 ```
 
@@ -97,7 +97,8 @@ As correções valem para os próximos scans e acompanham o arquivo se ele for r
 
 | Endpoint | O que faz |
 |---|---|
-| `GET /api/movies`, `/api/series`, `/api/animes` | Listagens paginadas: `?sort=title\|added\|year&order=asc\|desc&offset=0&limit=100` (máx. 500) |
+| `GET /api/movies`, `/api/series`, `/api/animes` | Listagens paginadas: `?sort=title\|added\|year&order=asc\|desc&offset=0&limit=100` (máx. 500); `&q=` busca no título (sem acento/caixa) |
+| `GET /api/movies/{id}` | Um filme |
 | `GET /api/series/{id}` | Série com temporadas e episódios |
 | `GET /api/movies/{id}/extras`, `/api/series/{id}/extras` | Trailers e extras (tocam pelo `media_id`) |
 | `GET /api/media/{id}` | Detalhes técnicos, faixas de áudio e legendas |

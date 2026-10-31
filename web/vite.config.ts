@@ -40,8 +40,37 @@ function unoCSS(): Plugin[] {
 	return UnoCSS().map(({ transformIndexHtml: _unused, ...plugin }) => plugin);
 }
 
+/**
+ * Svelte 5 scopes some selectors with `:where(.svelte-xyz)`, which Chromium
+ * 76 (Chrome 88+ only) rejects, dropping the whole rule on 2021 TVs. In the
+ * build, the plain class does the same job (one class more of specificity).
+ */
+export function unwrapSvelteWhere(css: string): string {
+	return css.replace(/:where\((\.svelte-[\w-]+)\)/g, '$1');
+}
+
+function legacyScopedCss(): Plugin {
+	return {
+		name: 'legacy-scoped-css',
+		apply: 'build',
+		enforce: 'post',
+		generateBundle(_options, bundle) {
+			for (const file of Object.values(bundle)) {
+				if (
+					file.type === 'asset' &&
+					file.fileName.endsWith('.css') &&
+					typeof file.source === 'string'
+				) {
+					file.source = unwrapSvelteWhere(file.source);
+				}
+			}
+		},
+	};
+}
+
 export default defineConfig({
 	plugins: [
+		legacyScopedCss(),
 		unoCSS(),
 		sveltekit({
 			compilerOptions: {

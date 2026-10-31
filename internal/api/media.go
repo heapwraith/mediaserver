@@ -11,15 +11,18 @@ import (
 	"strings"
 
 	"mediaserver/internal/library"
+	"mediaserver/internal/scanner"
 	"mediaserver/internal/stream"
 )
 
 const defaultLimit = 100
 
-// pageParams reads ?sort=title|added|year&order=asc|desc&offset=&limit=.
+// pageParams reads ?sort=title|added|year&order=asc|desc&offset=&limit=&q=.
+// q is a local title search, normalized like the stored titles (no accents,
+// case or punctuation).
 func pageParams(r *http.Request) (library.Page, error) {
 	q := r.URL.Query()
-	p := library.Page{Sort: q.Get("sort"), Limit: defaultLimit}
+	p := library.Page{Sort: q.Get("sort"), Limit: defaultLimit, Query: scanner.NormTitle(q.Get("q"))}
 	switch q.Get("order") {
 	case "", "asc":
 	case "desc":

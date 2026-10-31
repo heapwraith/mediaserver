@@ -55,7 +55,7 @@ export default defineConfig({
 			accent: '#4C8DFF',
 		},
 		fontFamily: {
-			sans: 'Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+			sans: '"Inter Variable", Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
 		},
 		borderRadius: {
 			card: '12px',

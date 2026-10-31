@@ -29,6 +29,18 @@ type Page struct {
 	Desc   bool
 	Offset int
 	Limit  int
+	// Query filters by normalized title (scanner.NormTitle): only letters,
+	// digits and spaces, so it holds no LIKE wildcard.
+	Query string
+}
+
+// filter is the SQL condition (and its args) of the title search on alias.
+// Without a search it is empty: a LIKE '%%' would read every row.
+func (p Page) filter(alias string) (string, []any) {
+	if p.Query == "" {
+		return "", nil
+	}
+	return " AND " + alias + ".norm_title LIKE ?", []any{"%" + p.Query + "%"}
 }
 
 // MaxLimit is the largest page a listing returns.
@@ -87,7 +99,9 @@ func (s Store) Movies(ctx context.Context, p Page) (List[Movie], error) {
 		return List[Movie]{}, err
 	}
 	out := List[Movie]{Items: []Movie{}, Offset: p.Offset, Limit: p.Limit}
-	if err := s.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM movies`).Scan(&out.Total); err != nil {
+	where, args := p.filter("mv")
+	//nolint:gosec // where is a fixed condition (Page.filter)
+	if err := s.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM movies mv WHERE 1=1`+where, args...).Scan(&out.Total); err != nil {
 		return out, fmt.Errorf("count movies: %w", err)
 	}
 	// The page is picked on the index alone; only its rows are joined.
@@ -95,11 +109,11 @@ func (s Store) Movies(ctx context.Context, p Page) (List[Movie], error) {
 	rows, err := s.DB.QueryContext(ctx,
 		`SELECT mv.id, mv.title, COALESCE(mv.year, 0), mv.media_file_id, COALESCE(mf.duration_ms, 0),
 		        COALESCE(mf.width, 0), COALESCE(mf.height, 0), mv.added_at, COALESCE(ic.color, '')
-		 FROM (SELECT mv.rowid AS rid FROM movies mv ORDER BY `+order+` LIMIT ? OFFSET ?) pg
+		 FROM (SELECT mv.rowid AS rid FROM movies mv WHERE 1=1`+where+` ORDER BY `+order+` LIMIT ? OFFSET ?) pg
 		 JOIN movies mv ON mv.rowid = pg.rid
 		 JOIN media_files mf ON mf.id = mv.media_file_id
 		 LEFT JOIN image_cache ic ON ic.owner_id = mv.id
-		 ORDER BY `+order, p.Limit, p.Offset)
+		 ORDER BY `+order, append(args, p.Limit, p.Offset)...)
 	if err != nil {
 		return out, fmt.Errorf("list movies: %w", err)
 	}
@@ -110,6 +124,26 @@ func (s Store) Movies(ctx context.Context, p Page) (List[Movie], error) {
 		return err
 	})
 	return out, err
+}
+
+// MovieByID returns one movie.
+func (s Store) MovieByID(ctx context.Context, id string) (Movie, error) {
+	var m Movie
+	err := s.DB.QueryRowContext(ctx,
+		`SELECT mv.id, mv.title, COALESCE(mv.year, 0), mv.media_file_id, COALESCE(mf.duration_ms, 0),
+		        COALESCE(mf.width, 0), COALESCE(mf.height, 0), mv.added_at, COALESCE(ic.color, '')
+		 FROM movies mv
+		 JOIN media_files mf ON mf.id = mv.media_file_id
+		 LEFT JOIN image_cache ic ON ic.owner_id = mv.id
+		 WHERE mv.id = ?`, id).
+		Scan(&m.ID, &m.Title, &m.Year, &m.MediaID, &m.DurationMs, &m.Width, &m.Height, &m.AddedAt, &m.Color)
+	if errors.Is(err, sql.ErrNoRows) {
+		return m, fmt.Errorf("movie %s: %w", id, ErrNotFound)
+	}
+	if err != nil {
+		return m, fmt.Errorf("movie %s: %w", id, err)
+	}
+	return m, nil
 }
 
 // Series is a series or anime card.
@@ -131,7 +165,10 @@ func (s Store) Series(ctx context.Context, kind string, p Page) (List[Series], e
 		return List[Series]{}, err
 	}
 	out := List[Series]{Items: []Series{}, Offset: p.Offset, Limit: p.Limit}
-	if err := s.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM series WHERE kind = ?`, kind).Scan(&out.Total); err != nil {
+	where, args := p.filter("s")
+	args = append([]any{kind}, args...)
+	//nolint:gosec // where is a fixed condition (Page.filter)
+	if err := s.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM series s WHERE s.kind = ?`+where, args...).Scan(&out.Total); err != nil {
 		return out, fmt.Errorf("count series: %w", err)
 	}
 	//nolint:gosec // order comes from a fixed whitelist (Page.orderBy)
@@ -140,10 +177,10 @@ func (s Store) Series(ctx context.Context, kind string, p Page) (List[Series], e
 		        (SELECT COUNT(*) FROM seasons se WHERE se.series_id = s.id),
 		        (SELECT COUNT(*) FROM episodes e WHERE e.series_id = s.id),
 		        s.added_at, COALESCE(ic.color, '')
-		 FROM (SELECT s.rowid AS rid FROM series s WHERE s.kind = ? ORDER BY `+order+` LIMIT ? OFFSET ?) pg
+		 FROM (SELECT s.rowid AS rid FROM series s WHERE s.kind = ?`+where+` ORDER BY `+order+` LIMIT ? OFFSET ?) pg
 		 JOIN series s ON s.rowid = pg.rid
 		 LEFT JOIN image_cache ic ON ic.owner_id = s.id
-		 ORDER BY `+order, kind, p.Limit, p.Offset)
+		 ORDER BY `+order, append(args, p.Limit, p.Offset)...)
 	if err != nil {
 		return out, fmt.Errorf("list series: %w", err)
 	}

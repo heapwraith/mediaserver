@@ -93,20 +93,20 @@ Duração sugerida: 1 semana por sprint (ajustável).
 
 **Objetivo:** interface navegável em qualquer navegador de PC, pronta pra controle remoto.
 
-- [ ] Tokens visuais do `AGENTS.md` §7 no `uno.config.ts` (cores, tipografia Inter auto-hospedada, espaçamento, raios, área segura)
-- [ ] Layout base estilo Apple TV+: menu (Início, Filmes, Séries, Animes), tema escuro
-- [ ] Tela inicial com *hero* + fileiras (Continuar assistindo, Próximos episódios, Adicionados recentemente, Filmes, Séries, Animes)
-- [ ] Cards 16:9 com estado de foco (escala 1.08 + sombra + contorno) e card tipográfico quando não houver imagem
-- [ ] Navegação espacial com `lrud` + memória de foco por fileira + Voltar em níveis
-- [ ] Fileiras virtualizadas, imagens lazy com placeholder na cor dominante
-- [ ] Página de detalhes (filme) e de série/anime (temporadas → episódios)
-- [ ] Botão **"Assistir trailer"** quando houver trailer, e aba **"Extras"** quando houver extras
-- [ ] Trailer tocando **sem som, em loop, no fundo da página de detalhes** (desligável nas configurações; desligado automaticamente em TVs com pouca memória)
-- [ ] Player Video.js 10 com sobreposição mínima (some após 3 s), barra de progresso grande, ±10 s e menu de áudio
-- [ ] Navegação por teclado: setas, Enter, Esc/Backspace = voltar (**base para a TV**)
-- [ ] Busca local (no título) com debounce
-- [ ] Tela **Revisar**: corrigir tipo/título/temporada/episódio, mesclar e separar séries
-- [ ] Tela de configurações: disparar scan, ver status
+- [x] Tokens visuais do `AGENTS.md` §7 no `uno.config.ts` (cores, tipografia Inter auto-hospedada, espaçamento, raios, área segura)
+- [x] Layout base estilo Apple TV+: menu (Início, Filmes, Séries, Animes), tema escuro
+- [ ] Tela inicial com *hero* + fileiras (Continuar assistindo, Próximos episódios, Adicionados recentemente, Filmes, Séries, Animes) — falta só *Continuar assistindo* e *Próximos episódios*, que dependem do progresso (Sprint 4)
+- [x] Cards 16:9 com estado de foco (escala 1.08 + sombra + contorno) e card tipográfico quando não houver imagem
+- [x] Navegação espacial com `lrud` + memória de foco por fileira + Voltar em níveis
+- [x] Fileiras virtualizadas, imagens lazy com placeholder na cor dominante
+- [x] Página de detalhes (filme) e de série/anime (temporadas → episódios)
+- [x] Botão **"Assistir trailer"** quando houver trailer, e aba **"Extras"** quando houver extras
+- [x] Trailer tocando **sem som, em loop, no fundo da página de detalhes** (desligável nas configurações; desligado automaticamente em TVs com pouca memória)
+- [x] Player ~~Video.js 10~~ próprio no `<video>` (ADR 004) com sobreposição mínima (some após 3 s), barra de progresso grande, ±10 s e menu de áudio (troca de faixa só no Safari até a Sprint 5)
+- [x] Navegação por teclado: setas, Enter, Esc/Backspace = voltar (**base para a TV**)
+- [x] Busca local (no título) com debounce
+- [x] Tela **Revisar**: corrigir tipo/título/temporada/episódio, mesclar e separar séries
+- [x] Tela de configurações: disparar scan, ver status
 
 **Aceite**
 - Todo o fluxo (início → série → episódio → assistir → voltar) funciona **só com o teclado**
@@ -232,3 +232,4 @@ Duração sugerida: 1 semana por sprint (ajustável).
 - Escolha do nome do projeto e troca do placeholder `mediaserver`
 - Scanner: arquivo ainda "em cópia" no scan de inicialização só é reprocessado quando chega outro evento do disco; reagendar um scan quando `pending > 0`
 - Imagens: pré-gerar após o scan (cor dominante disponível já na 1ª listagem) e limpar o cache de itens removidos
+- Frontend: migrar os estilos dos componentes (hoje em `<style>`) para classes UnoCSS com os tokens do tema (AGENTS.md §9)

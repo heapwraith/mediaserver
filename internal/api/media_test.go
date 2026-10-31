@@ -58,6 +58,16 @@ func TestLibraryEndpoints(t *testing.T) {
 		t.Fatalf("page = %s", body)
 	}
 
+	// Local search ignores case, accents and punctuation.
+	_, _, body = get(t, srv, "/api/movies?q=M%C3%81TRIX!")
+	if found := decode[library.List[library.Movie]](t, body); found.Total != 1 || found.Items[0].Title != "The Matrix" {
+		t.Fatalf("search = %s", body)
+	}
+	_, _, body = get(t, srv, "/api/animes?q=frieren")
+	if found := decode[library.List[library.Series]](t, body); found.Total != 1 {
+		t.Fatalf("anime search = %s", body)
+	}
+
 	_, _, body = get(t, srv, "/api/series")
 	series := decode[library.List[library.Series]](t, body)
 	if series.Total != 1 || series.Items[0].Title != "Dark" || series.Items[0].Episodes != 2 {
@@ -73,6 +83,11 @@ func TestLibraryEndpoints(t *testing.T) {
 	if len(dark.Seasons) != 1 || dark.Seasons[0].Number != 1 || len(dark.Seasons[0].Episodes) != 2 ||
 		dark.Seasons[0].Episodes[1].Number != 2 {
 		t.Fatalf("series detail = %s", body)
+	}
+
+	_, _, body = get(t, srv, "/api/movies/"+alien.ID)
+	if m := decode[library.Movie](t, body); m != alien {
+		t.Fatalf("movie = %s", body)
 	}
 
 	_, _, body = get(t, srv, "/api/movies/"+alien.ID+"/extras")
@@ -103,6 +118,7 @@ func TestLibraryEndpoints(t *testing.T) {
 		{"/api/animes?limit=abc", 400},
 		{"/api/series/" + unknown, 404},
 		{"/api/series/123", 400},
+		{"/api/movies/" + unknown, 404},
 		{"/api/movies/" + unknown + "/extras", 404},
 		{"/api/series/" + unknown + "/extras", 404},
 		{"/api/media/" + unknown, 404},
