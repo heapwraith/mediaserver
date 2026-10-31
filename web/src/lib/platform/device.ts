@@ -33,3 +33,38 @@ export const isTV = false;
 
 /** Leaves the app (TV only; the browser has nothing to exit). */
 export function exitApp(): void {}
+
+// Fullscreen (Safari 15 still needs the webkit-prefixed API).
+type WebkitDocument = Document & {
+	webkitFullscreenElement?: Element | null;
+	webkitExitFullscreen?: () => void;
+};
+type WebkitElement = HTMLElement & { webkitRequestFullscreen?: () => void };
+
+export function isFullscreen(): boolean {
+	const d = document as WebkitDocument;
+	return (d.fullscreenElement ?? d.webkitFullscreenElement ?? null) !== null;
+}
+
+/** Asks for fullscreen; the browser may refuse without a recent user gesture. */
+export async function enterFullscreen(el: HTMLElement): Promise<void> {
+	if (isTV || isFullscreen()) return; // TV apps already fill the screen
+	const w = el as WebkitElement;
+	try {
+		if (typeof el.requestFullscreen === 'function') await el.requestFullscreen();
+		else w.webkitRequestFullscreen?.();
+	} catch {
+		// Refused (no user gesture): the button is still there.
+	}
+}
+
+export async function exitFullscreen(): Promise<void> {
+	if (!isFullscreen()) return;
+	const d = document as WebkitDocument;
+	try {
+		if (typeof document.exitFullscreen === 'function') await document.exitFullscreen();
+		else d.webkitExitFullscreen?.();
+	} catch {
+		// Already left.
+	}
+}

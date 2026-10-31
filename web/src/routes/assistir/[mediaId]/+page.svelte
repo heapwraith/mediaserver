@@ -1,12 +1,19 @@
 <script lang="ts">
-	import { onDestroy } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 
 	import { page } from '$app/state';
 
 	import { getMedia, streamURL } from '#lib/api/client.ts';
 	import type { Media, Track } from '#lib/api/types.ts';
 	import { goBack } from '#lib/platform/back.ts';
-	import { load, save } from '#lib/platform/device.ts';
+	import {
+		enterFullscreen,
+		exitFullscreen,
+		isFullscreen,
+		isTV,
+		load,
+		save,
+	} from '#lib/platform/device.ts';
 	import type { Action } from '#lib/platform/keys.ts';
 	import { focusable } from '#lib/platform/nav.svelte.ts';
 	import { clock } from '#lib/ui/time.ts';
@@ -23,7 +30,7 @@
 	const VOLUME_STEP = 0.1;
 
 	type AudioTrackList = { length: number; [n: number]: { enabled: boolean } | undefined };
-	type Tool = 'back' | 'subs' | 'audio' | 'volume';
+	type Tool = 'back' | 'subs' | 'audio' | 'volume' | 'fullscreen';
 	type Panel = '' | 'subs' | 'audio' | 'volume';
 	type Subtitle = Media['subtitles'][number];
 
@@ -31,6 +38,30 @@
 	const title = $derived(page.url.searchParams.get('title') ?? '');
 
 	let video: HTMLVideoElement | undefined = $state();
+	let root: HTMLElement | undefined = $state();
+	let fullscreen = $state(false);
+
+	// A 16:9 video in a browser window (tabs, address bar) gets side bars;
+	// the fullscreen button removes them. Leaving the player leaves fullscreen.
+	function syncFullscreen() {
+		fullscreen = isFullscreen();
+	}
+	onMount(() => {
+		const sync = syncFullscreen;
+		document.addEventListener('fullscreenchange', sync);
+		document.addEventListener('webkitfullscreenchange', sync);
+		return () => {
+			document.removeEventListener('fullscreenchange', sync);
+			document.removeEventListener('webkitfullscreenchange', sync);
+			void exitFullscreen();
+		};
+	});
+
+	function toggleFullscreen() {
+		if (isFullscreen()) void exitFullscreen();
+		else if (root !== undefined) void enterFullscreen(root);
+		show();
+	}
 	// Read from the element's events only: a two-way bind would push the
 	// initial `paused` back into the element and race with autoplay.
 	let paused = $state(true);
@@ -54,6 +85,7 @@
 		...(subs.length > 0 ? (['subs'] as const) : []),
 		...(audio.length > 1 ? (['audio'] as const) : []),
 		'volume',
+		...(isTV ? [] : (['fullscreen'] as const)),
 	]);
 	const kfocus = (t: Tool) => inTop && panel === '' && tools[toolIdx] === t;
 
@@ -141,6 +173,7 @@
 
 	function useTool(t: Tool) {
 		if (t === 'back') goBack();
+		else if (t === 'fullscreen') toggleFullscreen();
 		else open(t);
 	}
 
@@ -251,6 +284,7 @@
 <svelte:head><title>{title || 'Assistir'}</title></svelte:head>
 
 <div
+	bind:this={root}
 	class="player"
 	class:idle={!visible}
 	role="application"
@@ -355,6 +389,34 @@
 						{/if}
 					</svg>
 				</button>
+				{#if !isTV}
+					<button
+						tabindex="-1"
+						class="pill icon"
+						class:kfocus={kfocus('fullscreen')}
+						onclick={toggleFullscreen}
+						aria-label={fullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
+						title={fullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
+					>
+						<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+							{#if fullscreen}
+								<path
+									d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+								/>
+							{:else}
+								<path
+									d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+								/>
+							{/if}
+						</svg>
+					</button>
+				{/if}
 			</div>
 
 			{#if panel === 'audio'}
