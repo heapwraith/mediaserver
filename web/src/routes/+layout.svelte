@@ -3,10 +3,11 @@
 	import 'virtual:uno.css';
 	import '../app.css';
 
-	import { afterNavigate, goto } from '$app/navigation';
+	import { afterNavigate } from '$app/navigation';
 	import { page } from '$app/state';
 
 	import favicon from '#lib/assets/favicon.svg';
+	import { goBack, trackNavigation } from '#lib/platform/back.ts';
 	import { isTV } from '#lib/platform/device.ts';
 	import { isDirection, keyAction } from '#lib/platform/keys.ts';
 	import { focusGroup, focusable, handleAction } from '#lib/platform/nav.svelte.ts';
@@ -31,22 +32,7 @@
 		document.documentElement.classList.toggle('reduce-motion', settings.reduceMotion);
 	});
 
-	// Pages visited inside the app: Voltar never leaves it (a page opened
-	// from a link has nothing to go back to but Início).
-	let depth = 0;
-	afterNavigate((nav) => {
-		if (nav.type === 'popstate') depth = Math.max(0, depth + (nav.delta ?? -1));
-		else if (nav.type === 'link' || nav.type === 'goto') depth += 1;
-	});
-
-	/** Voltar closes the current level: player → details → menu page → Início. */
-	function back() {
-		const path = page.url.pathname;
-		if (path === '/') return; // TVs ask to exit the app (Sprint 7)
-		if (top.has(path)) void goto('/');
-		else if (depth > 0) history.back();
-		else void goto('/', { replaceState: true });
-	}
+	afterNavigate(trackNavigation);
 
 	function onkeydown(e: KeyboardEvent) {
 		const action = keyAction(e);
@@ -61,7 +47,7 @@
 			e.preventDefault();
 		} else if (action === 'back') {
 			e.preventDefault();
-			back();
+			goBack(top);
 		} else if (isDirection(action)) {
 			e.preventDefault(); // no native scrolling: the focus drives the page
 		}
