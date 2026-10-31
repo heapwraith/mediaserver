@@ -1,6 +1,6 @@
 # SPRINTS.md
 
-Planejamento do projeto. **Sprint ativa: 5.**
+Planejamento do projeto. **Sprint ativa: 6.**
 
 Regras:
 - Marcar `[x]` só quando o critério de aceite da tarefa for cumprido.
@@ -164,12 +164,21 @@ Duração sugerida: 1 semana por sprint (ajustável).
 
 **Objetivo:** legendas funcionando, inclusive as ASS estilizadas de anime.
 
-- [ ] Legendas laterais SRT → convertidas para WebVTT sob demanda
-- [ ] Extração de legendas embutidas no MKV (cache em `DATA_DIR`)
-- [ ] ASS/SSA renderizadas com **JASSUB** no cliente
-- [ ] Extração das **fontes anexadas** no MKV (attachments) para o JASSUB
-- [ ] Seleção de legenda no player + legenda padrão por perfil (ex.: pt-BR)
-- [ ] Fallback: *burn-in* de ASS na transcodificação quando o cliente não aguenta o JASSUB (TV antiga)
+- [x] Legendas laterais SRT → convertidas para WebVTT sob demanda (API testada com UTF-8 e Latin-1)
+- [x] Extração de legendas embutidas no MKV (cache em `DATA_DIR`)
+- [x] ASS/SSA renderizadas com **JASSUB** no cliente
+- [x] Extração das **fontes anexadas** no MKV (attachments) para o JASSUB
+- [x] Seleção de legenda no player + legenda padrão por perfil (ex.: pt-BR)
+- [x] Fallback: *burn-in* de ASS na transcodificação quando o cliente não aguenta o JASSUB (TV antiga)
+
+Implementação e verificações automáticas/Edge concluídas. O aceite manual reservado ao usuário (anime real com ASS pesado comparado no mpv e Firefox/Safari) permanece pendente; a sprint ativa continua sendo a 6.
+
+- [x] API de perfil com `subtitle_language`, validação e manutenção do valor omitido/null
+- [x] Regras de seleção padrão e detecção do token `ass` cobertas por testes unitários
+- [x] ADR [007 — Legendas](docs/adr/007-subtitles.md)
+- [x] Instalação JASSUB 2.5.23 e atualização do lockfile; tipos, lint web e build aprovados (55,6 KB gzip de JS inicial)
+- [x] `make fmt`, `make check`, `make test`, `make bench` e E2E Edge; detalhes em [Verificação da Sprint 6](docs/sprint-6-verificacao.md)
+- [ ] Aceite manual: anime real com ASS pesado comparado no mpv e Firefox/Safari (reservado ao usuário no plano)
 
 **Aceite**
 - Episódio de anime com ASS estilizado (karaokê, posicionamento) exibe igual ao mpv
@@ -218,6 +227,12 @@ Duração sugerida: 1 semana por sprint (ajustável).
 ---
 
 ## Backlog (sem sprint)
+
+- Legendas em imagem (PGS, VobSub, DVB) via burn-in com overlay
+- Pré-extrair legendas após scan e limpar caches de versões antigas/arquivos removidos
+- Fontes de uma pasta `Fonts/` ao lado de ASS externa
+- Lembrar a última legenda escolhida por mídia (`progress.subtitle_id` já existe)
+- COOP/COEP para JASSUB em multithread
 
 - Acesso externo via **Tailscale** (`tailscale serve`)
 - Metadados externos opcionais (TMDB, AniList)

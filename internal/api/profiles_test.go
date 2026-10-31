@@ -32,6 +32,52 @@ func newProfile(t *testing.T, call func(method, path, body string, headers ...st
 	return s.Profile, ProfileHeader + ": " + s.Token
 }
 
+func TestProfileSubtitleLanguage(t *testing.T) {
+	srv, _, _ := newLibraryServer(t)
+	status, body := do(t, srv, http.MethodPost, "/api/profiles", `{"name":"Legendas","color":"#123456","subtitle_language":"pt-BR"}`)
+	if status != http.StatusCreated {
+		t.Fatalf("create = %d %s", status, body)
+	}
+	s := decode[sessionBody](t, body)
+	if s.Profile.SubtitleLanguage != "pt-BR" {
+		t.Fatalf("create language = %q", s.Profile.SubtitleLanguage)
+	}
+	header := ProfileHeader + ": " + s.Token
+	path := "/api/profiles/" + s.Profile.ID
+	for _, tc := range []struct {
+		name, field, want string
+		status            int
+	}{
+		{"omitted keeps value", "", "pt-BR", http.StatusOK},
+		{"null keeps value", `,"subtitle_language":null`, "pt-BR", http.StatusOK},
+		{"three letters", `,"subtitle_language":"eng"`, "eng", http.StatusOK},
+		{"invalid case", `,"subtitle_language":"PT-br"`, "eng", http.StatusBadRequest},
+		{"invalid separator", `,"subtitle_language":"pt_BR"`, "eng", http.StatusBadRequest},
+		{"too long", `,"subtitle_language":"english"`, "eng", http.StatusBadRequest},
+		{"off", `,"subtitle_language":""`, "", http.StatusOK},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			status, body := do(t, srv, http.MethodPut, path, `{"name":"Legendas","color":"#123456"`+tc.field+`}`, header)
+			if status != tc.status {
+				t.Fatalf("update = %d %s", status, body)
+			}
+			status, body = do(t, srv, http.MethodPost, path+"/session", `{}`)
+			if status != http.StatusOK || decode[sessionBody](t, body).Profile.SubtitleLanguage != tc.want {
+				t.Fatalf("session = %d %s, want language %q", status, body, tc.want)
+			}
+			_, body = do(t, srv, http.MethodGet, "/api/profiles", "")
+			profiles := decode[[]library.Profile](t, body)
+			if len(profiles) != 1 || profiles[0].SubtitleLanguage != tc.want {
+				t.Fatalf("list = %s, want language %q", body, tc.want)
+			}
+		})
+	}
+	status, body = do(t, srv, http.MethodPost, "/api/profiles", `{"name":"Invalid","color":"#123456","subtitle_language":"pt_BR"}`)
+	if status != http.StatusBadRequest {
+		t.Fatalf("invalid create = %d %s", status, body)
+	}
+}
+
 func TestProfilesAndProgress(t *testing.T) {
 	srv, sc, fileID, conn := newLibraryServerDB(t, progressFiles...)
 	if _, err := sc.Scan(t.Context()); err != nil {

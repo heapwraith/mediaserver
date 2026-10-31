@@ -15,6 +15,7 @@ import (
 	"mediaserver/internal/library"
 	"mediaserver/internal/scanner"
 	"mediaserver/internal/stream"
+	"mediaserver/internal/subtitles"
 )
 
 // Deps are the dependencies of the HTTP layer.
@@ -35,6 +36,8 @@ type Deps struct {
 	Images  *stream.Images
 	// Transcoder powers the playback decision and the HLS sessions.
 	Transcoder *stream.Transcoder
+	// Subtitles serves WebVTT, ASS and the attached fonts.
+	Subtitles *subtitles.Store
 	// Secret signs the profile sessions (library.Store.Secret). Profile and
 	// progress endpoints answer 503 without it.
 	Secret []byte
@@ -89,6 +92,13 @@ func NewRouter(d Deps) http.Handler {
 				r.Post("/media/{id}/playback", d.playback)
 				r.Get("/transcode/{key}/{file}", d.transcodeFile)
 				r.Delete("/transcode/{key}", d.stopTranscode)
+			})
+			r.Group(func(r chi.Router) {
+				r.Use(d.requireSubtitles)
+				r.Get("/subtitles/{id}/vtt", d.subtitleVTT)
+				r.Get("/subtitles/{id}/ass", d.subtitleASS)
+				r.Get("/media/{id}/fonts", d.mediaFonts)
+				r.Get("/media/{id}/fonts/{name}", d.mediaFont)
 			})
 		})
 		r.Group(func(r chi.Router) {

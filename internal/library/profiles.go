@@ -33,6 +33,7 @@ const (
 var (
 	colorRe = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
 	pinRe   = regexp.MustCompile(`^[0-9]{4}$`)
+	langRe  = regexp.MustCompile(`^[a-z]{2,3}(?:-[A-Z]{2})?$`)
 )
 
 // Profile is a local profile: each person of the house has their own
@@ -43,14 +44,19 @@ type Profile struct {
 	Color     string `json:"color"` // avatar color, '#rrggbb'
 	HasPIN    bool   `json:"has_pin"`
 	CreatedAt int64  `json:"created_at"`
+	// SubtitleLanguage turns on the subtitle of this language (BCP 47,
+	// "pt-BR"); "" = subtitles off.
+	SubtitleLanguage string `json:"subtitle_language"`
 }
 
 // ProfileInput creates a profile or changes one. On update, a nil PIN keeps
-// the current one, "" removes it and 4 digits set a new one.
+// the current one, "" removes it and 4 digits set a new one; a nil
+// SubtitleLanguage keeps the current one.
 type ProfileInput struct {
-	Name  string  `json:"name"`
-	Color string  `json:"color"`
-	PIN   *string `json:"pin,omitempty"`
+	Name             string  `json:"name"`
+	Color            string  `json:"color"`
+	PIN              *string `json:"pin,omitempty"`
+	SubtitleLanguage *string `json:"subtitle_language,omitempty"`
 }
 
 func (in *ProfileInput) validate() error {
@@ -64,6 +70,9 @@ func (in *ProfileInput) validate() error {
 	in.Color = strings.ToLower(in.Color)
 	if in.PIN != nil && *in.PIN != "" && !pinRe.MatchString(*in.PIN) {
 		return fmt.Errorf("%w: pin must have 4 digits", ErrInvalid)
+	}
+	if l := in.SubtitleLanguage; l != nil && *l != "" && !langRe.MatchString(*l) {
+		return fmt.Errorf("%w: subtitle_language must look like pt-BR or en", ErrInvalid)
 	}
 	return nil
 }
@@ -98,10 +107,10 @@ func VerifyPIN(stored, pin string) bool {
 	return err == nil && subtle.ConstantTimeCompare(got, want) == 1
 }
 
-const profileCols = `id, name, color, pin_hash IS NOT NULL, created_at`
+const profileCols = `id, name, color, pin_hash IS NOT NULL, created_at, COALESCE(subtitle_language, '')`
 
 func scanProfile(row interface{ Scan(...any) error }, p *Profile) error {
-	return row.Scan(&p.ID, &p.Name, &p.Color, &p.HasPIN, &p.CreatedAt)
+	return row.Scan(&p.ID, &p.Name, &p.Color, &p.HasPIN, &p.CreatedAt, &p.SubtitleLanguage)
 }
 
 // Profiles lists the profiles in creation order.
@@ -124,8 +133,9 @@ func (s Store) Profiles(ctx context.Context) ([]Profile, error) {
 func (s Store) ProfileAuth(ctx context.Context, id string) (Profile, string, error) {
 	var p Profile
 	var hash sql.NullString
-	err := s.DB.QueryRowContext(ctx, `SELECT id, name, color, created_at, pin_hash FROM profiles WHERE id = ?`, id).
-		Scan(&p.ID, &p.Name, &p.Color, &p.CreatedAt, &hash)
+	err := s.DB.QueryRowContext(ctx,
+		`SELECT id, name, color, created_at, COALESCE(subtitle_language, ''), pin_hash FROM profiles WHERE id = ?`, id).
+		Scan(&p.ID, &p.Name, &p.Color, &p.CreatedAt, &p.SubtitleLanguage, &hash)
 	if errors.Is(err, sql.ErrNoRows) {
 		return p, "", fmt.Errorf("profile %s: %w", id, ErrNotFound)
 	}
@@ -182,8 +192,12 @@ func (s Store) CreateProfile(ctx context.Context, in ProfileInput) (Profile, err
 		return Profile{}, err
 	}
 	p := Profile{ID: uuid.NewV7().String(), Name: in.Name, Color: in.Color, HasPIN: hash != nil, CreatedAt: time.Now().UnixMilli()}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO profiles (id, name, color, pin_hash, created_at) VALUES (?, ?, ?, ?, ?)`,
-		p.ID, p.Name, p.Color, hash, p.CreatedAt); err != nil {
+	if in.SubtitleLanguage != nil {
+		p.SubtitleLanguage = *in.SubtitleLanguage
+	}
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO profiles (id, name, color, pin_hash, created_at, subtitle_language) VALUES (?, ?, ?, ?, ?, NULLIF(?, ''))`,
+		p.ID, p.Name, p.Color, hash, p.CreatedAt, p.SubtitleLanguage); err != nil {
 		return Profile{}, fmt.Errorf("insert profile: %w", err)
 	}
 	if err := tx.Commit(); err != nil {
@@ -192,7 +206,8 @@ func (s Store) CreateProfile(ctx context.Context, in ProfileInput) (Profile, err
 	return p, nil
 }
 
-// UpdateProfile changes the name, color and (when in.PIN is set) the PIN.
+// UpdateProfile changes the name, color and (when set) the PIN and the
+// subtitle language.
 func (s Store) UpdateProfile(ctx context.Context, id string, in ProfileInput) (Profile, error) {
 	if err := in.validate(); err != nil {
 		return Profile{}, err
@@ -219,6 +234,12 @@ func (s Store) UpdateProfile(ctx context.Context, id string, in ProfileInput) (P
 		}
 		if _, err := tx.ExecContext(ctx, `UPDATE profiles SET pin_hash = ? WHERE id = ?`, hash, id); err != nil {
 			return Profile{}, fmt.Errorf("update pin %s: %w", id, err)
+		}
+	}
+	if in.SubtitleLanguage != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE profiles SET subtitle_language = NULLIF(?, '') WHERE id = ?`,
+			*in.SubtitleLanguage, id); err != nil {
+			return Profile{}, fmt.Errorf("update subtitle language %s: %w", id, err)
 		}
 	}
 	var p Profile

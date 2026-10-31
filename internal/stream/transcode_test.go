@@ -231,3 +231,28 @@ func TestPrune(t *testing.T) {
 		}
 	}
 }
+
+func TestTranscodeBurn(t *testing.T) {
+	tr, m, rel := newTranscoder(t, 6, 1)
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, "fonts"), 0o750); err != nil {
+		t.Fatal(err)
+	}
+	ass := "[Script Info]\nScriptType: v4.00+\n\n[V4+ Styles]\n" +
+		"Format: Name, Fontname, Fontsize, PrimaryColour, Bold, Alignment\nStyle: Default,Arial,40,&H00FFFFFF,0,2\n\n" +
+		"[Events]\nFormat: Layer, Start, End, Style, Text\nDialogue: 0,0:00:02.00,0:00:05.00,Default,{\\k50}Karaokê\n"
+	if err := os.WriteFile(filepath.Join(dir, "s3.ass"), []byte(ass), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	// Even a client that plays the file directly gets it encoded with the subtitle.
+	pb, err := tr.Start(t.Context(), m, rel, PlayRequest{
+		Caps: []string{"mkv", "h264", "ac3"}, Audio: 1, Start: 2, Burn: &Burn{Dir: dir, File: "s3.ass"},
+	})
+	if err != nil || pb.Direct || !pb.Burned || pb.Video != "h264" || pb.Start != 2 {
+		t.Fatalf("playback = %+v %v", pb, err)
+	}
+	waitIdle(t, tr)
+	if _, body := serve(t, tr, pb.URL); !strings.Contains(body, "#EXT-X-ENDLIST") {
+		t.Fatalf("burned session failed: %q", body)
+	}
+}

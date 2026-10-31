@@ -2,6 +2,8 @@
 // play, remux and transcoding (internal/stream/plan.go). Feature detection
 // only, never the user agent (AGENTS.md §5.1).
 
+import { lowMemory } from './device';
+
 /** Containers of direct play, asked to the <video> element. */
 const containers: Record<string, string> = {
 	mp4: 'video/mp4',
@@ -44,6 +46,33 @@ export function detectCapabilities(canPlay: Check, mse: Check | undefined): stri
 
 let cached: string[] | undefined;
 
+/** Old TVs ignore WorkerOptions.type; only module workers read its getter. */
+export function supportsASS(): boolean {
+	if (
+		lowMemory() ||
+		typeof Worker === 'undefined' ||
+		typeof OffscreenCanvas === 'undefined' ||
+		typeof WebAssembly === 'undefined'
+	)
+		return false;
+	let supported = false;
+	const url = URL.createObjectURL(new Blob([''], { type: 'text/javascript' }));
+	try {
+		const worker = new Worker(url, {
+			get type(): WorkerType {
+				supported = true;
+				return 'module';
+			},
+		});
+		worker.terminate();
+	} catch {
+		return false;
+	} finally {
+		URL.revokeObjectURL(url);
+	}
+	return supported;
+}
+
 export function capabilities(): string[] {
 	if (cached === undefined) {
 		const video = document.createElement('video');
@@ -53,6 +82,7 @@ export function capabilities(): string[] {
 			(t) => video.canPlayType(t) !== '',
 			MS === undefined ? undefined : (t) => MS.isTypeSupported(t),
 		);
+		if (supportsASS()) cached.push('ass');
 	}
 	return cached;
 }

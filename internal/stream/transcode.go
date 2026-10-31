@@ -56,9 +56,19 @@ var (
 
 // PlayRequest is the body of POST /api/media/{id}/playback.
 type PlayRequest struct {
-	Caps  []string `json:"caps"`  // what the client plays (see Decide)
-	Audio int      `json:"audio"` // ffprobe index of the audio track; another value = default
-	Start float64  `json:"start"` // seconds
+	Caps     []string `json:"caps"`     // what the client plays (see Decide)
+	Audio    int      `json:"audio"`    // ffprobe index of the audio track; another value = default
+	Start    float64  `json:"start"`    // seconds
+	Subtitle string   `json:"subtitle"` // id of the subtitle shown ("" = none)
+	// Burn is set by the API when the subtitle must be drawn into the video.
+	Burn *Burn `json:"-"`
+}
+
+// Burn draws an ASS subtitle into the video, for clients that cannot run
+// JASSUB. FFmpeg runs in Dir (which holds fonts/), so File needs no escaping.
+type Burn struct {
+	Dir  string
+	File string
 }
 
 // Playback tells the client what to load.
@@ -67,9 +77,10 @@ type Playback struct {
 	URL    string `json:"url"`
 	// Start is the media time (s) of the stream's time 0 (HLS), or where the
 	// client seeks to (direct play).
-	Start float64 `json:"start"`
-	Video string  `json:"video,omitzero"` // HLS: copy | h264
-	Audio string  `json:"audio,omitzero"` // HLS: copy | aac
+	Start  float64 `json:"start"`
+	Video  string  `json:"video,omitzero"`  // HLS: copy | h264
+	Audio  string  `json:"audio,omitzero"`  // HLS: copy | aac
+	Burned bool    `json:"burned,omitzero"` // the subtitle is drawn into the video
 }
 
 // TranscoderOptions configure NewTranscoder.
@@ -183,7 +194,11 @@ func (t *Transcoder) Start(ctx context.Context, m library.Media, rel string, req
 	if m.DurationMs > 0 {
 		start = min(start, max(0, float64(m.DurationMs)/1000-1))
 	}
-	plan := Decide(m, req.Caps, req.Audio)
+	plan := Decide(m, req.Caps, req.Audio, req.Burn != nil)
+	workDir := ""
+	if req.Burn != nil {
+		plan.Burn, workDir = req.Burn.File, req.Burn.Dir
+	}
 	if plan.Direct {
 		return Playback{Direct: true, URL: "/api/media/" + m.ID + "/stream", Start: start}, nil
 	}
@@ -203,10 +218,13 @@ func (t *Transcoder) Start(ctx context.Context, m library.Media, rel string, req
 	key := hex.EncodeToString(sum[:16])
 	// Built before taking the lock: the first call may wait for the GPU detection.
 	args := t.args(src, plan, start, filepath.Join(t.dir, key))
-	if err := t.ensure(ctx, key, args, plan.Video != "copy"); err != nil {
+	if err := t.ensure(ctx, key, args, workDir, plan.Video != "copy"); err != nil {
 		return Playback{}, err
 	}
-	return Playback{URL: "/api/transcode/" + key + "/" + playlistName, Start: start, Video: plan.Video, Audio: plan.Audio}, nil
+	return Playback{
+		URL: "/api/transcode/" + key + "/" + playlistName, Start: start,
+		Video: plan.Video, Audio: plan.Audio, Burned: plan.Burn != "",
+	}, nil
 }
 
 // keyframe returns where a video stream copy seeking to at really starts:
@@ -231,7 +249,8 @@ func (t *Transcoder) keyframe(ctx context.Context, src string, at float64) float
 }
 
 // ensure reuses the running or complete session key, or starts FFmpeg.
-func (t *Transcoder) ensure(ctx context.Context, key string, args []string, encode bool) error {
+// workDir is FFmpeg's working directory ("" = the server's).
+func (t *Transcoder) ensure(ctx context.Context, key string, args []string, workDir string, encode bool) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if t.closed {
@@ -271,6 +290,7 @@ func (t *Transcoder) ensure(ctx context.Context, key string, args []string, enco
 	//nolint:gosec // the binary comes from the operator's config (FFMPEG_PATH); src is a file: path inside MEDIA_DIR
 	cmd := exec.CommandContext(ctx, t.ffmpeg, args...)
 	cmd.WaitDelay = 5 * time.Second
+	cmd.Dir = workDir
 	stderr := &capped{}
 	cmd.Stderr = stderr
 	if err := cmd.Start(); err != nil {
@@ -335,7 +355,14 @@ func (t *Transcoder) args(src string, p Plan, start float64, dir string) []strin
 			a = append(a, "-tag:v", "hvc1") // Safari only plays hvc1
 		}
 	} else {
-		a = append(a, "-vf", "scale=-2:'min(ih,1080)',"+enc.format)
+		vf := "scale=-2:'min(ih,1080)',"
+		if p.Burn != "" {
+			// The input seek restarts timestamps at 0: shift them back to
+			// the subtitle's timeline while it is drawn.
+			ss := strconv.FormatFloat(start, 'f', 3, 64)
+			vf += "setpts=PTS+" + ss + "/TB,subtitles=f=" + p.Burn + ":fontsdir=fonts,setpts=PTS-STARTPTS,"
+		}
+		a = append(a, "-vf", vf+enc.format)
 		a = append(a, enc.args...)
 		a = append(a, "-profile:v", "high", "-force_key_frames", "expr:gte(t,n_forced*"+segmentSeconds+")")
 	}

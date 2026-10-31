@@ -17,6 +17,7 @@ type Plan struct {
 	VideoCodec string // source codec, for the copy (hevc needs the hvc1 tag)
 	Audio      string // "copy", "aac" (encode) or "" (no audio)
 	AudioIndex int    // ffprobe stream index of the audio track, -1 = none
+	Burn       string // ASS file drawn into the video (Burn.File), "" = none
 }
 
 // Streams that fMP4 HLS carries as they are (hls.js and Safari read them).
@@ -29,20 +30,21 @@ var (
 // declares (web/src/lib/platform/codecs.ts), never from its user agent:
 // containers mp4, webm, mkv, mov; video h264, hevc, av1, vp9 (":10" = 10-bit);
 // audio aac, mp3, opus, flac, ac3, eac3. audio is the ffprobe index of the
-// wanted audio track (another value = the default track).
-func Decide(m library.Media, caps []string, audio int) Plan {
+// wanted audio track (another value = the default track). burn: a subtitle
+// is drawn into the video, so it is always encoded.
+func Decide(m library.Media, caps []string, audio int, burn bool) Plan {
 	has := func(token string) bool { return token != "" && slices.Contains(caps, token) }
 	track, isDefault := audioTrack(m.Audio, audio)
 
 	videoOK := m.VideoCodec == "" || has(videoToken(m.VideoCodec, m.VideoBits))
 	audioOK := track == nil || has(audioToken(track.Codec))
 	// Direct play plays the default track: another one needs HLS.
-	if has(containerToken(m.Container)) && videoOK && audioOK && isDefault {
+	if !burn && has(containerToken(m.Container)) && videoOK && audioOK && isDefault {
 		return Plan{Direct: true, AudioIndex: -1}
 	}
 
 	p := Plan{Video: "h264", VideoCodec: m.VideoCodec, AudioIndex: -1}
-	if videoOK && (m.VideoCodec == "" || copyVideo[m.VideoCodec]) {
+	if !burn && videoOK && (m.VideoCodec == "" || copyVideo[m.VideoCodec]) {
 		p.Video = "copy"
 	}
 	if track != nil {

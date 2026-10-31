@@ -69,6 +69,7 @@ function legacyScopedCss(): Plugin {
 }
 
 export default defineConfig({
+	optimizeDeps: { exclude: ['jassub'] },
 	plugins: [
 		legacyScopedCss(),
 		unoCSS(),

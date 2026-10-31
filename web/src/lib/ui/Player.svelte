@@ -5,13 +5,17 @@
 
 	import {
 		ApiError,
+		assURL,
 		getMedia,
 		getProgress,
+		listFonts,
 		nextEpisode,
 		saveProgress,
 		startPlayback,
 		stopPlayback,
+		vttURL,
 	} from '#lib/api/client.ts';
+	import { session } from '#lib/api/session.svelte.ts';
 	import type { HomeItem, Media, Playback, Track } from '#lib/api/types.ts';
 	import { goBack } from '#lib/platform/back.ts';
 	import { CONTAINERS, capabilities } from '#lib/platform/codecs.ts';
@@ -29,10 +33,11 @@
 	import { homeTitle, playHref } from '#lib/ui/cards.ts';
 	import { nextCountdown, resumeAt, shouldSave, MIN_SAVE_S } from '#lib/ui/progress.ts';
 	import { attach, type Source } from '#lib/ui/source.ts';
+	import { attachASS, defaultSubtitle, type ASSRenderer } from '#lib/ui/subtitles.ts';
 	import { clock } from '#lib/ui/time.ts';
 
 	// Own player on the native <video> (ADR 004): Chromium 76 safe; hls.js
-	// and JASSUB (Sprint 6) attach to this same element.
+	// and JASSUB attach to this same element.
 	//
 	// The server decides direct play or HLS from this device's codecs (ADR
 	// 006). An HLS session starts at `offset` seconds of the media: the real
@@ -124,6 +129,50 @@
 	let audioSel = $state(0);
 	let subs: Subtitle[] = $state([]);
 	let subSel = $state(-1); // -1 = off
+	let appliedSub = $state(-1);
+	let tracksReady = $state(false);
+	let burned = $state(false);
+	let burnRequested = false;
+	let offset = $state(0);
+	let assUnavailable = $state(false);
+	const selectedSub = $derived(subs[appliedSub]);
+	const canASS = $derived(!assUnavailable && capabilities().includes('ass'));
+	const textURL = $derived(selectedSub?.kind === 'text' && !burned ? vttURL(selectedSub.id, offset) : '');
+	let ass: ASSRenderer | undefined = $state.raw();
+	let fontURLs: Promise<string[]> | undefined;
+
+	$effect(() => {
+		const sub = selectedSub;
+		const el = video;
+		if (sub?.kind !== 'ass' || el === undefined || !canASS || burned) return;
+		let canceled = false;
+		let renderer: ASSRenderer | undefined;
+		fontURLs ??= listFonts(mediaId);
+		void fontURLs
+			.then((fonts) => canceled ? undefined : attachASS(el, assURL(sub.id), fonts, untrack(() => offset)))
+			.then((r) => {
+				if (canceled) r?.destroy();
+				else if (r !== undefined) {
+					renderer = r;
+					r.setOffset(offset);
+					ass = r;
+				}
+				return undefined;
+			})
+			.catch(() => {
+				if (canceled) return;
+				assUnavailable = true;
+				void play(time);
+			});
+		return () => {
+			canceled = true;
+			renderer?.destroy();
+			ass = undefined;
+		};
+	});
+	$effect(() => {
+		ass?.setOffset(offset);
+	});
 
 	let panel: Panel = $state('');
 	let inTop = $state(false);
@@ -172,7 +221,10 @@
 
 	async function loadTracks(id: string) {
 		const m = await getMedia(id).catch(() => undefined);
-		if (m === undefined) return;
+		if (m === undefined) {
+			tracksReady = true;
+			return;
+		}
 		audio = m.audio;
 		// The default track (or the first), like the server picks it.
 		audioSel = Math.max(
@@ -180,14 +232,16 @@
 			audio.findIndex((t) => t.default === true),
 		);
 		if (audioIndex < 0) audioIndex = audio[audioSel]?.index ?? -1;
-		subs = m.subtitles;
+		subs = m.subtitles.filter((s) => s.kind === 'text' || s.kind === 'ass');
+		appliedSub = defaultSubtitle(subs, session.profile?.subtitle_language ?? '', audio[audioSel]?.language);
+		subSel = appliedSub;
+		tracksReady = true;
 		if (duration === 0 && m.duration_ms !== undefined) duration = m.duration_ms / 1000;
 	}
 
 	// --- Playback: direct play or an HLS session (ADR 006) ---
 	let playback: Playback | undefined;
 	let source: Source | undefined;
-	let offset = 0;
 	let audioIndex = -1; // ffprobe index of the audio track playing (-1: default)
 	let pendingSeek: number | undefined; // direct play: seek once the metadata loads
 	let retries = 0;
@@ -200,8 +254,15 @@
 	}
 
 	/** Plays from `at` seconds with the audio track `track`; caps: what to declare. */
-	async function play(at: number, track = audioIndex, caps = capabilities()) {
+	async function play(
+		at: number,
+		track = audioIndex,
+		caps = capabilities(),
+		subId = selectedSub?.id ?? '',
+	) {
 		if (video === undefined) return;
+		if (assUnavailable) caps = caps.filter((c) => c !== 'ass');
+		burnRequested = !caps.includes('ass') && subs.some((s) => s.id === subId && s.kind === 'ass');
 		const token = ++playToken;
 		const el = video;
 		waiting = true;
@@ -214,7 +275,7 @@
 		if (old !== undefined && !old.direct) await stopPlayback(old).catch(() => undefined);
 		let p: Playback;
 		try {
-			p = await startPlayback(mediaId, caps, track, at);
+			p = await startPlayback(mediaId, caps, track, at, subId);
 		} catch (e) {
 			if (token === playToken) {
 				waiting = false;
@@ -230,6 +291,7 @@
 			return;
 		}
 		playback = p;
+		burned = p.burned === true;
 		audioIndex = track;
 		offset = p.direct ? 0 : p.start;
 		pendingSeek = p.direct && p.start > 0 ? p.start : undefined;
@@ -242,7 +304,7 @@
 	// Starts once the saved position is known.
 	let started = false;
 	$effect(() => {
-		if (resume !== undefined && video !== undefined && !started) {
+		if (resume !== undefined && video !== undefined && tracksReady && !started) {
 			started = true;
 			const at = resume;
 			untrack(() => void play(at));
@@ -376,6 +438,7 @@
 	}
 
 	function open(p: Exclude<Panel, ''>) {
+		if (p === 'subs') subSel = appliedSub;
 		panel = panel === p ? '' : p;
 		show();
 	}
@@ -396,7 +459,12 @@
 	}
 
 	function chooseSub(i: number) {
-		subSel = i; // shown on screen from Sprint 6 (subtitle extraction)
+		const changed = appliedSub !== i;
+		appliedSub = i;
+		subSel = i;
+		if (changed && (burned || burnRequested || (!canASS && subs[i]?.kind === 'ass'))) {
+			void play(time, audioIndex, capabilities(), subs[i]?.id ?? '');
+		}
 		panel = '';
 		show();
 	}
@@ -479,7 +547,10 @@
 			.join(' · ');
 	}
 
-	const subName = (s: Subtitle) => s.title ?? s.language?.toUpperCase() ?? s.codec.toUpperCase();
+	const subName = (s: Subtitle) =>
+		[s.title ?? s.language?.toUpperCase() ?? s.codec.toUpperCase(), s.forced ? 'Forçada' : '']
+			.filter(Boolean)
+			.join(' · ');
 
 	const unsupported = 'Não foi possível reproduzir este arquivo.';
 </script>
@@ -495,8 +566,6 @@
 	use:focusable={{ id: 'player', onKey }}
 	onpointermove={show}
 >
-	<!-- Subtitles come in Sprint 6. -->
-	<!-- svelte-ignore a11y_media_has_caption -->
 	<video
 		bind:this={video}
 		autoplay
@@ -533,7 +602,22 @@
 		oncanplay={() => (waiting = false)}
 		onerror={onVideoError}
 		onclick={onVideoClick}
-	></video>
+	>
+		{#key textURL}
+			{#if textURL !== ''}
+				<track
+					kind="subtitles"
+					default
+					src={textURL}
+					srclang={selectedSub?.language ?? 'und'}
+					label={selectedSub ? subName(selectedSub) : 'Legendas'}
+					onload={(e) => {
+						if (e.currentTarget instanceof HTMLTrackElement) e.currentTarget.track.mode = 'showing';
+					}}
+				/>
+			{/if}
+		{/key}
+	</video>
 
 	{#if waiting && error === ''}<div class="spinner" aria-label="Carregando"></div>{/if}
 	{#if error !== ''}<p class="error">{error}</p>{/if}
@@ -699,7 +783,6 @@
 							{subName(s)}
 						</div>
 					{/each}
-					<p class="hint">A exibição das legendas chega numa próxima versão.</p>
 				</div>
 			{:else if panel === 'volume'}
 				<div class="panel volume-panel" aria-label="Volume">
@@ -768,6 +851,10 @@
 </div>
 
 <style>
+	video::cue {
+		background: rgba(0, 0, 0, 0.65);
+		color: white;
+	}
 	/* "Próximo episódio": bottom right, above the progress bar. */
 	.next {
 		position: absolute;
@@ -917,11 +1004,6 @@
 	.option.sel {
 		background: rgba(255, 255, 255, 0.92);
 		color: #0b0b0f;
-	}
-	.hint {
-		margin: 0.75rem 0 0;
-		font-size: 0.875rem;
-		color: rgba(255, 255, 255, 0.6);
 	}
 	.volume-row {
 		display: flex;

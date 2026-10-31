@@ -345,10 +345,24 @@ type Media struct {
 	Subtitles  []SubtitleInfo `json:"subtitles"`
 }
 
+// SubtitleKind is how a subtitle codec is shown: "text" (WebVTT in the
+// player), "ass" (styled: JASSUB or burned in) or "" (image subtitles such as
+// PGS, not shown yet).
+func SubtitleKind(codec string) string {
+	switch codec {
+	case "srt", "subrip", "webvtt", "mov_text", "text":
+		return "text"
+	case "ass", "ssa":
+		return "ass"
+	}
+	return ""
+}
+
 // SubtitleInfo is an external or embedded subtitle track.
 type SubtitleInfo struct {
 	ID          string `json:"id"`
 	Source      string `json:"source"` // external | embedded
+	Kind        string `json:"kind"`   // text | ass | "" (image subtitles: not shown yet)
 	Language    string `json:"language,omitzero"`
 	Codec       string `json:"codec"`
 	Title       string `json:"title,omitzero"`
@@ -402,6 +416,7 @@ func (s Store) MediaByID(ctx context.Context, id string) (Media, error) {
 			n := int(idx.Int64)
 			st.StreamIndex = &n
 		}
+		st.Kind = SubtitleKind(st.Codec)
 		m.Subtitles = append(m.Subtitles, st)
 		return nil
 	})

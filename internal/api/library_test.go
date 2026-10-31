@@ -19,6 +19,7 @@ import (
 	"mediaserver/internal/library"
 	"mediaserver/internal/scanner"
 	"mediaserver/internal/stream"
+	"mediaserver/internal/subtitles"
 	"mediaserver/migrations"
 )
 
@@ -72,11 +73,15 @@ func newLibraryServerDB(t *testing.T, files ...string) (*httptest.Server, *scann
 	if err != nil {
 		t.Fatal(err)
 	}
+	subs, err := subtitles.NewStore(conn, mediaRoot, "ffmpeg", t.TempDir(), slog.New(slog.DiscardHandler))
+	if err != nil {
+		t.Fatal(err)
+	}
 	srv := httptest.NewServer(NewRouter(Deps{
 		Logger: slog.New(slog.DiscardHandler), DB: conn, Version: "test",
 		Scanner: sc, StartScan: func() bool { return sc.Start(ctx) },
 		Library: store, Stream: &stream.Server{Root: mediaRoot, Files: store}, Images: images,
-		Transcoder: transcoder, Secret: []byte("test-secret-0123456789abcdef"),
+		Transcoder: transcoder, Subtitles: subs, Secret: []byte("test-secret-0123456789abcdef"),
 	}))
 	t.Cleanup(srv.Close)
 	fileID := func(rel string) string {

@@ -83,6 +83,7 @@ export interface Playback {
 	start: number;
 	video?: 'copy' | 'h264';
 	audio?: 'copy' | 'aac';
+	burned?: boolean;
 }
 
 export interface Media {
@@ -100,7 +101,16 @@ export interface Media {
 	audio_codec?: string;
 	hdr?: string;
 	audio: Track[];
-	subtitles: { id: string; language?: string; codec: string; title?: string }[];
+	subtitles: Subtitle[];
+}
+
+export interface Subtitle {
+	id: string;
+	language?: string;
+	codec: string;
+	kind: 'text' | 'ass' | '';
+	title?: string;
+	forced?: boolean;
 }
 
 export interface ScanStatus {
@@ -156,6 +166,7 @@ export interface Profile {
 	color: string;
 	has_pin: boolean;
 	created_at: number;
+	subtitle_language: string;
 }
 
 /** A chosen profile: `token` goes in the X-Profile header. */
@@ -169,6 +180,7 @@ export interface ProfileInput {
 	name: string;
 	color: string;
 	pin?: string;
+	subtitle_language?: string;
 }
 
 export interface Progress {

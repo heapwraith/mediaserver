@@ -11,6 +11,7 @@
 
 	// Avatar colors: dark enough for the white initial (WCAG AA).
 	const COLORS = ['#4338ca', '#0369a1', '#047857', '#a16207', '#c2410c', '#b91c1c', '#be185d', '#7e22ce'];
+	const LANGUAGES = [['', 'Desligadas'], ['pt-BR', 'Português'], ['en', 'Inglês'], ['es', 'Espanhol'], ['ja', 'Japonês']] as const;
 
 	const id = $derived(page.params.id ?? 'novo');
 	const isNew = $derived(id === 'novo');
@@ -18,6 +19,7 @@
 	let name = $state('');
 	let color = $state(COLORS[0] ?? '#4338ca');
 	let pin = $state('');
+	let subtitleLanguage = $state('');
 	/** Editing: 'keep' the PIN, 'set' a new one, or 'remove' it. */
 	let pinMode: 'keep' | 'set' | 'remove' = $state('keep');
 	let current: Profile | undefined = $state();
@@ -42,6 +44,7 @@
 		}
 		name = current.name;
 		color = current.color;
+		subtitleLanguage = current.subtitle_language ?? '';
 		pinMode = current.has_pin ? 'keep' : 'set';
 	}
 	$effect(() => {
@@ -65,7 +68,7 @@
 			return;
 		}
 		// No pin field keeps the current PIN; "" removes it.
-		const input: ProfileInput = { name: name.trim(), color };
+		const input: ProfileInput = { name: name.trim(), color, subtitle_language: subtitleLanguage };
 		if (pinMode === 'remove') input.pin = '';
 		else if (pinMode === 'set' && pin !== '') input.pin = pin;
 		busy = true;
@@ -160,6 +163,15 @@
 				</Button>
 			</div>
 		{/if}
+	</div>
+
+	<div class="field">
+		<span>Legenda padrão</span>
+		<div class="grid grid-cols-2 sm:grid-cols-3 gap-4" use:focusGroup={{ id: 'profile:subtitles', orientation: 'horizontal' }}>
+			{#each LANGUAGES as [value, label] (value)}
+				<Button selected={subtitleLanguage === value} onclick={() => (subtitleLanguage = value)}>{label}</Button>
+			{/each}
+		</div>
 	</div>
 
 	{#if error}<p class="error">{error}</p>{/if}

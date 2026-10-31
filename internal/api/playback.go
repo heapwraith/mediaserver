@@ -2,10 +2,13 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/go-chi/chi/v5"
 
+	"mediaserver/internal/library"
 	"mediaserver/internal/stream"
 )
 
@@ -53,6 +56,23 @@ func (d Deps) startPlayback(r *http.Request, id string, req stream.PlayRequest) 
 	rel, err := d.Library.PlayablePath(r.Context(), id)
 	if err != nil {
 		return stream.Playback{}, err
+	}
+	// An ASS subtitle on a client that cannot run JASSUB is burned in.
+	if req.Subtitle != "" && !slices.Contains(req.Caps, "ass") {
+		i := slices.IndexFunc(m.Subtitles, func(s library.SubtitleInfo) bool { return s.ID == req.Subtitle })
+		if i < 0 {
+			return stream.Playback{}, fmt.Errorf("%w: unknown subtitle %s", library.ErrInvalid, req.Subtitle)
+		}
+		if m.Subtitles[i].Kind == "ass" {
+			if d.Subtitles == nil {
+				return stream.Playback{}, fmt.Errorf("%w: subtitles not available", library.ErrInvalid)
+			}
+			dir, file, err := d.Subtitles.BurnFile(r.Context(), req.Subtitle)
+			if err != nil {
+				return stream.Playback{}, err
+			}
+			req.Burn = &stream.Burn{Dir: dir, File: file}
+		}
 	}
 	return d.Transcoder.Start(r.Context(), m, rel, req)
 }
