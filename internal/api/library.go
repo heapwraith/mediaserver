@@ -37,6 +37,8 @@ func (d Deps) writeError(w http.ResponseWriter, r *http.Request, err error) {
 		// The client left (e.g. a TV row scrolled past a loading image).
 	case errors.Is(err, scanner.ErrInvalid), errors.Is(err, library.ErrInvalid):
 		writeJSON(w, http.StatusBadRequest, errorBody{Error: err.Error()})
+	case errors.Is(err, library.ErrConflict):
+		writeJSON(w, http.StatusConflict, errorBody{Error: err.Error()})
 	case errors.Is(err, scanner.ErrNotFound), errors.Is(err, library.ErrNotFound), errors.Is(err, stream.ErrNotFound):
 		writeJSON(w, http.StatusNotFound, errorBody{Error: "not found"})
 	default:

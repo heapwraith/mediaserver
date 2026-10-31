@@ -16,14 +16,21 @@
 		key,
 		cell,
 		onopen,
+		onside,
 		onend,
 		minWidth = 18,
 	}: {
 		id: string;
 		items: T[];
 		key: (item: T) => string;
-		cell: Snippet<[T, boolean]>;
+		/** Renders a cell: (item, focused, side button focused). */
+		cell: Snippet<[T, boolean, boolean]>;
 		onopen: (item: T) => unknown;
+		/**
+		 * Secondary action of a single-column list: Right focuses the side
+		 * button of the row, Enter runs it, Left goes back.
+		 */
+		onside?: (item: T) => unknown;
 		/** Called when the focus nears the end (load the next page). */
 		onend?: () => unknown;
 		/** Minimum column width in rem; 0 = a single column. */
@@ -31,6 +38,7 @@
 	} = $props();
 
 	let index = $state(untrack(() => recall(id).index));
+	let side = $state(false);
 	let grid: HTMLElement | undefined = $state();
 
 	/** Columns as laid out by CSS: cells sharing the first cell's top. */
@@ -55,8 +63,13 @@
 	function onKey(a: Action): boolean {
 		const item = items[index];
 		if (a === 'enter') {
-			if (item !== undefined) void onopen(item);
+			if (item !== undefined) void (side && onside !== undefined ? onside(item) : onopen(item));
 			return item !== undefined;
+		}
+		if (onside !== undefined && cols() === 1 && (a === 'left' || a === 'right')) {
+			if (side === (a === 'right')) return false; // leave the list that way
+			side = a === 'right';
+			return true;
 		}
 		if (a !== 'up' && a !== 'down' && a !== 'left' && a !== 'right') return false;
 		const next = moveIndex(index, a, items.length, cols());
@@ -77,10 +90,13 @@
 			<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 			<div
 				class="cell"
-				onpointerenter={() => void select(i, false)}
+				onpointerenter={() => {
+					side = false;
+					void select(i, false);
+				}}
 				onclick={() => onopen(item)}
 			>
-				{@render cell(item, i === index)}
+				{@render cell(item, i === index, side && i === index)}
 			</div>
 		{/each}
 	</div>

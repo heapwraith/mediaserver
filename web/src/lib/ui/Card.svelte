@@ -30,6 +30,10 @@
 				onerror={() => (failed = true)}
 			/>
 		{/if}
+		{#if item.progress !== undefined}
+			<div class="bar"><div class="fill" style:transform={`scaleX(${item.progress})`}></div></div>
+		{/if}
+		{#if item.watched}<span class="check" role="img" aria-label="Assistido">✓</span>{/if}
 	</div>
 	<p class="title">{item.title}</p>
 	{#if item.subtitle}<p class="subtitle">{item.subtitle}</p>{/if}
@@ -68,6 +72,37 @@
 		font-weight: 700;
 		line-height: 1.1;
 		color: rgba(255, 255, 255, 0.92);
+	}
+	/* Progress: a thin bar at the bottom of the image. */
+	.bar {
+		position: absolute;
+		left: 0.75rem;
+		right: 0.75rem;
+		bottom: 0.75rem;
+		height: 0.375rem;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.3);
+		overflow: hidden;
+	}
+	.fill {
+		width: 100%;
+		height: 100%;
+		background: #4c8dff;
+		transform-origin: left center;
+	}
+	.check {
+		position: absolute;
+		top: 0.75rem;
+		right: 0.75rem;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 999px;
+		background: rgba(11, 11, 15, 0.75);
+		color: rgba(255, 255, 255, 0.92);
+		font-size: 1.125rem;
+		font-weight: 700;
+		line-height: 2rem;
+		text-align: center;
 	}
 	.title,
 	.subtitle {

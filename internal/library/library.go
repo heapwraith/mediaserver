@@ -245,7 +245,7 @@ func (s Store) SeriesByID(ctx context.Context, id string) (SeriesDetail, error) 
 		 JOIN media_files mf ON mf.id = e.media_file_id
 		 LEFT JOIN image_cache ic ON ic.owner_id = e.id
 		 WHERE se.series_id = ?
-		 ORDER BY se.number = 0, se.number, e.number, e.absolute_number, mf.rel_path`, id)
+		 ORDER BY `+episodeOrder, id)
 	if err != nil {
 		return d, fmt.Errorf("episodes of %s: %w", id, err)
 	}

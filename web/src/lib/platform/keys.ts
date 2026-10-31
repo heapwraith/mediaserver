@@ -39,3 +39,11 @@ export function keyAction(e: Pick<KeyboardEvent, 'key' | 'keyCode'>): Action | n
 
 export const isDirection = (a: Action): a is Direction =>
 	a === 'up' || a === 'down' || a === 'left' || a === 'right';
+
+/** The digit of a key event (keyboard row, numpad or remote number keys), or null. */
+export function digitKey(e: Pick<KeyboardEvent, 'key' | 'keyCode'>): number | null {
+	if (e.key.length === 1 && e.key >= '0' && e.key <= '9') return Number(e.key);
+	if (e.keyCode >= 48 && e.keyCode <= 57) return e.keyCode - 48;
+	if (e.keyCode >= 96 && e.keyCode <= 105) return e.keyCode - 96;
+	return null;
+}

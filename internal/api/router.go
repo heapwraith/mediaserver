@@ -33,10 +33,16 @@ type Deps struct {
 	Library library.Store
 	Stream  *stream.Server
 	Images  *stream.Images
+	// Secret signs the profile sessions (library.Store.Secret). Profile and
+	// progress endpoints answer 503 without it.
+	Secret []byte
+
+	pins *pinLimiter
 }
 
 // NewRouter builds the HTTP handler of the server.
 func NewRouter(d Deps) http.Handler {
+	d.pins = newPinLimiter()
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(requestLogger(d.Logger))
@@ -71,8 +77,27 @@ func NewRouter(d Deps) http.Handler {
 			r.Get("/media/{id}", byID(d, func(d Deps, r *http.Request, id string) (library.Media, error) {
 				return d.Library.MediaByID(r.Context(), id)
 			}))
+			r.Get("/media/{id}/next", byID(d, func(d Deps, r *http.Request, id string) (library.HomeItem, error) {
+				return d.Library.NextEpisode(r.Context(), id)
+			}))
 			r.Get("/media/{id}/stream", d.streamMedia)
 			r.Get("/images/{id}", d.image)
+		})
+		r.Group(func(r chi.Router) {
+			r.Use(d.requireProfiles)
+			r.Get("/profiles", d.listProfiles)
+			r.Post("/profiles", d.createProfile)
+			r.Post("/profiles/{id}/session", d.startSession)
+			r.Group(func(r chi.Router) {
+				r.Use(d.requireProfile)
+				r.Put("/profiles/{id}", d.updateProfile)
+				r.Delete("/profiles/{id}", d.deleteProfile)
+				r.Get("/progress/{mediaId}", d.getProgress)
+				r.Put("/progress/{mediaId}", d.putProgress)
+				r.Put("/watched", d.putWatched)
+				r.Get("/series/{id}/progress", d.seriesProgress)
+				r.Get("/home", d.home)
+			})
 		})
 		r.NotFound(func(w http.ResponseWriter, _ *http.Request) {
 			writeJSON(w, http.StatusNotFound, errorBody{Error: "not found"})

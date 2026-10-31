@@ -105,6 +105,10 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 	}
 	defer mediaRoot.Close()
 	store := library.Store{DB: conn}
+	secret, err := store.Secret(ctx)
+	if err != nil {
+		return err
+	}
 	images, err := stream.NewImages(conn, mediaRoot, cfg.FFmpegPath, filepath.Join(cfg.DataDir, "images"),
 		logger.With("component", "images"))
 	if err != nil {
@@ -122,6 +126,7 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 			Logger: logger, DB: conn, Version: version, Web: assets,
 			Scanner: lib, StartScan: func() bool { return lib.Start(ctx) },
 			Library: store, Stream: &stream.Server{Root: mediaRoot, Files: store}, Images: images,
+			Secret: secret,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       2 * time.Minute,

@@ -3,15 +3,17 @@
 	import 'virtual:uno.css';
 	import '../app.css';
 
-	import { afterNavigate } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 
+	import { session } from '#lib/api/session.svelte.ts';
 	import favicon from '#lib/assets/favicon.svg';
 	import { goBack, trackNavigation } from '#lib/platform/back.ts';
 	import { isTV } from '#lib/platform/device.ts';
 	import { isDirection, keyAction } from '#lib/platform/keys.ts';
 	import { focusGroup, focusable, handleAction } from '#lib/platform/nav.svelte.ts';
 	import { settings } from '#lib/platform/settings.svelte.ts';
+	import Avatar from '#lib/ui/Avatar.svelte';
 	import type { LayoutProps } from './$types';
 
 	let { children }: LayoutProps = $props();
@@ -27,6 +29,14 @@
 	];
 	const top = new Set(menu.map((m) => m.href));
 	const fullscreen = $derived(page.url.pathname.startsWith('/assistir/'));
+	// "Quem está assistindo?" and the profile form need no session.
+	const profilePages = $derived(page.url.pathname.startsWith('/perfis'));
+	const allowed = $derived(session.token !== '' || profilePages);
+
+	// No profile chosen (or its session ended): ask who is watching.
+	$effect(() => {
+		if (!allowed) void goto('/perfis', { replaceState: true });
+	});
 
 	$effect(() => {
 		document.documentElement.classList.toggle('reduce-motion', settings.reduceMotion);
@@ -62,7 +72,7 @@
 <svelte:window {onkeydown} />
 
 <div class="app" class:tv={isTV} use:focusGroup={{ id: 'app' }}>
-	{#if !fullscreen}
+	{#if !fullscreen && !profilePages}
 		<nav class="menu" use:focusGroup={{ id: 'menu', orientation: 'horizontal' }}>
 			{#each menu as m (m.href)}
 				<a
@@ -71,10 +81,21 @@
 					use:focusable={{ id: `menu:${m.href}` }}>{m.label}</a
 				>
 			{/each}
+			{#if session.profile}
+				<a
+					href="/perfis"
+					class="who"
+					title={`${session.profile.name} · trocar perfil`}
+					aria-label={`Perfil ${session.profile.name}: trocar perfil`}
+					use:focusable={{ id: 'menu:/perfis' }}
+				>
+					<Avatar name={session.profile.name} color={session.profile.color} size={2.25} />
+				</a>
+			{/if}
 		</nav>
 	{/if}
 	<main class:fullscreen use:focusGroup={{ id: 'main' }}>
-		{@render children()}
+		{#if allowed}{@render children()}{/if}
 	</main>
 </div>
 
@@ -100,6 +121,12 @@
 	.menu a.active {
 		color: rgba(255, 255, 255, 0.92);
 		background: rgba(255, 255, 255, 0.1);
+	}
+	.menu a.who {
+		display: flex;
+		align-items: center;
+		padding: 0.25rem;
+		margin-left: 1rem;
 	}
 	.menu a:global([data-focused]) {
 		color: #0b0b0f;

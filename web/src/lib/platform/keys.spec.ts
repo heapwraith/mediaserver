@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { keyAction } from './keys';
+import { digitKey, keyAction } from './keys';
 
 describe('keyAction', () => {
 	it.each([
@@ -13,5 +13,17 @@ describe('keyAction', () => {
 		[{ key: 'a', keyCode: 65 }, null],
 	])('%o → %s', (e, want) => {
 		expect(keyAction(e)).toBe(want);
+	});
+});
+
+describe('digitKey', () => {
+	it.each([
+		[{ key: '7', keyCode: 55 }, 7],
+		[{ key: 'Unidentified', keyCode: 48 }, 0],
+		[{ key: 'Unidentified', keyCode: 105 }, 9],
+		[{ key: 'a', keyCode: 65 }, null],
+		[{ key: 'Enter', keyCode: 13 }, null],
+	])('%o → %s', (e, want) => {
+		expect(digitKey(e)).toBe(want);
 	});
 });

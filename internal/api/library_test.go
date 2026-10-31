@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json/v2"
 	"io"
 	"log/slog"
@@ -22,6 +23,13 @@ import (
 )
 
 func newLibraryServer(t *testing.T, files ...string) (*httptest.Server, *scanner.Scanner, func(string) string) {
+	t.Helper()
+	srv, sc, fileID, _ := newLibraryServerDB(t, files...)
+	return srv, sc, fileID
+}
+
+// newLibraryServerDB is newLibraryServer that also returns the database.
+func newLibraryServerDB(t *testing.T, files ...string) (*httptest.Server, *scanner.Scanner, func(string) string, *sql.DB) {
 	t.Helper()
 	root := t.TempDir()
 	for _, rel := range files {
@@ -61,6 +69,7 @@ func newLibraryServer(t *testing.T, files ...string) (*httptest.Server, *scanner
 		Logger: slog.New(slog.DiscardHandler), DB: conn, Version: "test",
 		Scanner: sc, StartScan: func() bool { return sc.Start(ctx) },
 		Library: store, Stream: &stream.Server{Root: mediaRoot, Files: store}, Images: images,
+		Secret: []byte("test-secret-0123456789abcdef"),
 	}))
 	t.Cleanup(srv.Close)
 	fileID := func(rel string) string {
@@ -70,10 +79,11 @@ func newLibraryServer(t *testing.T, files ...string) (*httptest.Server, *scanner
 		}
 		return id
 	}
-	return srv, sc, fileID
+	return srv, sc, fileID, conn
 }
 
-func do(t *testing.T, srv *httptest.Server, method, path, body string) (int, string) {
+// do sends a request; headers are "Name: value" request headers.
+func do(t *testing.T, srv *httptest.Server, method, path, body string, headers ...string) (int, string) {
 	t.Helper()
 	var r io.Reader
 	if body != "" {
@@ -82,6 +92,11 @@ func do(t *testing.T, srv *httptest.Server, method, path, body string) (int, str
 	req, err := http.NewRequestWithContext(t.Context(), method, srv.URL+path, r)
 	if err != nil {
 		t.Fatal(err)
+	}
+	for _, h := range headers {
+		if k, v, ok := strings.Cut(h, ": "); ok {
+			req.Header.Set(k, v)
+		}
 	}
 	res, err := srv.Client().Do(req)
 	if err != nil {

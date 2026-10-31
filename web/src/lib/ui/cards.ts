@@ -1,4 +1,5 @@
-import type { Episode, Extra, Movie, Series } from '../api/types';
+import type { Episode, Extra, HomeItem, Movie, Series } from '../api/types';
+import { remaining } from './progress';
 
 /** What a card shows; `imageId` is any id /api/images accepts. */
 export interface CardItem {
@@ -8,6 +9,10 @@ export interface CardItem {
 	subtitle?: string;
 	color?: string;
 	href: string;
+	/** Share watched (0-1): a progress bar on the card. */
+	progress?: number;
+	/** Finished: a check mark on the card. */
+	watched?: boolean;
 }
 
 export function formatDuration(ms?: number): string {
@@ -51,9 +56,43 @@ export function episodeLabel(e: Episode): string {
 	return e.number_end === undefined ? `Ep. ${e.number}` : `Ep. ${e.number}–${e.number_end}`;
 }
 
-/** Player URL; `back` is where Voltar returns. */
-export const playHref = (mediaId: string, title: string) =>
-	`/assistir/${mediaId}?title=${encodeURIComponent(title)}`;
+/**
+ * Player URL. The player resumes from the saved position unless `fromStart`
+ * ("Do início").
+ */
+export const playHref = (mediaId: string, title: string, fromStart = false) =>
+	`/assistir/${mediaId}?title=${encodeURIComponent(title)}${fromStart ? '&inicio=1' : ''}`;
+
+/** "T2 · Ep. 3" (the season only when known). */
+export function seasonEpisode(season: number | undefined, e: Episode): string {
+	const ep = episodeLabel(e);
+	if (season === undefined || season === 0) return ep;
+	return ep === '' ? `T${season}` : `T${season} · ${ep}`;
+}
+
+/** Player title of an episode: "Dark · Ep. 2". */
+export const episodeTitle = (series: string, e: Episode) => `${series} · ${episodeLabel(e)}`;
+
+/** Title shown by the player for a home item. */
+export const homeTitle = (it: HomeItem) =>
+	it.episode === undefined ? it.title : episodeTitle(it.title, it.episode);
+
+/** A "Continuar assistindo" / "Próximos episódios" card: it opens the player. */
+export function homeCard(it: HomeItem): CardItem {
+	const started = it.position_ms > 0 && it.duration_ms > 0;
+	const where = it.episode === undefined ? '' : seasonEpisode(it.season, it.episode);
+	return {
+		key: it.media_id,
+		imageId: it.episode?.id ?? it.parent_id,
+		title: it.title,
+		subtitle: [where, started ? remaining(it) : formatDuration(it.duration_ms)]
+			.filter(Boolean)
+			.join(' · '),
+		color: it.color,
+		href: playHref(it.media_id, homeTitle(it)),
+		progress: started ? Math.min(1, it.position_ms / it.duration_ms) : undefined,
+	};
+}
 
 const extraTypes: Record<Extra['type'], string> = {
 	trailer: 'Trailer',

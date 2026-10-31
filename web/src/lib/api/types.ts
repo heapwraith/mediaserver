@@ -135,3 +135,71 @@ export interface Correction {
 	season?: number;
 	episode?: number;
 }
+
+// Profiles and progress (internal/library/profiles.go, progress.go).
+
+export interface Profile {
+	id: string;
+	name: string;
+	color: string;
+	has_pin: boolean;
+	created_at: number;
+}
+
+/** A chosen profile: `token` goes in the X-Profile header. */
+export interface Session {
+	profile: Profile;
+	token: string;
+}
+
+/** On update, a missing pin keeps it, "" removes it and 4 digits set it. */
+export interface ProfileInput {
+	name: string;
+	color: string;
+	pin?: string;
+}
+
+export interface Progress {
+	media_id: string;
+	position_ms: number;
+	duration_ms: number;
+	watched: boolean;
+	updated_at?: number;
+}
+
+export interface SeriesProgress {
+	/** Progress by media id (only the episodes played). */
+	episodes: Record<string, Progress>;
+	/** Media id of the episode to play next. */
+	up_next?: string;
+}
+
+/** A card of "Continuar assistindo" / "Próximos episódios", or the next episode. */
+export interface HomeItem {
+	media_id: string;
+	kind: 'movie' | 'episode';
+	/** Movie or series title. */
+	title: string;
+	/** Movie or series id (the details page). */
+	parent_id: string;
+	series_kind?: SeriesKind;
+	season?: number;
+	episode?: Episode;
+	position_ms: number;
+	duration_ms: number;
+	updated_at?: number;
+	color?: string;
+}
+
+export interface Home {
+	continue: HomeItem[];
+	next: HomeItem[];
+}
+
+/** Exactly one of media_ids, season_id or series_id. */
+export interface WatchedTarget {
+	media_ids?: string[];
+	season_id?: string;
+	series_id?: string;
+	watched: boolean;
+}

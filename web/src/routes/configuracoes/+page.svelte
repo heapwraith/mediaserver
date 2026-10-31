@@ -1,11 +1,15 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 
+	import { goto } from '$app/navigation';
+
 	import { fetchHealth } from '#lib';
 	import { scanStatus, startScan } from '#lib/api/client.ts';
+	import { session } from '#lib/api/session.svelte.ts';
 	import type { ScanStatus } from '#lib/api/types.ts';
 	import { focusGroup } from '#lib/platform/nav.svelte.ts';
 	import { saveSettings, settings } from '#lib/platform/settings.svelte.ts';
+	import Avatar from '#lib/ui/Avatar.svelte';
 	import Button from '#lib/ui/Button.svelte';
 
 	const POLL_MS = 1000;
@@ -33,7 +37,7 @@
 		await refresh();
 	}
 
-	function toggle(key: 'reduceMotion' | 'backgroundTrailer') {
+	function toggle(key: 'reduceMotion' | 'backgroundTrailer' | 'autoplayNext') {
 		settings[key] = !settings[key];
 		saveSettings();
 	}
@@ -42,6 +46,21 @@
 </script>
 
 <h1>Configurações</h1>
+
+{#if session.profile}
+	{@const p = session.profile}
+	<section>
+		<h2>Perfil</h2>
+		<div class="profile">
+			<Avatar name={p.name} color={p.color} size={4} />
+			<span class="name">{p.name}</span>
+		</div>
+		<div class="bar" use:focusGroup={{ orientation: 'horizontal' }}>
+			<Button id="settings:profile" onclick={() => goto(`/perfis/${p.id}`)}>Editar perfil</Button>
+			<Button onclick={() => goto('/perfis')}>Trocar perfil</Button>
+		</div>
+	</section>
+{/if}
 
 <section>
 	<h2>Biblioteca</h2>
@@ -76,6 +95,15 @@
 </section>
 
 <section>
+	<h2>Reprodução</h2>
+	<div class="bar" use:focusGroup={{ orientation: 'horizontal' }}>
+		<Button selected={settings.autoplayNext} onclick={() => toggle('autoplayNext')}>
+			Próximo episódio automático: {settings.autoplayNext ? 'sim' : 'não'}
+		</Button>
+	</div>
+</section>
+
+<section>
 	<h2>Aparência</h2>
 	<div class="bar" use:focusGroup={{ orientation: 'horizontal' }}>
 		<Button selected={settings.reduceMotion} onclick={() => toggle('reduceMotion')}>
@@ -102,6 +130,16 @@
 	}
 	.bar {
 		display: flex;
+	}
+	.profile {
+		display: flex;
+		align-items: center;
+		margin-bottom: 1.5rem;
+	}
+	.name {
+		margin-left: 1.25rem;
+		font-size: 1.5rem;
+		font-weight: 600;
 	}
 	.bar > :global(* + *) {
 		margin-left: 1rem;

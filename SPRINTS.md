@@ -1,6 +1,6 @@
 # SPRINTS.md
 
-Planejamento do projeto. **Sprint ativa: 3.**
+Planejamento do projeto. **Sprint ativa: 4.**
 
 Regras:
 - Marcar `[x]` só quando o critério de aceite da tarefa for cumprido.
@@ -95,7 +95,7 @@ Duração sugerida: 1 semana por sprint (ajustável).
 
 - [x] Tokens visuais do `AGENTS.md` §7 no `uno.config.ts` (cores, tipografia Inter auto-hospedada, espaçamento, raios, área segura)
 - [x] Layout base estilo Apple TV+: menu (Início, Filmes, Séries, Animes), tema escuro
-- [ ] Tela inicial com *hero* + fileiras (Continuar assistindo, Próximos episódios, Adicionados recentemente, Filmes, Séries, Animes) — falta só *Continuar assistindo* e *Próximos episódios*, que dependem do progresso (Sprint 4)
+- [x] Tela inicial com *hero* + fileiras (Continuar assistindo, Próximos episódios, Adicionados recentemente, Filmes, Séries, Animes) — as duas primeiras entraram com o progresso (Sprint 4)
 - [x] Cards 16:9 com estado de foco (escala 1.08 + sombra + contorno) e card tipográfico quando não houver imagem
 - [x] Navegação espacial com `lrud` + memória de foco por fileira + Voltar em níveis
 - [x] Fileiras virtualizadas, imagens lazy com placeholder na cor dominante
@@ -123,13 +123,13 @@ Duração sugerida: 1 semana por sprint (ajustável).
 
 **Objetivo:** cada pessoa da casa tem o seu "continuar assistindo".
 
-- [ ] Perfis locais (nome, avatar com cor/inicial, PIN opcional de 4 dígitos)
-- [ ] Tela "Quem está assistindo?"
-- [ ] Salvar progresso a cada 10 s e ao pausar/sair (`PUT /api/progress/{mediaId}`)
-- [ ] Marcar como assistido automaticamente a partir de 90%
-- [ ] Fileira "Continuar assistindo" e "Próximo episódio" na tela inicial
-- [ ] Autoplay do próximo episódio com contagem regressiva (cancelável)
-- [ ] Marcar/desmarcar como assistido manualmente (episódio, temporada, série)
+- [x] Perfis locais (nome, avatar com cor/inicial, PIN opcional de 4 dígitos)
+- [x] Tela "Quem está assistindo?"
+- [x] Salvar progresso a cada 10 s e ao pausar/sair (`PUT /api/progress/{mediaId}`)
+- [x] Marcar como assistido automaticamente a partir de 90%
+- [x] Fileira "Continuar assistindo" e "Próximo episódio" na tela inicial
+- [x] Autoplay do próximo episódio com contagem regressiva (cancelável)
+- [x] Marcar/desmarcar como assistido manualmente (episódio, temporada, série)
 
 **Aceite**
 - Parar um episódio no PC e retomar na TV (ou em outro navegador) no mesmo ponto

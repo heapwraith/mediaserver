@@ -1,15 +1,27 @@
+import { clearSession, session } from './session.svelte';
 import type {
 	Correction,
 	Extra,
+	Home,
+	HomeItem,
 	List,
 	Media,
 	Movie,
+	Profile,
+	ProfileInput,
+	Progress,
 	ReviewItem,
 	ScanStatus,
 	Series,
 	SeriesDetail,
 	SeriesKind,
+	SeriesProgress,
+	Session,
+	WatchedTarget,
 } from './types';
+
+/** Header of the profile session (internal/api/session.go). */
+export const PROFILE_HEADER = 'X-Profile';
 
 /** An error answered by the API ({"error": "..."}), or a network failure (status 0). */
 export class ApiError extends Error {
@@ -33,11 +45,14 @@ export async function api<T>(
 		const headers = new Headers(init.headers);
 		headers.set('Accept', 'application/json');
 		if (init.body !== undefined) headers.set('Content-Type', 'application/json');
+		if (session.token !== '') headers.set(PROFILE_HEADER, session.token);
 		res = await fetchFn(path, { ...init, headers });
 	} catch {
 		throw new ApiError(0, 'servidor indisponível');
 	}
 	const body: unknown = await res.json().catch(() => null);
+	// The session ended (profile deleted, PIN changed): choose a profile again.
+	if (res.status === 401) clearSession();
 	if (!res.ok) {
 		const message =
 			typeof body === 'object' && body !== null && 'error' in body && typeof body.error === 'string'
@@ -95,3 +110,39 @@ export const splitSeries = (seriesId: string, fileIds: string[], title: string) 
 		method: 'POST',
 		body: JSON.stringify({ series_id: seriesId, file_ids: fileIds, title }),
 	});
+
+const json = (method: string, body: unknown, keepalive = false): RequestInit => ({
+	method,
+	body: JSON.stringify(body),
+	keepalive,
+});
+
+export const listProfiles = () => api<Profile[]>('/api/profiles');
+export const createProfile = (p: ProfileInput) => api<Session>('/api/profiles', json('POST', p));
+export const startSession = (id: string, pin?: string) =>
+	api<Session>(`/api/profiles/${id}/session`, json('POST', pin === undefined ? {} : { pin }));
+export const updateProfile = (id: string, p: ProfileInput) =>
+	api<Session>(`/api/profiles/${id}`, json('PUT', p));
+export const deleteProfile = (id: string) =>
+	api<unknown>(`/api/profiles/${id}`, { method: 'DELETE' });
+
+export const getHome = () => api<Home>('/api/home');
+export const getProgress = (mediaId: string) => api<Progress>(`/api/progress/${mediaId}`);
+/** keepalive: the request survives the page closing (pagehide). */
+export const saveProgress = (
+	mediaId: string,
+	positionMs: number,
+	durationMs: number,
+	keepalive = false,
+) =>
+	api<Progress>(
+		`/api/progress/${mediaId}`,
+		json(
+			'PUT',
+			{ position_ms: Math.round(positionMs), duration_ms: Math.round(durationMs) },
+			keepalive,
+		),
+	);
+export const setWatched = (t: WatchedTarget) => api<unknown>('/api/watched', json('PUT', t));
+export const seriesProgress = (id: string) => api<SeriesProgress>(`/api/series/${id}/progress`);
+export const nextEpisode = (mediaId: string) => api<HomeItem>(`/api/media/${mediaId}/next`);
