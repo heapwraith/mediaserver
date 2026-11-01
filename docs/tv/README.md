@@ -4,7 +4,7 @@ O app da TV é **leve**: traz só a tela "Conectar ao servidor". Depois de conec
 
 | TV | Pacote | Guia |
 |---|---|---|
-| Samsung (Tizen 6+, 2021 em diante) | `.wgt` | [samsung.md](samsung.md) |
+| Samsung (Tizen 6+, 2021 em diante) | `.wgt` | [samsung.md](samsung.md) · roteiro da [The Frame](samsung-the-frame.md) |
 | LG (webOS 6+, 2021 em diante) | `.ipk` | [lg.md](lg.md) |
 | Android TV, Google TV, Fire TV (TCL, Sony, Philips…) | `.apk` | [android.md](android.md) |
 

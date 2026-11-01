@@ -24,10 +24,10 @@ TIZEN_PROFILE ?= mediaserver
 MEDIA_DIR ?= $(CURDIR)/media
 DEV_DIR   := .dev
 
-.PHONY: help dev build build-web build-go test fmt check bench load clean web-deps web-stub tv tv-tizen tv-webos tv-android
+.PHONY: help dev build build-web build-go test fmt check bench load clean web-deps web-stub tv tv-tizen-files tv-tizen tv-webos tv-android
 
 help: ## List the targets
-	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-10s %s\n", $$1, $$2}'
+	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-14s %s\n", $$1, $$2}'
 
 # --- setup -----------------------------------------------------------------
 
@@ -109,10 +109,13 @@ load: web-stub ## Load test: 2 direct plays + 1 conversion at once (conversion n
 tv: web-deps ## TV apps' connection page (web/build-tv)
 	$(NPM) run build:tv
 
-tv-tizen: tv ## Samsung .wgt (Tizen Studio CLI + certificate profile TIZEN_PROFILE)
-	@command -v tizen >/dev/null || { echo "tizen CLI not found: install Tizen Studio (docs/tv/samsung.md)"; exit 1; }
+tv-tizen-files: tv ## Samsung app folder, ready for `tizen package` (no Tizen Studio needed)
 	rm -rf $(TV_DIST)/tizen && mkdir -p $(TV_DIST)/tizen
 	cp tv/tizen/config.xml tv/tizen/icon.png web/build-tv/index.html $(TV_DIST)/tizen/
+	@echo "ready: $(TV_DIST)/tizen (package it with: tizen package -t wgt -s $(TIZEN_PROFILE) -- <folder>)"
+
+tv-tizen: tv-tizen-files ## Samsung .wgt (Tizen Studio CLI + certificate profile TIZEN_PROFILE)
+	@command -v tizen >/dev/null || { echo "tizen CLI not found: install Tizen Studio (docs/tv/samsung.md)"; exit 1; }
 	cd $(TV_DIST)/tizen && tizen package -t wgt -s $(TIZEN_PROFILE) -- .
 	@ls $(TV_DIST)/tizen/*.wgt
 

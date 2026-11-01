@@ -1,6 +1,8 @@
 # Samsung (Tizen)
 
-Instalação sem loja, pelo modo desenvolvedor. Use uma TV Samsung de 2021 em diante (Tizen 6+) e um PC na mesma rede.
+Instalação sem loja, pelo modo desenvolvedor. **Tem uma The Frame e usa Windows + WSL?** Siga o roteiro pronto: [samsung-the-frame.md](samsung-the-frame.md).
+
+Use uma TV Samsung de 2021 em diante (Tizen 6+) e um PC na mesma rede.
 
 ## 1. Modo desenvolvedor na TV
 
