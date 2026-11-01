@@ -278,3 +278,22 @@ Verificado: biblioteca real com 34 episódios analisada em ~2 min; abertura acha
 - Transcodificação: pausar o FFmpeg quando ele está muito à frente do player (*throttling*)
 - Perfis: redefinir um PIN esquecido (hoje só o próprio perfil edita ou apaga a si mesmo)
 - Transcodificação: matar os FFmpeg filhos se o servidor cair à força (Job Object no Windows, `Pdeathsig` no Linux); no encerramento normal nada sobra
+
+Revisão do sistema (01/11/2026), por prioridade:
+
+- **Segurança — backup:** `/api/admin/backup` aceita qualquer perfil, inclusive um recém-criado sem PIN por alguém da rede. O backup leva o segredo que assina as sessões, o que permite forjar a sessão de um perfil com PIN. Restringir a um perfil administrador e/ou tirar o segredo do backup
+- **Segurança — administração:** Revisar, scan e mesclar/separar séries não pedem nada na rede local. Criar um PIN de administrador para Revisar e Configurações
+- **Scanner — perda de progresso:** se uma subpasta fica ilegível por um momento (permissão, HD externo ou rede instável), os arquivos dela são apagados do banco junto com o progresso. Usar o status `missing` (já existe no esquema) e só apagar depois de alguns scans ou dias
+- **Servidor sem o HD de mídias:** se o `MEDIA_DIR` não existe na inicialização (HD externo desligado), o servidor não sobe; como serviço, fica reiniciando sem parar. Subir em modo degradado, avisar na interface e tentar de novo
+- **Serviço no Windows — firewall:** o `service install` deveria criar a regra de firewall para o binário instalado. A regra atual vale só para o caminho de dev; sem ela a TV não alcança o servidor
+- **Parser — grupo entre parênteses:** uma tag no início do nome vira parte do título: `(AnimesTotais) Obi-Wan...` virou uma série separada
+- **Parser — ano depois do codec:** um ano que vem depois de uma tag de codec é ignorado (`Teste HEVC (2026)` caiu em Revisar sem ano)
+- **Propaganda de release:** arquivos como `1XBET.COM_promo_...mp4` caem em Revisar. Ignorar sozinho por padrões de nome e tamanho pequeno
+- **Versões do mesmo episódio** (ex.: Obi-Wan S01E02 em 720p e 2160p): mostrar uma entrada só, com "versões", e escolher a melhor para cada aparelho
+- **Idioma de áudio preferido por perfil** (ex.: anime sempre em japonês): a coluna `profiles.audio_language` já existe e não é usada. Lembrar também a última faixa escolhida por mídia (`progress.audio_stream` já existe)
+- **Legendas na TV:** tamanho e fundo configuráveis nas Configurações (hoje vale o padrão do navegador ou do JASSUB)
+- **"Continuar assistindo":** remover um item da fileira manualmente
+- **Pular abertura — faixa de áudio:** o fingerprint usa a 1ª faixa de áudio. Usar a faixa padrão, ou a do mesmo idioma em todos os episódios
+- **Pular abertura — créditos longos:** créditos maiores que a janela de 4 min (comum na Disney+) são marcados tarde. Aumentar a janela quando o trecho encontrado encosta no início dela
+- **Versão do build local:** o binário de dev e o app da TV mostram "versão dev"; aplicar a versão do git também no `go build` de desenvolvimento
+- **Taxa de atualização da TV:** casar a taxa da tela com o FPS do vídeo (23,976/24/29,97), sem a trepidação de 3:2. No app Android, uma ponte JS pede o modo de tela certo (`WindowManager.LayoutParams.preferredDisplayModeId`, Android 6+) ao abrir o player e volta ao padrão ao sair; o servidor passa o FPS no JSON da mídia. Só funciona em TVs que oferecem modos de 24/50 Hz: a TCL/SEMP de teste só tem 1080p a 60 Hz. No Tizen/webOS, verificar
