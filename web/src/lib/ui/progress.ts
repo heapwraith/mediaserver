@@ -63,3 +63,14 @@ export function nextCountdown(timeS: number, durationS: number, creditsS?: numbe
 	const left = durationS - timeS;
 	return left <= NEXT_CARD_S ? Math.max(0, Math.ceil(left)) : null;
 }
+
+/**
+ * Where a seek to media second `at` goes: in place when it is in the file or
+ * in what is known of the HLS session (from `offset` to `end`), else a new session.
+ */
+export const seekAction = (
+	at: number,
+	offset: number,
+	end: number,
+	direct: boolean,
+): 'inplace' | 'session' => (direct || (at >= offset && at <= end) ? 'inplace' : 'session');

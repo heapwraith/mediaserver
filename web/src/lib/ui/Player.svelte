@@ -36,6 +36,7 @@
 		creditsAt,
 		nextCountdown,
 		resumeAt,
+		seekAction,
 		shouldSave,
 		skipIntro,
 		MIN_SAVE_S,
@@ -62,6 +63,7 @@
 
 	const HIDE_MS = 3000;
 	const SEEK_S = 10;
+	const SEEK_SETTLE_MS = 600;
 	const VOLUME_STEP = 0.1;
 	const MAX_RETRIES = 2;
 
@@ -110,6 +112,7 @@
 			window.removeEventListener('pagehide', hide);
 			document.removeEventListener('visibilitychange', visibility);
 			persist(true);
+			clearTimeout(seekTimer);
 			playToken += 1; // a play() still loading must not attach anymore
 			source?.destroy();
 			source = undefined;
@@ -255,6 +258,7 @@
 	let pendingSeek: number | undefined; // direct play: seek once the metadata loads
 	let retries = 0;
 	let playToken = 0; // only the latest play() attaches
+	let seekTimer: ReturnType<typeof setTimeout> | undefined; // a new session waiting for the last key press
 
 	/** Stops the current HLS session on the server (frees its FFmpeg). */
 	function stopSession() {
@@ -270,6 +274,8 @@
 		subId = selectedSub?.id ?? '',
 	) {
 		if (video === undefined) return;
+		clearTimeout(seekTimer);
+		seekTimer = undefined;
 		if (assUnavailable) caps = caps.filter((c) => c !== 'ass');
 		burnRequested = !caps.includes('ass') && subs.some((s) => s.id === subId && s.kind === 'ass');
 		const token = ++playToken;
@@ -394,7 +400,8 @@
 	function onTime() {
 		// Between sessions, or before the first seek of a direct play, the
 		// element's time is not the media's.
-		if (video === undefined || source === undefined || pendingSeek !== undefined) return;
+		// While a seek waits, `time` is where the user is going.
+		if (video === undefined || source === undefined || pendingSeek !== undefined || seekTimer !== undefined) return;
 		time = offset + video.currentTime;
 		if (!paused && shouldSave(time, lastSave, Date.now())) persist();
 	}
@@ -441,21 +448,39 @@
 	}
 
 	function seek(delta: number) {
-		seekTo(time + delta);
+		seekTo(time + delta, SEEK_SETTLE_MS);
 	}
 
-	/** Seeks to media second t: in place when it is ready, else a new HLS session there. */
-	function seekTo(t: number) {
+	/**
+	 * Seeks to media second t: in place when it is ready, else a new HLS session
+	 * there. settleMs: held arrow keys repeat and every session costs an FFmpeg,
+	 * so it opens only after the last press.
+	 */
+	function seekTo(t: number, settleMs = 0) {
 		show();
-		if (video === undefined || playback === undefined || source === undefined) return;
+		if (video === undefined || !started) return;
 		const end = duration > 0 ? duration : Infinity;
 		const at = Math.min(Math.max(0, t), end);
-		if (playback.direct) video.currentTime = at;
-		// Past what hls.js knows of the session the browser clamps the seek:
-		// a new session starts there instead (~0.2 s for a remux).
-		else if (at >= offset && at <= source.end()) video.currentTime = at - offset;
-		else void play(at);
 		time = at;
+		clearTimeout(seekTimer);
+		seekTimer = undefined;
+		if (
+			playback !== undefined &&
+			source !== undefined &&
+			seekAction(at, offset, source.end(), playback.direct) === 'inplace'
+		) {
+			video.currentTime = playback.direct ? at : at - offset;
+			return;
+		}
+		// Past what hls.js knows of the session the browser clamps the seek.
+		playToken += 1; // a play() still loading would bring `time` back
+		if (settleMs === 0) void play(at);
+		else {
+			seekTimer = setTimeout(() => {
+				seekTimer = undefined;
+				void play(time);
+			}, settleMs);
+		}
 	}
 
 	function open(p: Exclude<Panel, ''>) {
