@@ -7,12 +7,20 @@
 	import Hero from '#lib/ui/Hero.svelte';
 	import PlayButtons from '#lib/ui/PlayButtons.svelte';
 	import Row from '#lib/ui/Row.svelte';
-	import { extraCard, homeCard, movieCard, seriesCard, type CardItem } from '#lib/ui/cards.ts';
+	import {
+		extraCard,
+		finishedCard,
+		homeCard,
+		movieCard,
+		seriesCard,
+		watchedLast,
+		type CardItem,
+	} from '#lib/ui/cards.ts';
 	import { movieHero, seriesHero, type HeroData } from '#lib/ui/hero.ts';
 	import ErrorNotice from '#lib/ui/ErrorNotice.svelte';
 
 	const recent = { sort: 'added', order: 'desc', limit: 20 } as const;
-	const noRows: Home = { continue: [], next: [] };
+	const noRows: Home = { continue: [], next: [], again: [] };
 
 	/** The hero of something the profile is watching. */
 	const itemHero = async (it: HomeItem): Promise<HeroData> =>
@@ -33,17 +41,24 @@
 				hero: () => seriesHero(s.id),
 			})),
 		].sort((a, b) => b.at - a.at);
-		// The hero: what the profile is watching, else the latest addition.
+		// Titles the profile finished go last, never in the hero.
+		const done = new Set(rows.again.map((f) => f.id));
+		// The hero: what the profile is watching, else the latest addition not watched yet.
+		const fresh = added.find((a) => !done.has(a.card.key)) ?? added[0];
 		const watching = rows.continue[0];
-		const hero = watching === undefined ? added[0]?.hero : () => itemHero(watching);
+		const hero = watching === undefined ? fresh?.hero : () => itemHero(watching);
 		return {
-			hero: await hero?.().catch(() => added[0]?.hero()),
+			hero: await hero?.().catch(() => fresh?.hero()),
 			continue: rows.continue.map(homeCard),
 			next: rows.next.map(homeCard),
-			added: added.slice(0, 20).map((a) => a.card),
-			movies: movies.items.map(movieCard),
-			series: series.items.map(seriesCard),
-			animes: animes.items.map(seriesCard),
+			added: watchedLast(
+				added.slice(0, 20).map((a) => a.card),
+				done,
+			),
+			movies: watchedLast(movies.items.map(movieCard), done),
+			series: watchedLast(series.items.map(seriesCard), done),
+			animes: watchedLast(animes.items.map(seriesCard), done),
+			again: rows.again.map(finishedCard),
 		};
 	}
 	const data = load();
@@ -72,6 +87,7 @@
 		<Row id="movies" title="Filmes" items={d.movies} />
 		<Row id="series" title="Séries" items={d.series} />
 		<Row id="animes" title="Animes" items={d.animes} />
+		<Row id="again" title="Assista novamente" items={d.again} />
 	{:else}
 		<div class="empty">
 			<h1>Nenhuma mídia ainda</h1>

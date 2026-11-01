@@ -224,9 +224,21 @@ export interface HomeItem {
 	color?: string;
 }
 
+/** A title the profile finished: "Assista novamente". */
+export interface Finished {
+	kind: 'movie' | SeriesKind;
+	/** Movie or series id. */
+	id: string;
+	title: string;
+	color?: string;
+	at: number;
+}
+
 export interface Home {
 	continue: HomeItem[];
 	next: HomeItem[];
+	/** Every finished title, latest first. */
+	again: Finished[];
 }
 
 /** Exactly one of media_ids, season_id or series_id. */

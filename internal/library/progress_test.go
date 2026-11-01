@@ -213,6 +213,24 @@ func TestProgressStore(t *testing.T) {
 		t.Error("unknown series marked")
 	}
 
+	// "Assista novamente": finished movies, and series with every regular
+	// episode watched (season 1 is not yet), latest first.
+	if h, _ = s.HomeOf(ctx, ana.ID); len(h.Again) != 0 {
+		t.Fatalf("again with a series half watched = %+v", h.Again)
+	}
+	if err := s.SetWatched(ctx, ana.ID, WatchedTarget{MediaIDs: []string{movie}, Watched: true}); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(2 * time.Millisecond)
+	if err := s.SetWatched(ctx, ana.ID, WatchedTarget{MediaIDs: a[1:3], Watched: true}); err != nil {
+		t.Fatal(err)
+	}
+	h, _ = s.HomeOf(ctx, ana.ID)
+	if len(h.Again) != 2 || h.Again[0].Kind != "series" || h.Again[0].ID != mustSeriesOf(t, s, a[0]) ||
+		h.Again[1].Kind != "movie" || h.Again[1].ID != movies.Items[0].ID {
+		t.Fatalf("again = %+v", h.Again)
+	}
+
 	// Deleting the profile deletes its progress.
 	if err := s.DeleteProfile(ctx, ana.ID); err != nil {
 		t.Fatal(err)

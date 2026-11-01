@@ -1,4 +1,4 @@
-import type { Episode, Extra, HomeItem, Movie, Series } from '../api/types';
+import type { Episode, Extra, Finished, HomeItem, Movie, Series } from '../api/types';
 import { remaining } from './progress';
 
 /** What a card shows; `imageId` is any id /api/images accepts. */
@@ -92,6 +92,29 @@ export function homeCard(it: HomeItem): CardItem {
 		href: playHref(it.media_id, homeTitle(it)),
 		progress: started ? Math.min(1, it.position_ms / it.duration_ms) : undefined,
 	};
+}
+
+const finishedKinds: Record<Finished['kind'], string> = {
+	movie: 'Filme',
+	series: 'Série',
+	anime: 'Anime',
+};
+
+/** An "Assista novamente" card: it opens the details page. */
+export const finishedCard = (f: Finished): CardItem => ({
+	key: f.id,
+	imageId: f.id,
+	title: f.title,
+	subtitle: finishedKinds[f.kind],
+	color: f.color,
+	href: f.kind === 'movie' ? `/filme/${f.id}` : `/serie/${f.id}`,
+	watched: true,
+});
+
+/** Moves the finished titles (keys in `done`) to the end and checks them (in place). */
+export function watchedLast(cards: CardItem[], done: Set<string>): CardItem[] {
+	for (const c of cards) if (done.has(c.key)) c.watched = true;
+	return [...cards.filter((c) => !done.has(c.key)), ...cards.filter((c) => done.has(c.key))];
 }
 
 const extraTypes: Record<Extra['type'], string> = {

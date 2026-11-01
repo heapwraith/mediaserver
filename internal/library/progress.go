@@ -309,6 +309,19 @@ type HomeItem struct {
 type Home struct {
 	Continue []HomeItem `json:"continue"`
 	Next     []HomeItem `json:"next"`
+	// Again lists every title the profile finished, latest first: the home
+	// page moves them to the end of its rows.
+	Again []Finished `json:"again"`
+}
+
+// Finished is a movie, or a series with every regular episode, the profile
+// watched ("Assista novamente").
+type Finished struct {
+	Kind  string `json:"kind"` // movie | series | anime
+	ID    string `json:"id"`   // the movie or series (the details page)
+	Title string `json:"title"`
+	Color string `json:"color,omitzero"`
+	At    int64  `json:"at"` // when it was last watched
 }
 
 // homeItemCols and homeItemJoins read the movie or episode card of the
@@ -357,7 +370,7 @@ func scanHomeItem(dest []any, it *HomeItem, scan func(...any) error) error {
 // HomeOf returns the "Continuar assistindo" and "Próximos episódios" rows of
 // a profile.
 func (s Store) HomeOf(ctx context.Context, profileID string) (Home, error) {
-	h := Home{Continue: []HomeItem{}, Next: []HomeItem{}}
+	h := Home{Continue: []HomeItem{}, Next: []HomeItem{}, Again: []Finished{}}
 	// Most recent first; a series shows only its latest episode.
 	rows, err := s.DB.QueryContext(ctx,
 		`SELECT x.media_file_id, x.position_ms, x.duration_ms, x.updated_at, `+homeItemCols+`
@@ -425,7 +438,38 @@ func (s Store) HomeOf(ctx context.Context, profileID string) (Home, error) {
 		}
 		h.Next = append(h.Next, it)
 	}
-	return h, nil
+
+	// Watched movies, and series whose regular episodes (not season 0) were all watched.
+	rows, err = s.DB.QueryContext(ctx,
+		`SELECT 'movie', mv.id, mv.title, COALESCE(ic.color, ''), p.updated_at
+		 FROM progress p
+		 JOIN movies mv ON mv.media_file_id = p.media_file_id
+		 LEFT JOIN image_cache ic ON ic.owner_id = mv.id
+		 WHERE p.profile_id = ?1 AND p.watched = 1
+		 UNION ALL
+		 SELECT s.kind, s.id, s.title, COALESCE(ic.color, ''), MAX(p.updated_at)
+		 FROM progress p
+		 JOIN episodes e ON e.media_file_id = p.media_file_id
+		 JOIN series s ON s.id = e.series_id
+		 LEFT JOIN image_cache ic ON ic.owner_id = s.id
+		 WHERE p.profile_id = ?1 AND p.watched = 1
+		 GROUP BY s.id
+		 HAVING NOT EXISTS (
+		     SELECT 1 FROM episodes e2
+		     JOIN seasons se ON se.id = e2.season_id
+		     LEFT JOIN progress p2 ON p2.media_file_id = e2.media_file_id AND p2.profile_id = ?1
+		     WHERE e2.series_id = s.id AND se.number <> 0 AND COALESCE(p2.watched, 0) = 0)
+		 ORDER BY 5 DESC`, profileID)
+	if err != nil {
+		return h, fmt.Errorf("watched titles: %w", err)
+	}
+	err = scanAll(rows, func(r *sql.Rows) error {
+		var f Finished
+		err := r.Scan(&f.Kind, &f.ID, &f.Title, &f.Color, &f.At)
+		h.Again = append(h.Again, f)
+		return err
+	})
+	return h, err
 }
 
 // nextForSeries is the up-next episode of a series when the last one touched

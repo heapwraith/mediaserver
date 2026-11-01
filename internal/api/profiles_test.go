@@ -158,7 +158,7 @@ func TestProfilesAndProgress(t *testing.T) {
 
 	// Acceptance: a profile's progress never shows in another one.
 	_, body = call(http.MethodGet, "/api/home", "", biaH)
-	if h := decode[library.Home](t, body); len(h.Continue) != 0 || len(h.Next) != 0 {
+	if h := decode[library.Home](t, body); len(h.Continue) != 0 || len(h.Next) != 0 || !strings.Contains(body, `"again":[]`) {
 		t.Fatalf("bia home = %s", body)
 	}
 	_, body = call(http.MethodGet, "/api/progress/"+alien, "", biaH)

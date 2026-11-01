@@ -239,6 +239,7 @@ Implementação e verificação automática concluídas ([ADR 009](docs/adr/009-
 - [x] Detecção da abertura e dos créditos comparando os episódios da mesma temporada (tabela `media_markers`, [ADR 010](docs/adr/010-intro-skip.md))
 - [x] Botão **"Pular abertura"** no player (OK do controle ou clique)
 - [x] Nos créditos, o card "Próximo episódio" aparece logo no início deles e a contagem leva ao próximo
+- [x] Tela inicial: o que o perfil já terminou (filme, ou série com todos os episódios) sai do destaque, vai para o fim das fileiras com ✓ e entra na fileira nova **"Assista novamente"** (`again` em `/api/home`)
 - [ ] Aceite na TV com o controle remoto (usuário)
 
 Verificado: biblioteca real com 34 episódios analisada em ~2 min; abertura achada em todos os episódios de Origem (~2 min) e de Obi-Wan (~37 s); E2E no Edge (o OK pula para o fim da abertura, o card dos créditos conta e abre o próximo episódio).
@@ -320,3 +321,5 @@ Revisão do sistema (01/11/2026), por prioridade:
 - **Versão do build local:** o binário de dev e o app da TV mostram "versão dev"; aplicar a versão do git também no `go build` de desenvolvimento
 - **Taxa de atualização da TV:** casar a taxa da tela com o FPS do vídeo (23,976/24/29,97), sem a trepidação de 3:2. No app Android, uma ponte JS pede o modo de tela certo (`WindowManager.LayoutParams.preferredDisplayModeId`, Android 6+) ao abrir o player e volta ao padrão ao sair; o servidor passa o FPS no JSON da mídia. Só funciona em TVs que oferecem modos de 24/50 Hz: a TCL/SEMP de teste só tem 1080p a 60 Hz. No Tizen/webOS, verificar
 - **Histórico de sessões:** uma tela "Histórico" (em Configurações/Status) com cada reprodução: perfil, título/episódio, aparelho (TV ou navegador, IP), início, tempo assistido e trecho (de onde até onde), e modo (direto, remux, conversão com GPU, legenda queimada). Filtros por perfil e aparelho. Hoje só o log JSON registra o play (`"msg":"playback"`), sem perfil, título, aparelho nem duração. Dados numa tabela nova, gravada no play e nos salvamentos de progresso (a cada 10 s)
+- **Player — avançar/voltar segurando a seta (HLS):** cada toque de ±10 s fora do trecho que o hls.js já conhece abre uma sessão nova (`seekTo` → `play`), e o vídeo recarrega a cada toque. No teste da noite de 01/11/2026, a TV abriu 111 sessões em 50 s para o mesmo filme. Cada remux segue até o fim do arquivo, então o cache foi a 7,3 GB. Somar os toques, mostrar o ponto na barra e abrir uma sessão só ~0,5 s depois de soltar a tecla. O *throttling* (item acima) reduz o cache de cada sessão
+- **Filmes pedem "próximo episódio":** o player chama `/api/media/{id}/next` também em filme e recebe 404 (inofensivo, mas suja o log). Não chamar para filmes, ou responder 204
