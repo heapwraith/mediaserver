@@ -1,6 +1,6 @@
 # SPRINTS.md
 
-Planejamento do projeto. **Sprint ativa: 9.** (As sprints 6, 7 e 8 aguardam só os aceites manuais reservados ao usuário.)
+Planejamento do projeto. **Sprint ativa: 10.** (As sprints 6, 7, 8 e 9 aguardam só os aceites manuais reservados ao usuário.)
 
 Regras:
 - Marcar `[x]` só quando o critério de aceite da tarefa for cumprido.
@@ -247,6 +247,28 @@ Verificado: biblioteca real com 34 episódios analisada em ~2 min; abertura acha
 - A abertura é encontrada na maioria dos episódios de uma temporada que tem abertura, e o OK pula para o fim dela
 - Nenhum "Pular abertura" em filmes nem em episódio sem outro da mesma série para comparar
 - Nos créditos de um episódio com próximo, a contagem leva ao próximo episódio
+
+---
+
+## Sprint 10 — Docker
+
+**Objetivo:** rodar o servidor com `docker compose up`, sem instalar Go, Node nem FFmpeg. Caminho **opcional**: o binário continua sendo o principal.
+
+- [x] `Dockerfile` multi-stage (Node 24 → Go 1.27 sem CGO → FFmpeg 9 compilado com NVENC e Chromaprint → Debian slim), usuário não-root e `HEALTHCHECK` em `/api/health`
+- [x] `.dockerignore`
+- [x] `docker-compose.yml`: mídia em `/media:ro`, volume nomeado em `/data`, `restart: unless-stopped`, GPU (`/dev/dri`) comentada como opcional
+- [x] `docker-compose.nvidia.yml` para GPU NVIDIA (NVENC)
+- [x] Alvo `make docker`
+- [x] Seção "Docker" no `README.md`, com o limite da descoberta automática (bridge vs `network_mode: host`)
+- [x] ADR [011 — Docker](docs/adr/011-docker.md)
+
+Verificado: build ok, container `healthy`, scan com `/media`, banco persiste após `down`/`up`, FFmpeg 9.0.2 compilado do código-fonte, e transcodificação de MKV HEVC 10-bit + DTS para H.264/AAC na CPU (playlist em 0,5 s) e na RTX 5070 com NVENC (`encoder: nvenc`, playlist em 0,7 s); abertura da Sprint 9 achada no container (dois episódios de teste, erro de ~1 s); acessível pelo IP da rede (`192.168.18.8:8080`). Pendente só: aviso de arquivo novo em `/mnt/c` (inotify), não verificado. `make fmt`, `make check` e `make test` passam.
+
+**Aceite**
+- [x] `docker build` conclui (imagem de ~283 MB; a estimativa de 100–150 MB não considerava o FFmpeg)
+- [x] `docker compose up` com uma pasta de mídias: healthcheck em `/api/health` passa e o scan roda
+- [x] `ffmpeg` e `ffprobe` presentes no container (9.0.2) e um arquivo que exige conversão é transcodificado
+- [x] O banco persiste após `docker compose down` e `up`
 
 ---
 

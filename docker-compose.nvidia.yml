@@ -1,0 +1,13 @@
+# GPU NVIDIA (NVENC): funciona no Linux e no Docker Desktop com WSL 2.
+# Precisa do driver NVIDIA no host (e do NVIDIA Container Toolkit no Linux).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.nvidia.yml up -d --build
+services:
+  mediaserver:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, video, compute, utility]

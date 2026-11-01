@@ -24,7 +24,7 @@ TIZEN_PROFILE ?= mediaserver
 MEDIA_DIR ?= $(CURDIR)/media
 DEV_DIR   := .dev
 
-.PHONY: help dev build build-web build-go test fmt check bench load clean web-deps web-stub tv tv-tizen-files tv-tizen tv-webos tv-android
+.PHONY: help dev build build-web build-go docker test fmt check bench load clean web-deps web-stub tv tv-tizen-files tv-tizen tv-webos tv-android
 
 help: ## List the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-14s %s\n", $$1, $$2}'
@@ -73,6 +73,9 @@ build-go: web-stub
 		echo "  $$out"; \
 		CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch $(GO) build -trimpath -ldflags "$(LDFLAGS)" -o $$out ./cmd/mediaserver; \
 	done
+
+docker: ## Docker image "mediaserver" (frontend + Go + FFmpeg); see docs/adr/011-docker.md
+	docker build --build-arg VERSION=$(VERSION) -t mediaserver .
 
 # -race needs CGO and a C compiler (gcc/clang). It is only used by the tests;
 # release binaries stay CGO-free. Without a C compiler the tests run without -race.

@@ -1,0 +1,27 @@
+# docker compose up -d --build
+# Pasta de mídias: MEDIA_DIR=/caminho/das/midias docker compose up -d --build
+# (ou defina MEDIA_DIR no arquivo .env; sem nada usa ./media). Interface em http://IP-DO-PC:8080
+services:
+  mediaserver:
+    build: .
+    image: mediaserver
+    ports:
+      - "8080:8080"
+    volumes:
+      - ${MEDIA_DIR:-./media}:/media:ro # o servidor nunca altera os arquivos
+      - mediaserver-data:/data # banco, cache de HLS e miniaturas
+    environment:
+      HWACCEL: ${HWACCEL:-auto}
+      MAX_TRANSCODES: ${MAX_TRANSCODES:-2}
+      TZ: ${TZ:-UTC}
+    restart: unless-stopped
+
+    # GPU NVIDIA (NVENC): use também o docker-compose.nvidia.yml
+    #   docker compose -f docker-compose.yml -f docker-compose.nvidia.yml up -d
+
+    # Descoberta automática de TVs na rede costuma não passar pela rede
+    # "bridge" do Docker. No Linux, troque `ports` por:
+    # network_mode: host
+
+volumes:
+  mediaserver-data:

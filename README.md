@@ -71,6 +71,24 @@ Teste abrindo `http://IP-DO-PC:8080` no celular, conectado ao mesmo Wi-Fi.
 
 ---
 
+## Docker (opcional)
+
+Sem instalar Go, Node nem FFmpeg: a imagem já traz tudo.
+
+```bash
+MEDIA_DIR=/caminho/das/midias docker compose up -d --build
+```
+
+Abra `http://IP-DO-PC:8080`. As mídias entram como somente leitura e o banco fica no volume `mediaserver-data` (sobrevive a `docker compose down`). Sem `MEDIA_DIR`, usa a pasta `./media`.
+
+- **GPU NVIDIA (NVENC), no Linux ou no Docker Desktop com WSL 2:** `docker compose -f docker-compose.yml -f docker-compose.nvidia.yml up -d --build`. Sem isso, a conversão usa a CPU.
+- **Pasta no Windows (WSL):** use o caminho `/mnt/c/...`, por exemplo `MEDIA_DIR=/mnt/c/Users/SEU-USUARIO/Videos/mediaStorage` num arquivo `.env`. Arquivos novos podem não ser percebidos sozinhos nessa pasta; use **Configurações → scan**.
+- **Primeira imagem:** o build compila o FFmpeg 9 (NVENC) e leva alguns minutos; os próximos usam o cache.
+- **TVs:** na rede padrão do Docker a descoberta automática pode falhar; digite o IP na TV. No Linux, `network_mode: host` resolve.
+- Só a imagem: `make docker`. Detalhes no [ADR 011](docs/adr/011-docker.md).
+
+---
+
 ## Rodar como serviço
 
 Para o servidor ligar junto com o computador e voltar sozinho se cair, instale como serviço. Rode **na pasta onde você roda o servidor** (é dela que vêm `./data` e o `config.toml`) e com as mesmas opções:
