@@ -10,10 +10,18 @@
 	import { capabilities } from '#lib/platform/codecs.ts';
 	import { focusGroup } from '#lib/platform/nav.svelte.ts';
 	import { changeServer, isTV, platform } from '#lib/platform/platform.ts';
-	import { saveSettings, settings } from '#lib/platform/settings.svelte.ts';
+	import {
+		SUBTITLE_BACKGROUNDS,
+		SUBTITLE_SIZES,
+		saveSettings,
+		settings,
+		type SubtitleBackground,
+		type SubtitleSize,
+	} from '#lib/platform/settings.svelte.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import ErrorNotice from '#lib/ui/ErrorNotice.svelte';
+	import { subtitleCSS } from '#lib/ui/subtitles.ts';
 
 	const POLL_MS = 1000;
 
@@ -42,6 +50,23 @@
 
 	function toggle(key: 'reduceMotion' | 'backgroundTrailer' | 'autoplayNext') {
 		settings[key] = !settings[key];
+		saveSettings();
+	}
+
+	const sizeNames: Record<SubtitleSize, string> = { s: 'Pequena', m: 'Média', l: 'Grande', xl: 'Enorme' };
+	const backgroundNames: Record<SubtitleBackground, string> = {
+		none: 'Sem fundo',
+		soft: 'Suave',
+		solid: 'Preto',
+	};
+
+	function subtitleSize(s: SubtitleSize) {
+		settings.subtitleSize = s;
+		saveSettings();
+	}
+
+	function subtitleBackground(b: SubtitleBackground) {
+		settings.subtitleBackground = b;
 		saveSettings();
 	}
 
@@ -130,6 +155,24 @@
 			Próximo episódio automático: {settings.autoplayNext ? 'sim' : 'não'}
 		</Button>
 	</div>
+	<p class="label">Tamanho da legenda</p>
+	<div class="bar" use:focusGroup={{ orientation: 'horizontal' }}>
+		{#each SUBTITLE_SIZES as s (s)}
+			<Button selected={settings.subtitleSize === s} onclick={() => subtitleSize(s)}>{sizeNames[s]}</Button>
+		{/each}
+	</div>
+	<p class="label">Fundo da legenda</p>
+	<div class="bar" use:focusGroup={{ orientation: 'horizontal' }}>
+		{#each SUBTITLE_BACKGROUNDS as b (b)}
+			<Button selected={settings.subtitleBackground === b} onclick={() => subtitleBackground(b)}>
+				{backgroundNames[b]}
+			</Button>
+		{/each}
+	</div>
+	<div class="sample">
+		<span style={subtitleCSS(settings.subtitleSize, settings.subtitleBackground)}>Assim fica a legenda</span>
+	</div>
+	<p class="note">Vale neste aparelho. Legendas ASS mantêm o estilo do próprio arquivo.</p>
 </section>
 
 <section>
@@ -220,8 +263,20 @@
 		margin-top: 2rem;
 		color: rgba(255, 255, 255, 0.6);
 	}
+	.label {
+		margin: 1.5rem 0 0.75rem;
+		color: rgba(255, 255, 255, 0.6);
+	}
+	.sample {
+		margin-top: 1.5rem;
+		padding: 2rem;
+		border-radius: 12px;
+		background: linear-gradient(135deg, #5b7083, #1c2733);
+		text-align: center;
+	}
 	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
-	:global(html.tv) dl {
+	:global(html.tv) dl,
+	:global(html.tv) .label {
 		font-size: 1.5rem;
 	}
 </style>

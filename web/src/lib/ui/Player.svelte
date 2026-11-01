@@ -42,7 +42,7 @@
 		MIN_SAVE_S,
 	} from '#lib/ui/progress.ts';
 	import { attach, type Source } from '#lib/ui/source.ts';
-	import { attachASS, defaultSubtitle, type ASSRenderer } from '#lib/ui/subtitles.ts';
+	import { attachASS, defaultSubtitle, subtitleCSS, type ASSRenderer } from '#lib/ui/subtitles.ts';
 	import { clock } from '#lib/ui/time.ts';
 
 	// Own player on the native <video> (ADR 004): Chromium 76 safe; hls.js
@@ -636,7 +636,11 @@
 
 </script>
 
-<svelte:head><title>{title || 'Assistir'}</title></svelte:head>
+<svelte:head>
+	<title>{title || 'Assistir'}</title>
+	<!-- The values come from a fixed table (subtitleCSS). -->
+	{@html `<style>video::cue{${subtitleCSS(settings.subtitleSize, settings.subtitleBackground)}}</style>`}
+</svelte:head>
 
 <div
 	bind:this={root}
@@ -941,10 +945,6 @@
 </div>
 
 <style>
-	video::cue {
-		background: rgba(0, 0, 0, 0.65);
-		color: white;
-	}
 	/* "Pular abertura": bottom right, shown even with the controls hidden. */
 	.skip {
 		position: absolute;

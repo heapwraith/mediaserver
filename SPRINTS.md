@@ -279,7 +279,7 @@ Verificado: build ok, container `healthy`, scan com `/media`, banco persiste ap�
 
 - [x] **Propaganda de release:** arquivos como `1XBET.COM_promo_...mp4` são ignorados sozinhos, por nome e tamanho pequeno
 - [x] **Player — avançar/voltar segurando a seta (HLS):** somar os toques e abrir uma sessão só depois de soltar a tecla
-- [ ] **Legendas na TV:** tamanho e fundo configuráveis nas Configurações (SRT/WebVTT)
+- [x] **Legendas na TV:** tamanho e fundo configuráveis nas Configurações (SRT/WebVTT)
 - [ ] **Taxa de atualização da TV:** no app Android, casar a taxa da tela com o FPS do vídeo (opção desligada por padrão; só em TVs que oferecem o modo)
 - [ ] **TMDB, opcional e desligado por padrão:** chave na tela de Configurações, identificação pelas tags do arquivo ou por título + ano, e Revisar para o que não bater com certeza ([ADR 012](docs/adr/012-metadata-tmdb.md))
 - [ ] **Gêneros:** fileiras na tela inicial e filtro em Filmes/Séries/Animes (só com TMDB)
