@@ -1,4 +1,4 @@
-import type { Episode, Extra, Finished, HomeItem, Movie, Series } from '../api/types';
+import type { Collection, Episode, Extra, Finished, HomeItem, Movie, Series } from '../api/types';
 import { remaining } from './progress';
 
 /** What a card shows; `imageId` is any id /api/images accepts. */
@@ -93,6 +93,20 @@ export function homeCard(it: HomeItem): CardItem {
 		progress: started ? Math.min(1, it.position_ms / it.duration_ms) : undefined,
 	};
 }
+
+/** Button to a franchise: TMDB names often already say "Coleção". */
+export const collectionLabel = (name: string) =>
+	/cole[çc][ãa]o/i.test(name) ? name : `Coleção: ${name}`;
+
+/** A franchise: its oldest movie is the image. */
+export const collectionCard = (c: Collection): CardItem => ({
+	key: `collection:${c.id}`,
+	imageId: c.image_id,
+	title: c.name,
+	subtitle: `${c.count} filmes`,
+	color: c.color,
+	href: `/colecao/${c.id}`,
+});
 
 const finishedKinds: Record<Finished['kind'], string> = {
 	movie: 'Filme',

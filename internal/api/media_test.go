@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -86,7 +87,7 @@ func TestLibraryEndpoints(t *testing.T) {
 	}
 
 	_, _, body = get(t, srv, "/api/movies/"+alien.ID)
-	if m := decode[library.Movie](t, body); m != alien {
+	if m := decode[library.Movie](t, body); !reflect.DeepEqual(m, alien) {
 		t.Fatalf("movie = %s", body)
 	}
 

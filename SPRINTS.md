@@ -282,9 +282,11 @@ Verificado: build ok, container `healthy`, scan com `/media`, banco persiste ap�
 - [x] **Legendas na TV:** tamanho e fundo configuráveis nas Configurações (SRT/WebVTT)
 - [x] **Taxa de atualização da TV:** no app Android, casar a taxa da tela com o FPS do vídeo (opção desligada por padrão; só em TVs que oferecem o modo)
 - [x] **TMDB, opcional e desligado por padrão:** chave na tela de Configurações, identificação pelas tags do arquivo ou por título + ano, e Revisar para o que não bater com certeza ([ADR 012](docs/adr/012-metadata-tmdb.md))
-- [ ] **Gêneros:** fileiras na tela inicial e filtro em Filmes/Séries/Animes (só com TMDB)
-- [ ] **Coleções:** franquias do TMDB com 2 ou mais filmes na biblioteca (só com TMDB)
+- [x] **Gêneros:** fileiras na tela inicial e filtro em Filmes/Séries/Animes (só com TMDB)
+- [x] **Coleções:** franquias do TMDB com 2 ou mais filmes na biblioteca (só com TMDB)
 - [ ] Aceite com o controle na TV e com uma chave real do TMDB (usuário)
+
+Verificado no Edge, numa instância separada com cópia do banco: 40 toques seguidos de seta abrem 1 sessão só, no ponto certo, e um clique na barra abre na hora; a fila de Revisar da biblioteca real caiu de 3 para 1 arquivo; os presets de legenda mudam o tamanho no vídeo; o TMDB real recusa uma chave falsa, a tela avisa e a chave não aparece no log. Gêneros e coleções foram vistos só com dados de teste no banco, e a troca de taxa só com uma ponte Android simulada (o APK compila, mas não foi instalado nesta sprint; a TV de teste só tem 60 Hz). Benchmarks sem mudança relevante: listagens de 0,7 a 13 ms e rescan de 10 mil arquivos em ~230 ms.
 
 **Aceite**
 - Segurar a seta num arquivo em HLS abre uma sessão só, no ponto onde o usuário soltou

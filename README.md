@@ -338,6 +338,10 @@ JSON em `/api`. Rotas de perfil e progresso exigem o cabeçalho `X-Profile: <tok
 | `GET /api/images/{id}?w=480\|960\|1920&variant=card\|backdrop\|blur` | Imagem 16:9 em WebP, gerada na 1ª vez e guardada em `DATA_DIR/images` |
 
 Listagens e detalhes respondem com `ETag` (o cliente revalida e recebe 304).
+| `GET /api/genres?kind=movie\|series\|anime` | Gêneros de um tipo, com contagem (vazio com o TMDB desligado) |
+| `GET /api/genres/rows` | Fileiras por gênero da tela inicial |
+| `GET /api/collections`, `GET /api/collections/{id}` | Coleções com 2 ou mais filmes na biblioteca |
+| `GET /api/movies?genre=ID`, `/api/series?genre=ID`, `/api/animes?genre=ID` | Listagens filtradas por gênero |
 
 ### Reprodução e legendas
 

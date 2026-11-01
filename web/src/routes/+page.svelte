@@ -1,13 +1,21 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 
-	import { getHome, getMovie, listMovies, listSeries } from '#lib/api/client.ts';
+	import {
+		genreRows,
+		getHome,
+		getMovie,
+		listCollections,
+		listMovies,
+		listSeries,
+	} from '#lib/api/client.ts';
 	import type { Home, HomeItem } from '#lib/api/types.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import Hero from '#lib/ui/Hero.svelte';
 	import PlayButtons from '#lib/ui/PlayButtons.svelte';
 	import Row from '#lib/ui/Row.svelte';
 	import {
+		collectionCard,
 		extraCard,
 		finishedCard,
 		homeCard,
@@ -27,11 +35,14 @@
 		it.kind === 'movie' ? movieHero(await getMovie(it.parent_id)) : seriesHero(it.parent_id);
 
 	async function load() {
-		const [movies, series, animes, rows] = await Promise.all([
+		const [movies, series, animes, rows, collections, genres] = await Promise.all([
 			listMovies(recent),
 			listSeries('series', recent),
 			listSeries('anime', recent),
 			getHome().catch(() => noRows),
+			// Only with TMDB on; off they are empty and their rows do not show.
+			listCollections().catch(() => []),
+			genreRows().catch(() => []),
 		]);
 		const added: { at: number; card: CardItem; hero: () => Promise<HeroData> }[] = [
 			...movies.items.map((m) => ({ at: m.added_at, card: movieCard(m), hero: () => movieHero(m) })),
@@ -58,6 +69,12 @@
 			movies: watchedLast(movies.items.map(movieCard), done),
 			series: watchedLast(series.items.map(seriesCard), done),
 			animes: watchedLast(animes.items.map(seriesCard), done),
+			collections: collections.map(collectionCard),
+			genres: genres.map((g) => ({
+				id: g.id,
+				name: g.name,
+				items: watchedLast([...g.movies.map(movieCard), ...g.series.map(seriesCard)], done),
+			})),
 			again: rows.again.map(finishedCard),
 		};
 	}
@@ -87,6 +104,10 @@
 		<Row id="movies" title="Filmes" items={d.movies} />
 		<Row id="series" title="Séries" items={d.series} />
 		<Row id="animes" title="Animes" items={d.animes} />
+		<Row id="collections" title="Coleções" items={d.collections} />
+		{#each d.genres as g (g.id)}
+			<Row id={`genre:${g.id}`} title={g.name} items={g.items} />
+		{/each}
 		<Row id="again" title="Assista novamente" items={d.again} />
 	{:else}
 		<div class="empty">

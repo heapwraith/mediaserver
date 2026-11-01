@@ -83,7 +83,13 @@ export async function movieHero(m: Movie): Promise<HeroData & { progress?: Progr
 	const trailer = extras.find((x) => x.type === 'trailer');
 	return {
 		title: m.title,
-		meta: join(['Filme', m.year, formatDuration(m.duration_ms), resolution(m.height)]),
+		meta: join([
+			'Filme',
+			m.year,
+			formatDuration(m.duration_ms),
+			resolution(m.height),
+			m.genres?.join(', '),
+		]),
 		imageId: m.id,
 		color: m.color,
 		play: moviePlay(m, progress),
@@ -112,6 +118,7 @@ export async function seriesHero(
 			detail.kind === 'anime' ? 'Anime' : 'Série',
 			detail.year,
 			n > 1 ? `${n} temporadas` : `${detail.episodes} episódio${detail.episodes === 1 ? '' : 's'}`,
+			detail.genres?.join(', '),
 			resolution(first?.height),
 		]),
 		imageId: detail.id,

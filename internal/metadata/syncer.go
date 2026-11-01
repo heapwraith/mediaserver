@@ -14,12 +14,13 @@ import (
 	"sync"
 	"time"
 
+	"mediaserver/internal/library"
 	"mediaserver/internal/probe"
 	"mediaserver/internal/scanner"
 )
 
 const (
-	keyEnabled = "tmdb_enabled"
+	keyEnabled = library.TMDBEnabledKey
 	keyToken   = "tmdb_key"
 	// pace is the wait between titles: a library is looked up once, slowly.
 	pace = 250 * time.Millisecond

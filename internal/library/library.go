@@ -32,15 +32,29 @@ type Page struct {
 	// Query filters by normalized title (scanner.NormTitle): only letters,
 	// digits and spaces, so it holds no LIKE wildcard.
 	Query string
+	// Genre and Collection keep only their titles (TMDB ids; 0 = all).
+	Genre      int
+	Collection int
 }
 
-// filter is the SQL condition (and its args) of the title search on alias.
-// Without a search it is empty: a LIKE '%%' would read every row.
+// filter is the SQL condition (and its args) of the page on alias. Without
+// a search it has no LIKE: a LIKE '%%' would read every row.
 func (p Page) filter(alias string) (string, []any) {
-	if p.Query == "" {
-		return "", nil
+	var where string
+	var args []any
+	if p.Query != "" {
+		where += " AND " + alias + ".norm_title LIKE ?"
+		args = append(args, "%"+p.Query+"%")
 	}
-	return " AND " + alias + ".norm_title LIKE ?", []any{"%" + p.Query + "%"}
+	if p.Genre != 0 {
+		where += " AND " + alias + ".id IN (SELECT owner_id FROM title_genres WHERE genre_id = ?)"
+		args = append(args, p.Genre)
+	}
+	if p.Collection != 0 {
+		where += " AND " + alias + ".id IN (SELECT movie_id FROM collection_movies WHERE collection_id = ?)"
+		args = append(args, p.Collection)
+	}
+	return where, args
 }
 
 // MaxLimit is the largest page a listing returns.
@@ -90,6 +104,9 @@ type Movie struct {
 	Height     int    `json:"height,omitzero"`
 	AddedAt    int64  `json:"added_at"`
 	Color      string `json:"color,omitzero"` // dominant color of the card image, once generated
+	// Only in the details, and only with TMDB on.
+	Genres     []string       `json:"genres,omitzero"`
+	Collection *CollectionRef `json:"collection,omitzero"`
 }
 
 // Movies lists the movies.
@@ -143,7 +160,7 @@ func (s Store) MovieByID(ctx context.Context, id string) (Movie, error) {
 	if err != nil {
 		return m, fmt.Errorf("movie %s: %w", id, err)
 	}
-	return m, nil
+	return m, s.addMovieMeta(ctx, &m)
 }
 
 // Series is a series or anime card.
@@ -197,6 +214,7 @@ func (s Store) Series(ctx context.Context, kind string, p Page) (List[Series], e
 type SeriesDetail struct {
 	Series
 	Seasons []Season `json:"seasons"`
+	Genres  []string `json:"genres,omitzero"` // only with TMDB on
 }
 
 // Season groups the episodes of one season (number 0 = specials).
@@ -233,6 +251,15 @@ func (s Store) SeriesByID(ctx context.Context, id string) (SeriesDetail, error) 
 	}
 	if err != nil {
 		return d, fmt.Errorf("series %s: %w", id, err)
+	}
+	on, err := s.metadataOn(ctx)
+	if err != nil {
+		return d, err
+	}
+	if on {
+		if d.Genres, err = s.genresOf(ctx, id); err != nil {
+			return d, err
+		}
 	}
 	d.Seasons = []Season{}
 	rows, err := s.DB.QueryContext(ctx,

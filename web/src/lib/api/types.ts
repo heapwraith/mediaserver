@@ -17,6 +17,9 @@ export interface Movie {
 	height?: number;
 	added_at: number;
 	color?: string;
+	/** Only in the details, and only with TMDB on. */
+	genres?: string[];
+	collection?: { id: number; name: string };
 }
 
 export type SeriesKind = 'series' | 'anime';
@@ -54,6 +57,38 @@ export interface Season {
 
 export interface SeriesDetail extends Omit<Series, 'seasons'> {
 	seasons: Season[];
+	/** Only with TMDB on. */
+	genres?: string[];
+}
+
+/** A filter button of a library page (only with TMDB on). */
+export interface GenreCount {
+	id: number;
+	name: string;
+	count: number;
+}
+
+/** A home row: the latest titles of a genre. */
+export interface GenreRow {
+	id: number;
+	name: string;
+	movies: Movie[];
+	series: Series[];
+}
+
+/** A franchise with two or more movies in the library. */
+export interface Collection {
+	id: number;
+	name: string;
+	count: number;
+	image_id: string;
+	color?: string;
+}
+
+export interface CollectionDetail {
+	id: number;
+	name: string;
+	movies: Movie[];
 }
 
 export interface Extra {

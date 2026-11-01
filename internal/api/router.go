@@ -75,6 +75,10 @@ func NewRouter(d Deps) http.Handler {
 			r.Post("/series/merge", d.mergeSeries)
 			r.Post("/series/split", d.splitSeries)
 
+			r.Get("/genres", d.listGenres)
+			r.Get("/genres/rows", d.genreRows)
+			r.Get("/collections", d.listCollections)
+			r.Get("/collections/{id}", d.collection)
 			r.Get("/movies", d.listMovies)
 			r.Get("/series", d.listSeries("series"))
 			r.Get("/animes", d.listSeries("anime"))

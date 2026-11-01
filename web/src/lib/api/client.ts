@@ -1,7 +1,11 @@
 import { clearSession, session } from './session.svelte';
 import type {
+	Collection,
+	CollectionDetail,
 	Correction,
 	Extra,
+	GenreCount,
+	GenreRow,
 	Home,
 	HomeItem,
 	List,
@@ -81,6 +85,7 @@ export interface ListParams {
 	offset?: number;
 	limit?: number;
 	q?: string;
+	genre?: number;
 }
 
 /** Query string of a listing, without empty values. */
@@ -98,6 +103,11 @@ const seriesPath = (kind: SeriesKind) => (kind === 'anime' ? '/api/animes' : '/a
 export const listMovies = (p: ListParams = {}) => api<List<Movie>>(`/api/movies${query(p)}`);
 export const listSeries = (kind: SeriesKind, p: ListParams = {}) =>
 	api<List<Series>>(`${seriesPath(kind)}${query(p)}`);
+export const listGenres = (kind: 'movie' | SeriesKind) =>
+	api<GenreCount[]>(`/api/genres?kind=${kind}`);
+export const genreRows = () => api<GenreRow[]>('/api/genres/rows');
+export const listCollections = () => api<Collection[]>('/api/collections');
+export const getCollection = (id: string) => api<CollectionDetail>(`/api/collections/${id}`);
 export const getMovie = (id: string) => api<Movie>(`/api/movies/${id}`);
 export const getSeries = (id: string) => api<SeriesDetail>(`/api/series/${id}`);
 export const movieExtras = (id: string) => api<Extra[]>(`/api/movies/${id}/extras`);

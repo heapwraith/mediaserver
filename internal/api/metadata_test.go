@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"mediaserver/internal/library"
 	"mediaserver/internal/metadata"
 )
 
@@ -75,5 +76,63 @@ func TestMetadataEndpoints(t *testing.T) {
 	}
 	if _, body := call(http.MethodGet, "/api/metadata/review", "", h); len(decode[[]metadata.ReviewItem](t, body)) != 0 {
 		t.Fatalf("review after skip = %s", body)
+	}
+}
+
+func TestGenreEndpoints(t *testing.T) {
+	srv, sc, _, conn := newLibraryServerDB(t, progressFiles...)
+	if _, err := sc.Scan(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	call := func(path string) (int, string) { return do(t, srv, http.MethodGet, path, "") }
+	exec := func(q string, args ...any) {
+		t.Helper()
+		if _, err := conn.ExecContext(t.Context(), q, args...); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// Off by default: empty, with no error.
+	for _, p := range []string{"/api/genres?kind=movie", "/api/genres/rows", "/api/collections"} {
+		if status, body := call(p); status != http.StatusOK || strings.TrimSpace(body) != "[]" {
+			t.Errorf("%s while off = %d %s", p, status, body)
+		}
+	}
+	if status, _ := call("/api/collections/1"); status != http.StatusNotFound {
+		t.Errorf("collection while off = %d, want 404", status)
+	}
+
+	var movie string
+	if err := conn.QueryRowContext(t.Context(), `SELECT id FROM movies LIMIT 1`).Scan(&movie); err != nil {
+		t.Fatal(err)
+	}
+	exec(`INSERT INTO app_state (key, value) VALUES (?, '1')`, library.TMDBEnabledKey)
+	exec(`INSERT INTO genres (id, name) VALUES (1, 'Ação')`)
+	exec(`INSERT INTO title_genres (owner_id, genre_id) VALUES (?, 1)`, movie)
+
+	if status, body := call("/api/genres?kind=movie"); status != http.StatusOK || !strings.Contains(body, `"name":"Ação"`) {
+		t.Errorf("genres = %d %s", status, body)
+	}
+	if status, _ := call("/api/genres?kind=x"); status != http.StatusBadRequest {
+		t.Errorf("unknown kind = %d, want 400", status)
+	}
+	_, body := call("/api/movies?genre=1")
+	if list := decode[library.List[library.Movie]](t, body); list.Total != 1 || list.Items[0].ID != movie {
+		t.Errorf("movies of the genre = %s", body)
+	}
+	_, body = call("/api/movies?genre=2")
+	if list := decode[library.List[library.Movie]](t, body); list.Total != 0 {
+		t.Errorf("movies of another genre = %s", body)
+	}
+	if status, _ := call("/api/movies?genre=x"); status != http.StatusBadRequest {
+		t.Errorf("bad genre = %d, want 400", status)
+	}
+	if status, _ := call("/api/collections/x"); status != http.StatusBadRequest {
+		t.Errorf("bad collection id = %d, want 400", status)
+	}
+	if _, body := call("/api/movies/" + movie); !strings.Contains(body, `"genres":["Ação"]`) {
+		t.Errorf("movie details = %s", body)
+	}
+	if _, body := call("/api/movies"); strings.Contains(body, `"genres"`) {
+		t.Errorf("genres in the listing: %s", body)
 	}
 }
