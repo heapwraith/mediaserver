@@ -17,7 +17,7 @@
 	} from '#lib/api/client.ts';
 	import { UNSUPPORTED, describeError, type Problem } from '#lib/api/errors.ts';
 	import { session } from '#lib/api/session.svelte.ts';
-	import type { HomeItem, Media, Playback, Track } from '#lib/api/types.ts';
+	import type { HomeItem, Marker, Media, Playback, Track } from '#lib/api/types.ts';
 	import { goBack } from '#lib/platform/back.ts';
 	import { CONTAINERS, capabilities } from '#lib/platform/codecs.ts';
 	import {
@@ -32,7 +32,14 @@
 	import { focusable } from '#lib/platform/nav.svelte.ts';
 	import { settings } from '#lib/platform/settings.svelte.ts';
 	import { homeTitle, playHref } from '#lib/ui/cards.ts';
-	import { nextCountdown, resumeAt, shouldSave, MIN_SAVE_S } from '#lib/ui/progress.ts';
+	import {
+		creditsAt,
+		nextCountdown,
+		resumeAt,
+		shouldSave,
+		skipIntro,
+		MIN_SAVE_S,
+	} from '#lib/ui/progress.ts';
 	import { attach, type Source } from '#lib/ui/source.ts';
 	import { attachASS, defaultSubtitle, type ASSRenderer } from '#lib/ui/subtitles.ts';
 	import { clock } from '#lib/ui/time.ts';
@@ -227,6 +234,7 @@
 			return;
 		}
 		audio = m.audio;
+		markers = m.markers ?? [];
 		// The default track (or the first), like the server picks it.
 		audioSel = Math.max(
 			0,
@@ -345,9 +353,21 @@
 	let next: HomeItem | undefined = $state();
 	let nextCanceled = $state(false);
 	let nextSel = $state(0); // 0 = Assistir agora, 1 = Cancelar
+	// Opening and credits found by the server: "Pular abertura", and the
+	// next-episode card as soon as the credits start.
+	let markers: Marker[] = $state([]);
+	const introEnd = $derived(skipIntro(time, markers));
 	const countdown = $derived(
-		next === undefined || nextCanceled ? null : nextCountdown(time, duration),
+		next === undefined || nextCanceled ? null : nextCountdown(time, duration, creditsAt(markers)),
 	);
+	// With credits the countdown ends before the video does.
+	$effect(() => {
+		if (countdown === 0 && !paused && settings.autoplayNext && time < duration - 1) goNext();
+	});
+
+	function skipToEnd() {
+		if (introEnd !== null) seekTo(introEnd);
+	}
 
 	$effect(() => {
 		const id = mediaId;
@@ -379,8 +399,10 @@
 		if (!paused && shouldSave(time, lastSave, Date.now())) persist();
 	}
 
+	let leaving = false; // the countdown effect and onEnded may both get here
 	function goNext() {
-		if (next === undefined) return;
+		if (next === undefined || leaving) return;
+		leaving = true;
 		persist();
 		// Replace: Voltar still goes back to the details page.
 		void goto(playHref(next.media_id, homeTitle(next)), { replaceState: true });
@@ -535,6 +557,10 @@
 		if (panel !== '') return panelKey(a);
 		if (inTop) return topKey(a);
 		if (countdown !== null && nextKey(a)) return true;
+		if (introEnd !== null && a === 'enter') {
+			skipToEnd(); // OK skips the opening; play/pause stays on its own key
+			return true;
+		}
 		switch (a) {
 			case 'left':
 				seek(-SEEK_S);
@@ -655,6 +681,10 @@
 			<p class="error-title">{error.title}</p>
 			<p class="error-hint">{error.hint}</p>
 		</div>
+	{/if}
+
+	{#if introEnd !== null && countdown === null}
+		<button tabindex="-1" class="pill skip kfocus" onclick={skipToEnd}>Pular abertura ›</button>
 	{/if}
 
 	{#if countdown !== null && next !== undefined}
@@ -889,6 +919,16 @@
 	video::cue {
 		background: rgba(0, 0, 0, 0.65);
 		color: white;
+	}
+	/* "Pular abertura": bottom right, shown even with the controls hidden. */
+	.skip {
+		position: absolute;
+		right: 5vw;
+		bottom: 22vh;
+		z-index: 1;
+		height: 3.5rem;
+		padding: 0 2rem;
+		font-size: 1.25rem;
 	}
 	/* "Próximo episódio": bottom right, above the progress bar. */
 	.next {

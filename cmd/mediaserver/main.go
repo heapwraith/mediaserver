@@ -20,6 +20,7 @@ import (
 	"mediaserver/internal/api"
 	"mediaserver/internal/config"
 	"mediaserver/internal/db"
+	"mediaserver/internal/intro"
 	"mediaserver/internal/library"
 	"mediaserver/internal/probe"
 	"mediaserver/internal/scanner"
@@ -109,7 +110,9 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 	// Background work (scan, watcher) stops with this context; it is canceled
 	// before waiting for it, also when serve fails early.
 	ctx, cancel := context.WithCancel(ctx)
-	lib, stopLib, err := startLibrary(ctx, cfg, conn, logger)
+	// Openings and credits of new episodes, looked for after every scan.
+	analyzer := intro.NewAnalyzer(conn, cfg.MediaDir, cfg.FFmpegPath, logger.With("component", "intro"))
+	lib, stopLib, err := startLibrary(ctx, cfg, conn, logger, analyzer.Trigger)
 	if err != nil {
 		cancel()
 		return err
@@ -152,6 +155,7 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 	// Stops every FFmpeg when ctx ends; waited for before closing MEDIA_DIR.
 	var bg sync.WaitGroup
 	bg.Go(func() { transcoder.Run(ctx) })
+	bg.Go(func() { analyzer.Run(ctx) })
 	defer func() {
 		cancel()
 		bg.Wait()
@@ -220,7 +224,7 @@ const copyGrace = 2 * time.Second
 
 // startLibrary creates the scanner, runs the startup scan and the watcher in
 // the background. stop waits for both after ctx is canceled.
-func startLibrary(ctx context.Context, cfg config.Config, conn *sql.DB, logger *slog.Logger) (*scanner.Scanner, func(), error) {
+func startLibrary(ctx context.Context, cfg config.Config, conn *sql.DB, logger *slog.Logger, afterScan func()) (*scanner.Scanner, func(), error) {
 	var prober scanner.Prober
 	p := probe.Prober{Path: cfg.FFprobePath}
 	if err := p.Available(ctx); err != nil {
@@ -232,7 +236,7 @@ func startLibrary(ctx context.Context, cfg config.Config, conn *sql.DB, logger *
 
 	lib, err := scanner.New(ctx, conn, scanner.Options{
 		Root: cfg.MediaDir, Workers: cfg.ScanWorkers, MinAge: copyGrace, Prober: prober,
-		Logger: logger.With("component", "scanner"),
+		Logger: logger.With("component", "scanner"), AfterScan: afterScan,
 	})
 	if err != nil {
 		return nil, nil, fmt.Errorf("scanner: %w", err)

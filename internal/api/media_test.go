@@ -227,3 +227,23 @@ func TestImageEndpoint(t *testing.T) {
 		}
 	}
 }
+
+func TestMediaMarkers(t *testing.T) {
+	rel := "Series/Dark/Season 1/Dark - S01E01.mkv"
+	srv, sc, fileID, conn := newLibraryServerDB(t, rel)
+	if _, err := sc.Scan(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	id := fileID(rel)
+	if _, body := do(t, srv, http.MethodGet, "/api/media/"+id, ""); !strings.Contains(body, `"markers":[]`) {
+		t.Fatalf("no markers yet = %s", body)
+	}
+	if _, err := conn.ExecContext(t.Context(),
+		`INSERT INTO media_markers (media_file_id, kind, start_ms, end_ms) VALUES (?, 'intro', 61000, 101000)`, id); err != nil {
+		t.Fatal(err)
+	}
+	m := decode[library.Media](t, func() string { _, b := do(t, srv, http.MethodGet, "/api/media/"+id, ""); return b }())
+	if len(m.Markers) != 1 || m.Markers[0] != (library.Marker{Kind: "intro", StartMs: 61000, EndMs: 101000}) {
+		t.Fatalf("markers = %+v", m.Markers)
+	}
+}

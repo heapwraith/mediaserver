@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Progress } from '../api/types';
-import { fraction, nextCountdown, remaining, resumeAt, shouldSave } from './progress';
+import {
+	creditsAt,
+	fraction,
+	nextCountdown,
+	remaining,
+	resumeAt,
+	shouldSave,
+	skipIntro,
+} from './progress';
 
 const p = (position_ms: number, duration_ms = 600_000, watched = false): Progress => ({
 	media_id: 'm',
@@ -52,5 +60,31 @@ describe('nextCountdown', () => {
 		expect(nextCountdown(1199.2, 1200)).toBe(1);
 		expect(nextCountdown(1200, 1200)).toBe(0);
 		expect(nextCountdown(20, 25)).toBeNull();
+	});
+
+	it('starts with the end credits when they are known', () => {
+		expect(nextCountdown(1099, 1200, 1100)).toBeNull();
+		expect(nextCountdown(1100, 1200, 1100)).toBe(15);
+		expect(nextCountdown(1110.5, 1200, 1100)).toBe(5);
+		expect(nextCountdown(1130, 1200, 1100)).toBe(0);
+	});
+});
+
+describe('skipIntro and creditsAt', () => {
+	const markers = [
+		{ kind: 'intro' as const, start_ms: 60_000, end_ms: 100_000 },
+		{ kind: 'credits' as const, start_ms: 1_100_000, end_ms: 1_200_000 },
+	];
+	it('offers the end of the opening while it plays', () => {
+		expect(skipIntro(59, markers)).toBeNull();
+		expect(skipIntro(60, markers)).toBe(100);
+		expect(skipIntro(97.5, markers)).toBe(100);
+		expect(skipIntro(98, markers)).toBeNull(); // the last 2 s: nothing left to skip
+		expect(skipIntro(70, [])).toBeNull();
+		expect(skipIntro(70)).toBeNull();
+	});
+	it('finds the credits', () => {
+		expect(creditsAt(markers)).toBe(1100);
+		expect(creditsAt([])).toBeUndefined();
 	});
 });

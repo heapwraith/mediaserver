@@ -344,3 +344,14 @@ func TestUserFilesAreNeverModified(t *testing.T) {
 		}
 	}
 }
+
+func TestAfterScan(t *testing.T) {
+	e := newEnv(t)
+	var calls atomic.Int32
+	e.sc.opt.AfterScan = func() { calls.Add(1) }
+	e.sc.Start(t.Context())
+	e.sc.Wait()
+	if n := calls.Load(); n != 1 {
+		t.Fatalf("AfterScan called %d times, want 1", n)
+	}
+}

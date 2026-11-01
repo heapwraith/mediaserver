@@ -33,6 +33,9 @@ type Options struct {
 	MinAge  time.Duration // files modified more recently are left for the next scan
 	Prober  Prober        // nil disables probing
 	Logger  *slog.Logger
+	// AfterScan runs after each successful background scan (Start), e.g. to
+	// look for openings in new episodes. It must not block.
+	AfterScan func()
 }
 
 // Status is the progress/result of the current or last scan.
@@ -142,6 +145,8 @@ func (s *Scanner) Start(ctx context.Context) bool {
 		for {
 			if _, err := s.Scan(ctx); err != nil && ctx.Err() == nil {
 				s.log.Error("scan failed", "err", err)
+			} else if err == nil && s.opt.AfterScan != nil {
+				s.opt.AfterScan()
 			}
 			if ctx.Err() != nil || !s.again.CompareAndSwap(true, false) {
 				return

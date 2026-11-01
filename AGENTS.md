@@ -63,6 +63,7 @@ internal/subtitles/     → legendas externas e embutidas, SRT→VTT
 internal/api/           → handlers HTTP, rotas, middlewares
 internal/service/       → subcomando `service`: systemd, launchd e Windows Service
 internal/sysinfo/       → CPU, memória e GPU para a página de status
+internal/intro/         → abertura e créditos dos episódios por fingerprint de áudio
 web/                    → SvelteKit (o build vai para web/build, embutido)
 web/src/shell/          → tela de conexão dos apps de TV (build em web/build-tv, vai nos pacotes)
 tv/tizen/               → empacotamento Samsung (.wgt)

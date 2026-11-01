@@ -102,6 +102,15 @@ export interface Media {
 	hdr?: string;
 	audio: Track[];
 	subtitles: Subtitle[];
+	/** Opening and end credits found by the server (internal/intro). */
+	markers?: Marker[];
+}
+
+/** Where an episode's opening ("intro") or end credits are. */
+export interface Marker {
+	kind: 'intro' | 'credits';
+	start_ms: number;
+	end_ms: number;
 }
 
 export interface Subtitle {

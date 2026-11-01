@@ -1,6 +1,6 @@
 # SPRINTS.md
 
-Planejamento do projeto. **Sprint ativa: 8.** (As sprints 6 e 7 aguardam só os aceites manuais reservados ao usuário.)
+Planejamento do projeto. **Sprint ativa: 9.** (As sprints 6, 7 e 8 aguardam só os aceites manuais reservados ao usuário.)
 
 Regras:
 - Marcar `[x]` só quando o critério de aceite da tarefa for cumprido.
@@ -230,6 +230,26 @@ Implementação e verificação automática concluídas ([ADR 009](docs/adr/009-
 
 ---
 
+## Sprint 9 — Pular abertura e ajustes
+
+**Objetivo:** pular a abertura e ir direto ao próximo episódio nos créditos, como nos serviços de streaming.
+
+- [x] Formulário de perfil: os botões de "Legenda padrão" ficavam colados (`gap-4` bloqueado no UnoCSS; agora `grid-gap-4`)
+- [x] *Fingerprint* de áudio (Chromaprint do próprio FFmpeg) do início e do fim de cada episódio, em segundo plano depois de cada scan, um FFmpeg por vez
+- [x] Detecção da abertura e dos créditos comparando os episódios da mesma temporada (tabela `media_markers`, [ADR 010](docs/adr/010-intro-skip.md))
+- [x] Botão **"Pular abertura"** no player (OK do controle ou clique)
+- [x] Nos créditos, o card "Próximo episódio" aparece logo no início deles e a contagem leva ao próximo
+- [ ] Aceite na TV com o controle remoto (usuário)
+
+Verificado: biblioteca real com 34 episódios analisada em ~2 min; abertura achada em todos os episódios de Origem (~2 min) e de Obi-Wan (~37 s); E2E no Edge (o OK pula para o fim da abertura, o card dos créditos conta e abre o próximo episódio).
+
+**Aceite**
+- A abertura é encontrada na maioria dos episódios de uma temporada que tem abertura, e o OK pula para o fim dela
+- Nenhum "Pular abertura" em filmes nem em episódio sem outro da mesma série para comparar
+- Nos créditos de um episódio com próximo, a contagem leva ao próximo episódio
+
+---
+
 ## Backlog (sem sprint)
 
 - Legendas em imagem (PGS, VobSub, DVB) via burn-in com overlay
@@ -240,7 +260,8 @@ Implementação e verificação automática concluídas ([ADR 009](docs/adr/009-
 
 - Acesso externo via **Tailscale** (`tailscale serve`)
 - Metadados externos opcionais (TMDB, AniList)
-- Pular abertura/encerramento (detecção por *fingerprint* de áudio)
+- Pular a abertura automaticamente (opção no perfil) e corrigir/marcar a abertura à mão em Revisar
+- Pular o recap ("Nos episódios anteriores")
 - *Trickplay* (miniaturas na barra de progresso)
 - Múltiplas bibliotecas / múltiplas pastas raiz
 - Coleções (ex.: filmes de uma franquia)

@@ -1,7 +1,7 @@
 // Progress rules shared by the cards, the details pages and the player.
 // The server decides "watched" (90%, internal/library/progress.go).
 
-import type { Progress } from '../api/types';
+import type { Marker, Progress } from '../api/types';
 
 /** Below this position an item is not "started" (same as the server). */
 export const MIN_RESUME_S = 30;
@@ -36,12 +36,30 @@ export function shouldSave(timeS: number, lastSaveMs: number, nowMs: number): bo
 	return timeS >= MIN_SAVE_S && nowMs - lastSaveMs >= SAVE_EVERY_MS;
 }
 
+/** Where "Pular abertura" jumps to (s) while the opening plays, or null (not in its last 2 s). */
+export function skipIntro(timeS: number, markers: Marker[] = []): number | null {
+	const m = markers.find((k) => k.kind === 'intro');
+	if (m === undefined) return null;
+	const end = m.end_ms / 1000;
+	return timeS >= m.start_ms / 1000 && timeS < end - 2 ? end : null;
+}
+
+/** When the end credits start (s), if the server found them. */
+export function creditsAt(markers: Marker[] = []): number | undefined {
+	const m = markers.find((k) => k.kind === 'credits');
+	return m === undefined ? undefined : m.start_ms / 1000;
+}
+
 /**
  * Seconds left on the "Próximo episódio" countdown, or null while the card
- * is hidden (too early, or a video too short for it).
+ * is hidden (too early, or a video too short for it). With known credits the
+ * card shows when they start and counts NEXT_CARD_S from there.
  */
-export function nextCountdown(timeS: number, durationS: number): number | null {
+export function nextCountdown(timeS: number, durationS: number, creditsS?: number): number | null {
 	if (durationS <= NEXT_CARD_S * 2) return null;
+	if (creditsS !== undefined && timeS >= creditsS) {
+		return Math.max(0, Math.ceil(creditsS + NEXT_CARD_S - timeS));
+	}
 	const left = durationS - timeS;
 	return left <= NEXT_CARD_S ? Math.max(0, Math.ceil(left)) : null;
 }

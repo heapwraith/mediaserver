@@ -167,7 +167,7 @@
 
 	<div class="field">
 		<span>Legenda padrão</span>
-		<div class="grid grid-cols-2 sm:grid-cols-3 gap-4" use:focusGroup={{ id: 'profile:subtitles', orientation: 'horizontal' }}>
+		<div class="grid grid-cols-2 sm:grid-cols-3 grid-gap-4" use:focusGroup={{ id: 'profile:subtitles', orientation: 'horizontal' }}>
 			{#each LANGUAGES as [value, label] (value)}
 				<Button selected={subtitleLanguage === value} onclick={() => (subtitleLanguage = value)}>{label}</Button>
 			{/each}

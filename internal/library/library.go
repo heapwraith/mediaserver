@@ -343,6 +343,15 @@ type Media struct {
 	Bitrate    int64          `json:"bitrate,omitzero"`
 	Audio      []probe.Track  `json:"audio"`
 	Subtitles  []SubtitleInfo `json:"subtitles"`
+	Markers    []Marker       `json:"markers"`
+}
+
+// Marker is where the opening ("intro") or the end credits ("credits") of
+// an episode are, found by internal/intro.
+type Marker struct {
+	Kind    string `json:"kind"`
+	StartMs int64  `json:"start_ms"`
+	EndMs   int64  `json:"end_ms"`
 }
 
 // SubtitleKind is how a subtitle codec is shown: "text" (WebVTT in the
@@ -419,6 +428,21 @@ func (s Store) MediaByID(ctx context.Context, id string) (Media, error) {
 		st.Kind = SubtitleKind(st.Codec)
 		m.Subtitles = append(m.Subtitles, st)
 		return nil
+	})
+	if err != nil {
+		return m, err
+	}
+	m.Markers = []Marker{}
+	rows, err = s.DB.QueryContext(ctx,
+		`SELECT kind, start_ms, end_ms FROM media_markers WHERE media_file_id = ? ORDER BY start_ms`, id)
+	if err != nil {
+		return m, fmt.Errorf("markers of %s: %w", id, err)
+	}
+	err = scanAll(rows, func(r *sql.Rows) error {
+		var mk Marker
+		err := r.Scan(&mk.Kind, &mk.StartMs, &mk.EndMs)
+		m.Markers = append(m.Markers, mk)
+		return err
 	})
 	return m, err
 }
