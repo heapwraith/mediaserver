@@ -176,3 +176,33 @@ func TestMergeAndSplit(t *testing.T) {
 		t.Errorf("merge unknown series: %v", err)
 	}
 }
+
+func TestPromoIgnored(t *testing.T) {
+	const small, big = 21 << 20, 2 << 30
+	const ad = "1XBET.COM_promo_SHREK_dinheiro_livre.mp4"
+	cases := []struct {
+		rel  string
+		size int64
+		want Kind
+	}{
+		{"anime/Obi-Wan.Kenobi.S01E01-02.720p.WEB-DL.DUAL/" + ad, small, KindIgnored},
+		{"`serie/Obi-Wan.Kenobi.S01E04.1080p.WEB.DUAL/" + ad, small, KindIgnored},
+		// In a movie's own folder, the ad would be taken for the movie.
+		{"Filmes/Star Wars III (2005)/" + ad, small, KindIgnored},
+		{"Filmes/Star Wars III (2005)/WWW.SITE.TO.mp4", small, KindIgnored},
+		{"Filmes/Promo.2015.1080p.mkv", small, KindMovie},
+		{"Series/The.Dot.Com.S01E01.mkv", small, KindSeries},
+		{"Filmes/Promo (2015)/promo.mkv", big, KindMovie},
+		{"Random Video.mkv", small, KindReview},
+	}
+	for _, c := range cases {
+		if got := resolve(fileRow{rel: c.rel, size: c.size}, nil).kind; got != c.want {
+			t.Errorf("%s (%d bytes) = %s, want %s", c.rel, c.size, got, c.want)
+		}
+	}
+	// A correction in Revisar wins.
+	got := resolve(fileRow{rel: ad, size: small}, &Override{Kind: "movie", Title: "Propaganda"})
+	if got.kind != KindMovie {
+		t.Errorf("corrected ad = %s, want movie", got.kind)
+	}
+}

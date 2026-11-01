@@ -99,6 +99,7 @@ A pasta onde o arquivo está também conta como pista (ex.: uma pasta chamada `A
 - Legendas laterais: `.srt .ass .ssa .vtt`, com idioma opcional (`.pt-BR.srt`, `.en.ass`)
 - Arquivos que não são mídia principal **não entram como filme/episódio** (o arquivo nunca é tocado):
   - **Sample** (`sample` no nome ou na pasta, ou < 50 MB com essa marcação): ignorado.
+  - **Propaganda de release** (< 100 MB, nome com `promo`, `1xbet`, `www.` ou domínio, sem ano nem episódio no próprio nome): ignorada.
   - **Trailer** (`-trailer`, `.trailer.`, `trailer.mkv`, pasta `trailers/`): vinculado ao filme/série/temporada da mesma pasta como **trailer**.
   - **Extras** (pastas `extras/`, `featurettes/`, `behind the scenes/`, `deleted scenes/`, `interviews/`, ou sufixos `-featurette`, `-behindthescenes`, `-deleted`, `-interview`): vinculados como **extras**, com o tipo identificado.
 

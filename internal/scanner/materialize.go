@@ -64,6 +64,9 @@ type Guess struct {
 func resolve(f fileRow, ov *Override) *item {
 	p := Parse(f.rel)
 	cl := Classify(p)
+	if isPromo(f.rel, f.size) {
+		cl = Classification{Kind: KindIgnored}
+	}
 	it := &item{file: f, p: p, kind: cl.Kind, reason: cl.Reason, title: p.Title, year: p.Year, version: p.Version}
 	if p.SeasonEpisode {
 		it.season, it.episode, it.episodeEnd = p.Season, p.Episode, p.EpisodeEnd
