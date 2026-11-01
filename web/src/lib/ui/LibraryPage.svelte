@@ -25,7 +25,7 @@
 	let genre: number | undefined = $state();
 	$effect(() => {
 		void listGenres(kind).then(
-			(g) => (genres = g),
+			(g) => (genres = [...g].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))),
 			() => undefined,
 		);
 	});

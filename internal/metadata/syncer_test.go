@@ -452,3 +452,27 @@ func TestRunStopsWithTheContext(t *testing.T) {
 	cancel()
 	<-done
 }
+
+func TestSeriesGenresBecomeLocal(t *testing.T) {
+	e := newEnv(t)
+	id := e.series("X-Men", `"TMDB":"tv/1"`)
+	movie := e.movie("Homem-Aranha", 2020, `"TMDB":"movie/2"`)
+	e.fake.routes["/tv/1"] = `{"genres":[{"id":16,"name":"Animação"},{"id":10759,"name":"Action & Adventure"},
+		{"id":28,"name":"Ação"},{"id":10765,"name":"Sci-Fi & Fantasy"}]}`
+	e.fake.routes["/movie/2"] = `{"genres":[{"id":28,"name":"Ação"}]}`
+	e.turnOn()
+	if err := e.s.Sync(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	got := strings.Split(e.genres(id), ",")
+	slices.Sort(got)
+	want := []string{"Animação", "Aventura", "Ação", "Fantasia", "Ficção científica"} // byte order
+	if !slices.Equal(got, want) {
+		t.Errorf("genres = %v, want %v", got, want)
+	}
+	// Movies and series end up in the same genre.
+	shared := e.str(`SELECT count(*) FROM title_genres WHERE genre_id = 28 AND owner_id IN (?, ?)`, id, movie)
+	if shared != "2" {
+		t.Errorf("titles in Ação = %s, want 2", shared)
+	}
+}

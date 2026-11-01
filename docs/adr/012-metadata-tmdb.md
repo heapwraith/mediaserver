@@ -25,7 +25,8 @@ O usuário quer categorizar a biblioteca por gênero e agrupar franquias. Na bib
    - Sem rede ou com o TMDB fora do ar, nada é gravado, e o próximo scan tenta os mesmos títulos. Uma chave recusada para a rodada e aparece em Configurações.
 7. **As tabelas não têm chave estrangeira para `movies` e `series`.** O `materialize` apaga e recria esses registros (com ids estáveis), e um `ON DELETE CASCADE` apagaria tudo a cada scan. O que é de títulos que saíram da biblioteca é limpo depois de cada rodada, como faz o `image_cache`.
 8. **Coleção só aparece com 2 ou mais filmes na biblioteca.** Uma coleção de um filme só não ajuda ninguém.
-9. **Aviso do TMDB:** Configurações mostra "Este produto usa a API do TMDB, mas não é endossado nem certificado pelo TMDB", exigido pelos termos.
+9. **Gêneros que só as séries têm viram os gêneros dos filmes.** O TMDB os devolve em inglês mesmo em pt-BR, e juntos: "Sci-Fi & Fantasy" vira Ficção científica + Fantasia, e "Action & Adventure" vira Ação + Aventura. Assim uma fileira traz filmes e séries juntos. Só apareceu com dados reais.
+10. **Aviso do TMDB:** Configurações mostra "Este produto usa a API do TMDB, mas não é endossado nem certificado pelo TMDB", exigido pelos termos.
 
 ## Consequências
 

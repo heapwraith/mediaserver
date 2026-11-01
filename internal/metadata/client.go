@@ -168,5 +168,40 @@ func (c client) search(ctx context.Context, kind, title string) ([]Candidate, er
 func (c client) details(ctx context.Context, kind string, id int) (details, error) {
 	var out details
 	err := c.get(ctx, "/"+kind+"/"+strconv.Itoa(id), nil, &out)
+	out.Genres = localGenres(out.Genres)
 	return out, err
+}
+
+// seriesGenres replaces the genres only series have on TMDB: they come in
+// English even in pt-BR, and joined ("Sci-Fi & Fantasy"), so a row by genre would
+// split movies from series. The same table is in migrations/007_genres_pt.sql.
+var seriesGenres = map[int][]genre{
+	10759: {{28, "Ação"}, {12, "Aventura"}},
+	10765: {{878, "Ficção científica"}, {14, "Fantasia"}},
+	10768: {{10752, "Guerra"}, {10768, "Política"}},
+	10762: {{10762, "Infantil"}},
+	10763: {{10763, "Notícias"}},
+	10766: {{10766, "Novela"}},
+	10767: {{10767, "Programa de entrevistas"}},
+}
+
+func localGenres(in []genre) []genre {
+	out := make([]genre, 0, len(in))
+	seen := map[int]bool{}
+	add := func(g genre) {
+		if !seen[g.ID] {
+			seen[g.ID] = true
+			out = append(out, g)
+		}
+	}
+	for _, g := range in {
+		if local, ok := seriesGenres[g.ID]; ok {
+			for _, l := range local {
+				add(l)
+			}
+		} else {
+			add(g)
+		}
+	}
+	return out
 }
