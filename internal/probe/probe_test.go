@@ -194,3 +194,14 @@ func TestFrameRate(t *testing.T) {
 		}
 	}
 }
+
+func TestFormatTags(t *testing.T) {
+	raw := `{"streams":[{"codec_type":"video","codec_name":"h264"}],"format":{"format_name":"matroska","tags":{"TMDB":"tv/136315","IMDB":"tt14452776"}}}`
+	res, err := Parse([]byte(raw), ".mkv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Tags["tmdb"] != "tv/136315" || res.Tags["imdb"] != "tt14452776" {
+		t.Errorf("tags = %v", res.Tags)
+	}
+}

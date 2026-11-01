@@ -281,7 +281,7 @@ Verificado: build ok, container `healthy`, scan com `/media`, banco persiste ap�
 - [x] **Player — avançar/voltar segurando a seta (HLS):** somar os toques e abrir uma sessão só depois de soltar a tecla
 - [x] **Legendas na TV:** tamanho e fundo configuráveis nas Configurações (SRT/WebVTT)
 - [x] **Taxa de atualização da TV:** no app Android, casar a taxa da tela com o FPS do vídeo (opção desligada por padrão; só em TVs que oferecem o modo)
-- [ ] **TMDB, opcional e desligado por padrão:** chave na tela de Configurações, identificação pelas tags do arquivo ou por título + ano, e Revisar para o que não bater com certeza ([ADR 012](docs/adr/012-metadata-tmdb.md))
+- [x] **TMDB, opcional e desligado por padrão:** chave na tela de Configurações, identificação pelas tags do arquivo ou por título + ano, e Revisar para o que não bater com certeza ([ADR 012](docs/adr/012-metadata-tmdb.md))
 - [ ] **Gêneros:** fileiras na tela inicial e filtro em Filmes/Séries/Animes (só com TMDB)
 - [ ] **Coleções:** franquias do TMDB com 2 ou mais filmes na biblioteca (só com TMDB)
 - [ ] Aceite com o controle na TV e com uma chave real do TMDB (usuário)

@@ -4,11 +4,18 @@
 	import { goto } from '$app/navigation';
 
 	import { fetchHealth } from '#lib';
-	import { downloadBackup, scanStatus, startScan } from '#lib/api/client.ts';
+	import {
+		downloadBackup,
+		metadataStatus,
+		saveMetadataSettings,
+		scanStatus,
+		startScan,
+		syncMetadata,
+	} from '#lib/api/client.ts';
 	import { session } from '#lib/api/session.svelte.ts';
-	import type { ScanStatus } from '#lib/api/types.ts';
+	import type { MetadataStatus, ScanStatus } from '#lib/api/types.ts';
 	import { capabilities } from '#lib/platform/codecs.ts';
-	import { focusGroup } from '#lib/platform/nav.svelte.ts';
+	import { focusGroup, focusable } from '#lib/platform/nav.svelte.ts';
 	import { changeServer, displayRates, isTV, platform } from '#lib/platform/platform.ts';
 	import {
 		SUBTITLE_BACKGROUNDS,
@@ -42,6 +49,52 @@
 	}
 	void refresh();
 	onDestroy(() => clearTimeout(timer));
+
+	// TMDB: optional and off by default (docs/adr/012). The key goes in and never comes back.
+	let meta: MetadataStatus | undefined = $state();
+	let metaKey = $state('');
+	let metaError: unknown = $state();
+	let metaTimer: ReturnType<typeof setTimeout> | undefined;
+
+	function showMeta(st: MetadataStatus) {
+		meta = st;
+		clearTimeout(metaTimer);
+		if (st.running) metaTimer = setTimeout(() => void loadMeta(), POLL_MS);
+	}
+
+	async function loadMeta() {
+		try {
+			showMeta(await metadataStatus());
+		} catch {
+			meta = undefined; // this server cannot do it: no section
+		}
+	}
+	void loadMeta();
+	onDestroy(() => clearTimeout(metaTimer));
+
+	async function saveMeta(change: { enabled?: boolean; key?: string }) {
+		metaError = undefined;
+		try {
+			showMeta(await saveMetadataSettings(change));
+			// The run has just been asked for: its first status comes in a moment.
+			metaTimer = setTimeout(() => void loadMeta(), POLL_MS);
+		} catch (e) {
+			metaError = e;
+		}
+	}
+
+	async function saveKey() {
+		const key = metaKey.trim();
+		if (key === '') return;
+		await saveMeta({ key });
+		if (metaError === undefined) metaKey = '';
+	}
+
+	async function syncNow() {
+		metaError = undefined;
+		await syncMetadata().catch((e: unknown) => (metaError = e));
+		metaTimer = setTimeout(() => void loadMeta(), POLL_MS);
+	}
 
 	async function scan() {
 		await startScan().catch((e: unknown) => (error = e));
@@ -194,6 +247,54 @@
 	</div>
 </section>
 
+{#if meta}
+	<section>
+		<h2>Gêneros e coleções (TMDB)</h2>
+		<p class="intro">
+			Opcional. Ligado, o servidor busca no TMDB, pela internet, os gêneros e as coleções dos títulos,
+			com a sua chave. Desligado, ele não faz nenhuma chamada externa.
+		</p>
+		<label class="field">
+			Chave do TMDB
+			<input
+				type="password"
+				bind:value={metaKey}
+				placeholder={meta.has_key ? 'Chave salva. Cole outra para trocar.' : 'Cole aqui a sua chave'}
+				use:focusable
+				autocomplete="off"
+			/>
+		</label>
+		<div class="bar" use:focusGroup={{ orientation: 'horizontal' }}>
+			<Button onclick={saveKey}>Salvar chave</Button>
+			<Button selected={meta.enabled} onclick={() => saveMeta({ enabled: !meta?.enabled })}>
+				TMDB: {meta.enabled ? 'ligado' : 'desligado'}
+			</Button>
+			{#if meta.enabled && meta.has_key}
+				<Button onclick={syncNow}>{meta.running ? 'Atualizando…' : 'Atualizar agora'}</Button>
+			{/if}
+			{#if meta.review > 0}
+				<Button onclick={() => goto('/revisar')}>Revisar títulos</Button>
+			{/if}
+		</div>
+		{#if metaError !== undefined}<ErrorNotice error={metaError} />{/if}
+		{#if meta.enabled && !meta.has_key}
+			<p class="note">Ligado, mas sem chave: nada é buscado até você salvar uma.</p>
+		{/if}
+		{#if meta.last_error === 'invalid_key'}
+			<p class="note">O TMDB recusou esta chave. Confira e salve de novo.</p>
+		{:else if meta.last_error === 'unavailable'}
+			<p class="note">Sem resposta do TMDB. O servidor tenta de novo no próximo scan.</p>
+		{/if}
+		<dl>
+			<dt>Títulos reconhecidos</dt>
+			<dd>{meta.matched}</dd>
+			<dt>Para revisar</dt>
+			<dd>{meta.review}</dd>
+		</dl>
+		<p class="note">Este produto usa a API do TMDB, mas não é endossado nem certificado pelo TMDB.</p>
+	</section>
+{/if}
+
 <section>
 	<h2>Servidor</h2>
 	<div class="bar" use:focusGroup={{ orientation: 'horizontal' }}>
@@ -278,6 +379,33 @@
 		margin: 1.5rem 0 0.75rem;
 		color: rgba(255, 255, 255, 0.6);
 	}
+	.intro {
+		max-width: 60rem;
+		color: rgba(255, 255, 255, 0.6);
+	}
+	.field {
+		display: block;
+		max-width: 40rem;
+		margin: 1rem 0 1.5rem;
+		color: rgba(255, 255, 255, 0.6);
+	}
+	input {
+		display: block;
+		width: 100%;
+		height: 3.25rem;
+		margin-top: 0.5rem;
+		padding: 0 1.25rem;
+		border: 0;
+		border-radius: 12px;
+		background: rgba(255, 255, 255, 0.1);
+		color: rgba(255, 255, 255, 0.92);
+		font: inherit;
+		font-size: 1.25rem;
+		outline: none;
+	}
+	input:global([data-focused]) {
+		box-shadow: 0 0 0 3px #4c8dff;
+	}
 	.sample {
 		margin-top: 1.5rem;
 		padding: 2rem;
@@ -287,7 +415,10 @@
 	}
 	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
 	:global(html.tv) dl,
-	:global(html.tv) .label {
+	:global(html.tv) .label,
+	:global(html.tv) .intro,
+	:global(html.tv) .field,
+	:global(html.tv) input {
 		font-size: 1.5rem;
 	}
 </style>

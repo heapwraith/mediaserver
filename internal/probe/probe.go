@@ -42,6 +42,8 @@ type Result struct {
 	AudioCodec string  `json:"audio_codec"`         // default (or first) audio track
 	Audio      []Track `json:"audio"`
 	Subtitles  []Track `json:"subtitles"`
+	// Tags are the tags of the file, by lower-case name (e.g. "tmdb", "imdb").
+	Tags map[string]string `json:"-"`
 	// Raw is the full ffprobe JSON (kept for tracks/chapters in later sprints).
 	Raw []byte `json:"-"`
 }
@@ -119,9 +121,10 @@ type ffStream struct {
 type ffOutput struct {
 	Streams []ffStream `json:"streams"`
 	Format  struct {
-		FormatName string `json:"format_name"`
-		Duration   string `json:"duration"`
-		BitRate    string `json:"bit_rate"`
+		FormatName string            `json:"format_name"`
+		Duration   string            `json:"duration"`
+		BitRate    string            `json:"bit_rate"`
+		Tags       map[string]string `json:"tags"`
 	} `json:"format"`
 }
 
@@ -144,6 +147,10 @@ func Parse(data []byte, ext string) (*Result, error) {
 	}
 	if b, err := strconv.ParseInt(ff.Format.BitRate, 10, 64); err == nil {
 		res.Bitrate = b
+	}
+	res.Tags = make(map[string]string, len(ff.Format.Tags))
+	for k, v := range ff.Format.Tags {
+		res.Tags[strings.ToLower(k)] = v
 	}
 
 	defaultAudio := -1

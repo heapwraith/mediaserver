@@ -22,6 +22,7 @@ import (
 	"mediaserver/internal/db"
 	"mediaserver/internal/intro"
 	"mediaserver/internal/library"
+	"mediaserver/internal/metadata"
 	"mediaserver/internal/probe"
 	"mediaserver/internal/scanner"
 	"mediaserver/internal/stream"
@@ -112,7 +113,13 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 	ctx, cancel := context.WithCancel(ctx)
 	// Openings and credits of new episodes, looked for after every scan.
 	analyzer := intro.NewAnalyzer(conn, cfg.MediaDir, cfg.FFmpegPath, logger.With("component", "intro"))
-	lib, stopLib, err := startLibrary(ctx, cfg, conn, logger, analyzer.Trigger)
+	// Genres and collections, only when the user turned TMDB on (off by default).
+	meta := metadata.New(conn, logger.With("component", "metadata"))
+	afterScan := func() {
+		analyzer.Trigger()
+		meta.Trigger()
+	}
+	lib, stopLib, err := startLibrary(ctx, cfg, conn, logger, afterScan)
 	if err != nil {
 		cancel()
 		return err
@@ -156,6 +163,7 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 	var bg sync.WaitGroup
 	bg.Go(func() { transcoder.Run(ctx) })
 	bg.Go(func() { analyzer.Run(ctx) })
+	bg.Go(func() { meta.Run(ctx) })
 	defer func() {
 		cancel()
 		bg.Wait()
@@ -172,7 +180,7 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 			Logger: logger, DB: conn, Version: version, Web: assets,
 			Scanner: lib, StartScan: func() bool { return lib.Start(ctx) },
 			Library: store, Stream: &stream.Server{Root: mediaRoot, Files: store}, Images: images,
-			Transcoder: transcoder, Subtitles: subs, Secret: secret,
+			Transcoder: transcoder, Subtitles: subs, Secret: secret, Metadata: meta,
 			DataDir: cfg.DataDir, Started: start,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,

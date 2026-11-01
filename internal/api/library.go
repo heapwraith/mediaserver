@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"mediaserver/internal/library"
+	"mediaserver/internal/metadata"
 	"mediaserver/internal/scanner"
 	"mediaserver/internal/stream"
 )
@@ -45,11 +46,16 @@ func (d Deps) writeError(w http.ResponseWriter, r *http.Request, err error) {
 		writeJSON(w, http.StatusServiceUnavailable, errorBody{Error: "too many transcodes running", Code: "busy"})
 	case errors.Is(err, stream.ErrClosed):
 		writeJSON(w, http.StatusServiceUnavailable, errorBody{Error: "server shutting down", Code: "shutting_down"})
-	case errors.Is(err, scanner.ErrInvalid), errors.Is(err, library.ErrInvalid):
+	case errors.Is(err, metadata.ErrUnauthorized):
+		writeJSON(w, http.StatusBadGateway, errorBody{Error: "TMDB refused the key", Code: "tmdb_key"})
+	case errors.Is(err, metadata.ErrUnavailable):
+		writeJSON(w, http.StatusBadGateway, errorBody{Error: "TMDB unavailable", Code: "tmdb_unavailable"})
+	case errors.Is(err, scanner.ErrInvalid), errors.Is(err, library.ErrInvalid), errors.Is(err, metadata.ErrInvalid):
 		writeJSON(w, http.StatusBadRequest, errorBody{Error: err.Error(), Code: "invalid"})
 	case errors.Is(err, library.ErrConflict):
 		writeJSON(w, http.StatusConflict, errorBody{Error: err.Error(), Code: "conflict"})
-	case errors.Is(err, scanner.ErrNotFound), errors.Is(err, library.ErrNotFound), errors.Is(err, stream.ErrNotFound):
+	case errors.Is(err, scanner.ErrNotFound), errors.Is(err, library.ErrNotFound), errors.Is(err, stream.ErrNotFound),
+		errors.Is(err, metadata.ErrNotFound):
 		writeJSON(w, http.StatusNotFound, errorBody{Error: "not found", Code: "not_found"})
 	default:
 		d.Logger.ErrorContext(r.Context(), "request failed", "path", r.URL.Path, "err", err)

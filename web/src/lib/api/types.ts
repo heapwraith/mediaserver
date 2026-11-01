@@ -226,6 +226,32 @@ export interface HomeItem {
 	color?: string;
 }
 
+/** TMDB lookups (optional, off by default). Never has the key. */
+export interface MetadataStatus {
+	enabled: boolean;
+	has_key: boolean;
+	running: boolean;
+	matched: number;
+	review: number;
+	last_error?: 'invalid_key' | 'unavailable';
+}
+
+export interface TMDBCandidate {
+	id: number;
+	title: string;
+	original_title?: string;
+	year?: number;
+}
+
+/** A title TMDB could not identify for sure (Revisar). */
+export interface MetadataReviewItem {
+	id: string;
+	kind: 'movie' | 'series';
+	title: string;
+	year?: number;
+	candidates: TMDBCandidate[];
+}
+
 /** A title the profile finished: "Assista novamente". */
 export interface Finished {
 	kind: 'movie' | SeriesKind;

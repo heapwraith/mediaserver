@@ -6,6 +6,8 @@ import type {
 	HomeItem,
 	List,
 	Media,
+	MetadataReviewItem,
+	MetadataStatus,
 	Movie,
 	Playback,
 	Profile,
@@ -121,6 +123,13 @@ export const listFonts = (mediaId: string) => api<string[]>(`/api/media/${mediaI
 export const stopPlayback = (p: Playback) =>
 	api<unknown>(p.url.replace(/\/index\.m3u8$/, ''), { method: 'DELETE', keepalive: true });
 
+export const metadataStatus = () => api<MetadataStatus>('/api/metadata/status');
+export const saveMetadataSettings = (s: { enabled?: boolean; key?: string }) =>
+	api<MetadataStatus>('/api/metadata/settings', json('PUT', s));
+export const syncMetadata = () => api<unknown>('/api/metadata/sync', { method: 'POST' });
+export const metadataReview = () => api<MetadataReviewItem[]>('/api/metadata/review');
+export const answerMetadata = (id: string, answer: { tmdb_id: number } | { skip: true }) =>
+	api<unknown>(`/api/metadata/${id}`, json('PUT', answer));
 export const scanStatus = () => api<ScanStatus>('/api/library/scan');
 export const startScan = () => api<{ started: boolean }>('/api/library/scan', { method: 'POST' });
 export const reviewQueue = () => api<ReviewItem[]>('/api/review');

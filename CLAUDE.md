@@ -19,7 +19,7 @@ As regras do projeto estão no `AGENTS.md` (importado acima). Esta seção só a
 - Mexeu em caminho crítico? Rode `make bench` e informe o resultado comparado ao anterior.
 - Não instale dependência nova sem justificar em uma linha (o que faz, por que a stdlib não resolve, tamanho).
 - Não crie arquivos fora da estrutura definida no `AGENTS.md` §3.
-- Não faça chamadas de rede externas no código (a única exceção é baixar dependências na build).
+- Não faça chamadas de rede externas no código. As únicas exceções são baixar dependências na build e o TMDB opcional em `internal/metadata` (ADR 012), desligado por padrão.
 
 ### Ao terminar uma tarefa
 1. Marque `[x]` no `SPRINTS.md`.
