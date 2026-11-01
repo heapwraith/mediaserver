@@ -87,6 +87,8 @@ export interface Playback {
 }
 
 export interface Media {
+	/** Frames per second of the video. */
+	fps?: number;
 	id: string;
 	kind: string;
 	status: string;

@@ -177,3 +177,20 @@ func TestProbeRealFile(t *testing.T) {
 		t.Errorf("probe of fake file: err = %v", err)
 	}
 }
+
+func TestFrameRate(t *testing.T) {
+	cases := []struct {
+		name, avg, r string
+		want         float64
+	}{
+		{"film", "24000/1001", "24000/1001", 24000.0 / 1001},
+		{"unknown average", "0/0", "25/1", 25},
+		{"unknown", "0/0", "0/0", 0},
+		{"missing", "", "", 0},
+	}
+	for _, c := range cases {
+		if got := frameRate(ffStream{AvgFrameRate: c.avg, RFrameRate: c.r}); got != c.want {
+			t.Errorf("%s = %v, want %v", c.name, got, c.want)
+		}
+	}
+}

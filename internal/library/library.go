@@ -338,6 +338,7 @@ type Media struct {
 	Height     int            `json:"height,omitzero"`
 	VideoCodec string         `json:"video_codec,omitzero"`
 	VideoBits  int            `json:"video_bits,omitzero"`
+	FPS        float64        `json:"fps,omitzero"`
 	AudioCodec string         `json:"audio_codec,omitzero"`
 	HDR        string         `json:"hdr,omitzero"`
 	Bitrate    int64          `json:"bitrate,omitzero"`
@@ -406,6 +407,7 @@ func (s Store) MediaByID(ctx context.Context, id string) (Media, error) {
 				m.Audio = res.Audio
 			}
 			m.VideoBits = res.VideoBits
+			m.FPS = res.FPS
 		}
 	}
 	m.Subtitles = []SubtitleInfo{}

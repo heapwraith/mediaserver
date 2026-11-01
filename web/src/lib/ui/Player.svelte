@@ -30,6 +30,7 @@
 	} from '#lib/platform/device.ts';
 	import type { Action } from '#lib/platform/keys.ts';
 	import { focusable } from '#lib/platform/nav.svelte.ts';
+	import { matchFrameRate } from '#lib/platform/platform.ts';
 	import { settings } from '#lib/platform/settings.svelte.ts';
 	import { homeTitle, playHref } from '#lib/ui/cards.ts';
 	import {
@@ -113,6 +114,7 @@
 			document.removeEventListener('visibilitychange', visibility);
 			persist(true);
 			clearTimeout(seekTimer);
+			if (settings.matchFrameRate) matchFrameRate(0);
 			playToken += 1; // a play() still loading must not attach anymore
 			source?.destroy();
 			source = undefined;
@@ -238,6 +240,7 @@
 		}
 		audio = m.audio;
 		markers = m.markers ?? [];
+		if (settings.matchFrameRate) matchFrameRate(m.fps ?? 0);
 		// The default track (or the first), like the server picks it.
 		audioSel = Math.max(
 			0,

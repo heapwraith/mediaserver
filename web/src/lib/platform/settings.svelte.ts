@@ -14,6 +14,8 @@ interface Settings {
 	backgroundTrailer: boolean;
 	/** The next episode starts by itself after a countdown. */
 	autoplayNext: boolean;
+	/** The screen follows the video's frame rate. Off: switching blanks it for a moment. */
+	matchFrameRate: boolean;
 	/** Text subtitles (SRT, WebVTT): ASS keeps the style of its file. */
 	subtitleSize: SubtitleSize;
 	subtitleBackground: SubtitleBackground;
@@ -31,12 +33,18 @@ function initial(): Settings {
 		reduceMotion: weak || prefersReducedMotion(),
 		backgroundTrailer: !weak,
 		autoplayNext: true,
+		matchFrameRate: false,
 		subtitleSize: 'm',
 		subtitleBackground: 'soft',
 	};
 	const stored = load(KEY);
 	if (typeof stored === 'object' && stored !== null) {
-		for (const k of ['reduceMotion', 'backgroundTrailer', 'autoplayNext'] as const) {
+		for (const k of [
+			'reduceMotion',
+			'backgroundTrailer',
+			'autoplayNext',
+			'matchFrameRate',
+		] as const) {
 			const v: unknown = k in stored ? Reflect.get(stored, k) : undefined;
 			if (typeof v === 'boolean') s[k] = v;
 		}

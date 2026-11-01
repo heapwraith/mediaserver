@@ -38,6 +38,7 @@ type Result struct {
 	VideoCodec string  `json:"video_codec"`
 	VideoBits  int     `json:"video_bits,omitzero"` // bit depth of the video (8, 10, 12)
 	HDR        string  `json:"hdr,omitempty"`       // hdr10, hlg, dolby_vision
+	FPS        float64 `json:"fps,omitzero"`        // frames per second of the video
 	AudioCodec string  `json:"audio_codec"`         // default (or first) audio track
 	Audio      []Track `json:"audio"`
 	Subtitles  []Track `json:"subtitles"`
@@ -101,6 +102,8 @@ type ffStream struct {
 	Channels      int    `json:"channels"`
 	PixFmt        string `json:"pix_fmt"`
 	ColorTransfer string `json:"color_transfer"`
+	AvgFrameRate  string `json:"avg_frame_rate"` // "24000/1001"
+	RFrameRate    string `json:"r_frame_rate"`
 	SideDataList  []struct {
 		SideDataType string `json:"side_data_type"`
 	} `json:"side_data_list"`
@@ -154,6 +157,7 @@ func Parse(data []byte, ext string) (*Result, error) {
 			res.Width, res.Height = s.Width, s.Height
 			res.VideoBits = bitDepth(s.PixFmt)
 			res.HDR = hdr(s)
+			res.FPS = frameRate(s)
 		case "audio":
 			t := track(s)
 			t.Channels = s.Channels
@@ -183,6 +187,19 @@ func track(s ffStream) Track {
 		Default:  s.Disposition.Default == 1,
 		Forced:   s.Disposition.Forced == 1,
 	}
+}
+
+// frameRate reads the frames per second; ffprobe answers "0/0" when it does not know.
+func frameRate(s ffStream) float64 {
+	for _, r := range []string{s.AvgFrameRate, s.RFrameRate} {
+		num, den, _ := strings.Cut(r, "/")
+		n, errN := strconv.ParseFloat(num, 64)
+		d, errD := strconv.ParseFloat(den, 64)
+		if errN == nil && errD == nil && n > 0 && d > 0 {
+			return n / d
+		}
+	}
+	return 0
 }
 
 // bitDepth reads the bit depth from a pixel format (yuv420p10le, p010le…).

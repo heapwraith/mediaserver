@@ -9,7 +9,7 @@
 	import type { ScanStatus } from '#lib/api/types.ts';
 	import { capabilities } from '#lib/platform/codecs.ts';
 	import { focusGroup } from '#lib/platform/nav.svelte.ts';
-	import { changeServer, isTV, platform } from '#lib/platform/platform.ts';
+	import { changeServer, displayRates, isTV, platform } from '#lib/platform/platform.ts';
 	import {
 		SUBTITLE_BACKGROUNDS,
 		SUBTITLE_SIZES,
@@ -48,7 +48,9 @@
 		await refresh();
 	}
 
-	function toggle(key: 'reduceMotion' | 'backgroundTrailer' | 'autoplayNext') {
+	const rates = displayRates();
+
+	function toggle(key: 'reduceMotion' | 'backgroundTrailer' | 'autoplayNext' | 'matchFrameRate') {
 		settings[key] = !settings[key];
 		saveSettings();
 	}
@@ -154,6 +156,11 @@
 		<Button selected={settings.autoplayNext} onclick={() => toggle('autoplayNext')}>
 			Próximo episódio automático: {settings.autoplayNext ? 'sim' : 'não'}
 		</Button>
+		{#if rates.length > 1}
+			<Button selected={settings.matchFrameRate} onclick={() => toggle('matchFrameRate')}>
+				Ajustar a tela ao vídeo: {settings.matchFrameRate ? 'sim' : 'não'}
+			</Button>
+		{/if}
 	</div>
 	<p class="label">Tamanho da legenda</p>
 	<div class="bar" use:focusGroup={{ orientation: 'horizontal' }}>
@@ -212,6 +219,10 @@
 		<dd>{platformName}</dd>
 		<dt>Reproduz direto</dt>
 		<dd>{caps.length > 0 ? caps.join(' · ') : '—'}</dd>
+		{#if rates.length > 0}
+			<dt>Taxas da tela</dt>
+			<dd>{rates.map((r) => `${r} Hz`).join(' · ')}</dd>
+		{/if}
 		<dt>Legendas ASS no aparelho</dt>
 		<dd>{caps.includes('ass') ? 'sim' : 'não (gravadas no vídeo pelo servidor)'}</dd>
 	</dl>
