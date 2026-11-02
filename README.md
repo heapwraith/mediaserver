@@ -6,13 +6,14 @@ Servidor de streaming **local** para filmes, séries e animes. Um binário só (
 - **Nunca** renomeia, move ou apaga seus arquivos: toda a organização é virtual, no banco.
 - Toca direto quando o aparelho suporta o formato e converte (HLS, com GPU quando houver) só quando precisa.
 - Perfis com "continuar assistindo", legendas SRT/ASS (inclusive as estilizadas de anime) e apps para TVs Samsung, LG e Android.
-- Só rede local, sem contas, sem internet: nada é buscado fora (TMDB etc.).
+- Só rede local, sem contas, sem internet: nada é buscado fora (o TMDB é opcional e vem desligado). Sem telemetria.
+- Segurança em camadas: tudo exige sessão de perfil, PINs, PIN de administrador opcional e proteção contra ataques vindos de outras páginas da rede (veja [Segurança](#segurança-e-privacidade)).
 
 > **Uso responsável:** o Telão é um *player* para arquivos que **você** tem o direito de assistir (conteúdo próprio, comprado, livre ou com licença). Ele não baixa, não busca e não distribui mídia, e não quebra proteção (DRM). Os nomes de release que o scanner entende (`WEB-DL`, `BluRay`...) são só padrões de nome de arquivo.
 
 > `mediaserver` é um nome provisório. Regras do projeto em [`AGENTS.md`](AGENTS.md); planejamento em [`SPRINTS.md`](SPRINTS.md).
 
-**Sumário:** [Instalação](#instalação) · [Rodar como serviço](#rodar-como-serviço) · [Primeiro uso](#primeiro-uso) · [Organização das pastas](#organização-das-pastas) · [Assistindo](#assistindo) · [TVs](#tvs) · [Configuração](#configuração) · [Backup e restauração](#backup-e-restauração) · [Status do servidor](#status-do-servidor) · [Problemas comuns](#problemas-comuns) · [API](#api) · [Desenvolvimento](#desenvolvimento)
+**Sumário:** [Instalação](#instalação) · [Rodar como serviço](#rodar-como-serviço) · [Primeiro uso](#primeiro-uso) · [Organização das pastas](#organização-das-pastas) · [Assistindo](#assistindo) · [TVs](#tvs) · [Configuração](#configuração) · [Backup e restauração](#backup-e-restauração) · [Status do servidor](#status-do-servidor) · [Segurança](#segurança-e-privacidade) · [Problemas comuns](#problemas-comuns) · [API](#api) · [Desenvolvimento](#desenvolvimento)
 
 ---
 
@@ -87,6 +88,7 @@ Abra `http://IP-DO-PC:8080`. As mídias entram como somente leitura e o banco fi
 - **Pasta no Windows (WSL):** use o caminho `/mnt/c/...`, por exemplo `MEDIA_DIR=/mnt/c/Users/SEU-USUARIO/Videos/mediaStorage` num arquivo `.env`. Arquivos novos podem não ser percebidos sozinhos nessa pasta; use **Configurações → scan**.
 - **Primeira imagem:** o build compila o FFmpeg 9 (NVENC) e leva alguns minutos; os próximos usam o cache.
 - **TVs:** na rede padrão do Docker a descoberta automática pode falhar; digite o IP na TV. No Linux, `network_mode: host` resolve.
+- **Segurança do contêiner:** o `docker-compose.yml` já roda sem capabilities, com sistema de arquivos somente leitura (só `/data` e `/tmp` gravam) e `no-new-privileges`. Ele publica a porta em **todas** as interfaces (a TV precisa alcançar): para limitar, troque `ports` por `"IP-DA-SUA-REDE:8080:8080"`.
 - Só a imagem: `make docker`. Detalhes no [ADR 011](docs/adr/011-docker.md).
 
 ---
@@ -125,7 +127,8 @@ sudo ./mediaserver-linux-amd64 service install -media-dir "/srv/midias"
 1. **Escolha quem está assistindo.** Na primeira vez, crie um perfil: nome, cor e, se quiser, um **PIN de 4 dígitos** (5 erros seguidos bloqueiam o perfil por 30 s). Cada perfil tem seu próprio "continuar assistindo" e sua legenda padrão.
 2. **Espere o primeiro scan.** Ele começa sozinho ao iniciar o servidor. Acompanhe em **Configurações → Biblioteca**. Arquivos copiados depois aparecem sozinhos, assim que a cópia termina.
 3. **Confira a fila Revisar.** O que o servidor não conseguiu classificar com certeza vai para **Revisar**, nunca some. Ali você corrige tipo (filme, série, anime ou ignorar), título, ano, temporada e episódio, e pode **juntar** séries duplicadas ou **separar** episódios. As correções valem para os próximos scans e acompanham o arquivo se ele for renomeado ou movido.
-4. **Ajuste o perfil** (Configurações → Editar perfil): idioma padrão das legendas (ex.: Português). Com áudio no mesmo idioma, só legendas forçadas aparecem sozinhas.
+4. **Proteja a instalação** (recomendado): em **Configurações → Servidor → Definir PIN de administrador**. Sem ele, qualquer aparelho da rede pode fazer scan, editar a Revisar, mexer no TMDB e baixar o backup. Detalhes em [Segurança](#segurança-e-privacidade).
+5. **Ajuste o perfil** (Configurações → Editar perfil): idioma padrão das legendas (ex.: Português). Com áudio no mesmo idioma, só legendas forçadas aparecem sozinhas.
 
 ---
 
@@ -267,7 +270,7 @@ No Windows, use barras normais ou dobradas no TOML: `media_dir = "D:/Midias"`.
 
 O banco guarda perfis, progresso e as correções da Revisar. A biblioteca em si é refeita por um scan, e seus vídeos nunca ficam no banco.
 
-- **Backup:** **Configurações → Baixar backup** (no navegador do PC). Ele baixa `mediaserver-AAAAMMDD-HHMM.db`, uma cópia consistente feita com o servidor rodando.
+- **Backup:** **Configurações → Baixar backup** (no navegador do PC; pede o PIN de administrador, se houver). Ele baixa `mediaserver-AAAAMMDD-HHMM.db`, uma cópia consistente feita com o servidor rodando. **O backup não leva segredos**: nem o segredo das sessões, nem a chave do TMDB, nem os PINs. Depois de restaurar, todos escolhem o perfil de novo, e você define de novo os PINs dos perfis, o PIN de administrador e a chave do TMDB.
 - **Restaurar:** com o servidor **parado**, na mesma pasta e com as mesmas opções do servidor:
 
   ```bash
@@ -306,7 +309,11 @@ O banco guarda perfis, progresso e as correções da Revisar. A biblioteca em si
 | Legenda com acento quebrado | SRT em codificação rara: salve em UTF-8 |
 | HDR convertido parece desbotado | Ainda sem *tone mapping* (Backlog); prefira direct play num aparelho com HDR |
 | Servidor não liga como serviço | `mediaserver service status` e o log (`journalctl --user -u mediaserver`; macOS `~/Library/Logs/mediaserver.log`; Windows `DATA_DIR\mediaserver.log`) |
-| Esqueci o PIN | Ainda não há como redefinir (está no Backlog). Crie outro perfil; um perfil só pode ser editado ou apagado por ele mesmo |
+| Esqueci o PIN de um perfil | Ainda não há como redefinir (está no Backlog). Crie outro perfil; um perfil só pode ser editado ou apagado por ele mesmo |
+| Esqueci o PIN de administrador | Pare o servidor e rode `sqlite3 data/mediaserver.db "DELETE FROM app_state WHERE key='admin_pin'"` |
+| `403 bad_host` / "host not allowed" | Você abriu o servidor por um nome com ponto (ex.: `telao.casa`). Libere-o com `ALLOWED_HOSTS=telao.casa`. Por IP, `localhost`, nome sem ponto e `*.local` funciona sempre |
+| Imagens e vídeos dão 401 depois de atualizar o servidor | A sessão antiga acabou: escolha o perfil de novo |
+| `ERR_BLOCKED_BY_RESPONSE` na TV | Algum proxy ou versão antiga bloqueia o iframe do app. Os apps só podem embutir a interface por páginas `file://` (veja [ADR 015](docs/adr/015-seguranca-rede.md)) |
 
 Logs: no terminal onde o servidor roda (`-env dev` para texto legível, `-log-level debug` para mais detalhes).
 
@@ -314,19 +321,21 @@ Logs: no terminal onde o servidor roda (`-env dev` para texto legível, `-log-le
 
 ## API
 
-JSON em `/api`. Rotas de perfil e progresso exigem o cabeçalho `X-Profile: <token>` (devolvido ao escolher o perfil).
+JSON em `/api`. **Quase tudo exige sessão:** o cabeçalho `X-Profile: <token>` (devolvido ao escolher o perfil, vale 90 dias). O que o navegador carrega sozinho (`<video>`, `<img>`, legendas, fontes) leva o **token de mídia** em `?m=<token>` (só `GET`/`HEAD`; vem em `media_token` ao escolher o perfil e se renova em `GET /api/media-token`; as URLs de vídeo direto e de fontes já vêm com ele). Abertos, sem sessão: `GET /api/health` (sem versão), `GET /api/profiles`, `POST /api/profiles/{id}/session`, `GET /api/admin/access`, `POST /api/admin/unlock` e os segmentos HLS (`/api/transcode/…`, protegidos pela chave aleatória da conversão). Escritas pedem `Content-Type: application/json`, e `Host`/`Origin` passam pelo [`guard`](docs/adr/015-seguranca-rede.md).
+
+Rotas marcadas **(admin)** pedem o cabeçalho `X-Admin: <token>` quando existe PIN de administrador (`403 admin_required` sem ele).
 
 ### Biblioteca e Revisar
 
 | Endpoint | O que faz |
 |---|---|
-| `GET /api/health` | Status e versão (`name: "mediaserver"`; aberto a outras origens para a descoberta das TVs) |
-| `POST /api/library/scan` | Inicia um scan manual (202) |
+| `GET /api/health` | Status (`name: "mediaserver"`, sem versão; aberto só às páginas `file://` dos apps de TV, para a descoberta) |
+| `POST /api/library/scan` **(admin)** | Inicia um scan manual (202) |
 | `GET /api/library/scan` | Status do scan atual/último |
-| `GET /api/review` | Fila Revisar |
-| `PUT /api/review/{fileId}` | Corrige um arquivo: `{"kind":"movie\|series\|anime\|ignored","title":"…","year":2020,"season":1,"episode":5}` |
-| `POST /api/series/merge` | Junta séries: `{"source_ids":[…],"target_id":"…"}` |
-| `POST /api/series/split` | Separa episódios numa série nova: `{"series_id":"…","file_ids":[…],"title":"…"}` |
+| `GET /api/review` **(admin)** | Fila Revisar |
+| `PUT /api/review/{fileId}` **(admin)** | Corrige um arquivo: `{"kind":"movie\|series\|anime\|ignored","title":"…","year":2020,"season":1,"episode":5}` |
+| `POST /api/series/merge` **(admin)** | Junta séries: `{"source_ids":[…],"target_id":"…"}` |
+| `POST /api/series/split` **(admin)** | Separa episódios numa série nova: `{"series_id":"…","file_ids":[…],"title":"…"}` |
 
 ### Leitura
 
@@ -363,8 +372,9 @@ Listagens e detalhes respondem com `ETag` (o cliente revalida e recebe 304).
 | Endpoint | O que faz |
 |---|---|
 | `GET /api/profiles` | Lista os perfis |
-| `POST /api/profiles` | Cria: `{"name":"Sala","color":"#4c8dff","pin":"1234","subtitle_language":"pt-BR"}` |
-| `POST /api/profiles/{id}/session` | Escolhe o perfil (`{"pin":"1234"}` se tiver) → `{"profile":…,"token":"…"}` |
+| `POST /api/profiles` **(admin)** | Cria: `{"name":"Sala","color":"#4c8dff","pin":"1234","subtitle_language":"pt-BR"}` |
+| `POST /api/profiles/{id}/session` | Escolhe o perfil (`{"pin":"1234"}` se tiver) → `{"profile":…,"token":"…","media_token":"…"}` |
+| `GET /api/media-token` | Renova o token de mídia da sessão |
 | `PUT /api/profiles/{id}`, `DELETE /api/profiles/{id}` | Edita / apaga o próprio perfil (com `X-Profile` dele) |
 | `GET /api/home` | Fileiras do Início do perfil |
 | `GET`/`PUT /api/progress/{mediaId}` | Posição: `{"position_ms":…,"duration_ms":…}` |
@@ -375,17 +385,21 @@ Listagens e detalhes respondem com `ETag` (o cliente revalida e recebe 304).
 
 | Endpoint | O que faz |
 |---|---|
-| `GET /api/admin/backup` | Baixa uma cópia consistente do banco (`mediaserver-AAAAMMDD-HHMM.db`) |
-| `GET /api/admin/status` | CPU, memória, encoder, GPU NVIDIA, conversões ativas, caches e biblioteca |
+| `GET /api/admin/access` | `{"enabled":…,"unlocked":…}`: há PIN de administrador? esta chamada já o liberou? |
+| `POST /api/admin/unlock` | `{"pin":"1234"}` → `{"token":"…"}` (vale 30 min; 5 erros bloqueiam por endereço) |
+| `PUT /api/admin/pin` **(admin)** | Define, troca (`{"pin":"1234"}`) ou remove (`{"pin":""}`) o PIN de administrador |
+| `POST /api/admin/revoke` **(admin)** | Encerra todas as sessões de todos os aparelhos |
+| `GET /api/admin/backup` **(admin)** | Baixa uma cópia consistente do banco (`mediaserver-AAAAMMDD-HHMM.db`) |
+| `GET /api/admin/status` **(admin)** | CPU, memória, encoder, GPU NVIDIA, conversões ativas, caches e biblioteca |
 | `GET /api/metadata/status` | TMDB: ligado, tem chave, títulos reconhecidos e para revisar (nunca a chave) |
-| `PUT /api/metadata/settings` | Liga ou desliga o TMDB e salva a chave (`{"enabled": true, "key": "..."}`) |
-| `POST /api/metadata/sync` | Busca agora os títulos ainda sem resposta |
-| `GET /api/metadata/review` | Títulos sem certeza, com as opções |
-| `PUT /api/metadata/{id}` | Resposta do usuário: `{"tmdb_id": 123}` ou `{"skip": true}` |
+| `PUT /api/metadata/settings` **(admin)** | Liga ou desliga o TMDB e salva a chave (`{"enabled": true, "key": "..."}`) |
+| `POST /api/metadata/sync` **(admin)** | Busca agora os títulos ainda sem resposta |
+| `GET /api/metadata/review` **(admin)** | Títulos sem certeza, com as opções |
+| `PUT /api/metadata/{id}` **(admin)** | Resposta do usuário: `{"tmdb_id": 123}` ou `{"skip": true}` |
 
 ### Erros
 
-Toda resposta de erro é `{"error": "texto para logs", "code": "…"}`. Códigos: `file_missing` (410, o arquivo sumiu do disco), `no_ffmpeg` (503), `busy` (503, limite de conversões), `shutting_down` (503), `not_found` (404), `invalid` (400), `conflict` (409), `no_profile` (401), `wrong_pin` / `forbidden` (403), `pin_locked` (429), `unavailable` (503), `internal` (500).
+Toda resposta de erro é `{"error": "texto para logs", "code": "…"}`. Códigos: `file_missing` (410, o arquivo sumiu do disco), `no_ffmpeg` (503), `busy` (503, limite de conversões), `shutting_down` (503), `not_found` (404), `invalid` (400), `conflict` (409), `no_profile` (401), `wrong_pin` / `forbidden` / `admin_required` / `bad_host` / `bad_origin` (403), `pin_locked` (429), `unavailable` (503), `internal` (500).
 
 ---
 
@@ -417,13 +431,15 @@ make clean      # apaga as saídas de build
 
 O `make dev` usa a pasta `./media` (mude com `make dev MEDIA_DIR=/caminho`) e guarda o banco em `.dev/data`.
 
-O CI (`.github/workflows/ci.yml`) roda `make check` e `make test` em Linux, Windows e macOS a cada push.
+O CI roda a cada push e pull request: `make check` e `make test` em Linux, Windows e macOS (`ci.yml`), `govulncheck`, `npm audit` e a checagem de licenças (job `security`), CodeQL (`codeql.yml`) e revisão de dependências (`dependency-review.yml`). O Dependabot abre PRs semanais. As Actions são fixadas por hash de commit.
+
+**Fluxo de contribuição:** a branch `main` é protegida. Crie uma branch (`git switch -c feat/minha-mudanca`), abra um pull request e espere o CI ficar verde; só então ele pode ser mesclado. Push direto e *force push* na `main` são bloqueados. Commits em inglês, no padrão Conventional Commits.
 
 ### Estrutura
 
 ```
 cmd/mediaserver/   bootstrap e encerramento
-internal/          config, db, library, scanner, probe, stream, subtitles, api
+internal/          config, db, library, scanner, probe, ffsafe, stream, subtitles, intro, metadata, sysinfo, service, api
 web/               SvelteKit (interface) e web/src/shell (tela de conexão das TVs)
 tv/                empacotamento Samsung, LG e Android
 migrations/        SQL versionado
@@ -440,15 +456,25 @@ Decisões de arquitetura em [`docs/adr/`](docs/adr/).
 - **TMDB:** este produto usa a API do TMDB, mas não é endossado nem certificado pelo TMDB. O recurso é opcional e desligado por padrão.
 - **Privacidade:** sem telemetria e sem contas externas. Perfis e histórico ficam só no seu banco local.
 
-## Privacidade e segurança na rede
+## Segurança e privacidade
 
-- O servidor **não faz nenhuma chamada à internet** (só o TMDB, se você ligar). Sem telemetria.
-- Ele escuta em todas as interfaces, **inclusive IPv6**. Confira no roteador que **não há encaminhamento de porta** para ele e que o firewall IPv6 bloqueia entrada. Não exponha a porta à internet.
-- O servidor recusa pedidos com `Host` de domínio externo (proteção contra *DNS rebinding*) e pedidos de gravação vindos de outro site (CSRF).
-- O backup (`/api/admin/backup`) **não leva** o segredo das sessões, a chave do TMDB nem os PINs: depois de restaurar, defina os PINs de novo.
-- A sessão de um perfil vale 90 dias.
-- **PIN de administrador (opcional):** em Configurações → Servidor → *Definir PIN de administrador*. Com ele, scan, Revisar, TMDB e backup pedem o PIN (vale 30 min); assistir continua livre. Sem ele (o padrão) essas ações ficam abertas a quem estiver na rede. Esqueceu o PIN? Pare o servidor e rode `sqlite3 data/mediaserver.db "DELETE FROM app_state WHERE key='admin_pin'"`. Defina o PIN logo na instalação: quem definir primeiro é o dono.
-- **Tudo exige sessão de perfil** (lista, vídeo, imagens, legendas); sem PIN de administrador, quem cria um perfil enxerga a biblioteca. Para fechar a casa: defina o PIN de administrador (ele passa a ser necessário também para criar perfil) e ponha PIN nos perfis. *Configurações → Sair de todos os aparelhos* encerra todas as sessões.
-- Política de segurança e como reportar: [SECURITY.md](SECURITY.md).
-- Se a máquina tiver IPv6 público ou IPv4 público, o servidor avisa no log ao iniciar.
-- Detalhes: [docs/auditoria-seguranca.md](docs/auditoria-seguranca.md) (achados e o que falta), [ADR 015](docs/adr/015-seguranca-rede.md) (decisões) e [docs/conformidade.md](docs/conformidade.md) (licenças e leis).
+O Telão é feito para a **rede de casa**. Política e como reportar uma falha: [SECURITY.md](SECURITY.md).
+
+**O que ele faz por você**
+- **Nenhuma chamada à internet** (só o TMDB, se você ligar) e nenhuma telemetria.
+- **Sessão para tudo:** lista, detalhes, vídeo, imagens e legendas só respondem a quem escolheu um perfil. Um site aberto no navegador da casa não consegue ler nem alterar nada: pedidos com `Host` de domínio externo (DNS rebinding) e gravações de outra origem (CSRF) são recusados, e só os apps de TV podem embutir a interface.
+- **PIN de perfil** (4 dígitos, PBKDF2) com bloqueio crescente por perfil e endereço.
+- **PIN de administrador (opcional):** em *Configurações → Servidor*. Com ele, scan, Revisar, mesclar/separar, TMDB, status, backup e **criar perfil** pedem o PIN (vale 30 min); assistir continua livre. *Sair de todos os aparelhos* encerra todas as sessões.
+- **Backup sem segredos** (sessões, chave do TMDB e PINs ficam de fora).
+- **FFmpeg contido:** lê só arquivos locais, só os contêineres que o scanner conhece, e não abre conexão de rede, mesmo com um arquivo de mídia malicioso.
+- **Instalação isolada:** o contêiner Docker roda sem capabilities, somente leitura e sem root; a unidade systemd tem sandbox.
+
+**O que é com você**
+1. **Defina o PIN de administrador logo na instalação.** Sem ele, quem entrar na rede e criar um perfil vê a biblioteca e pode fazer scan, editar a Revisar e baixar o backup. Quem definir o PIN primeiro é o administrador. Esqueceu? Pare o servidor e rode `sqlite3 data/mediaserver.db "DELETE FROM app_state WHERE key='admin_pin'"`. O log avisa a cada início enquanto não houver PIN.
+2. **Ponha PIN nos perfis** que não devem ser abertos por qualquer um. Perfil sem PIN é aberto por desenho.
+3. **Não exponha a porta à internet.** O servidor escuta em todas as interfaces, inclusive IPv6: confira no roteador que **não há encaminhamento de porta** e que o firewall IPv6 bloqueia entrada. Se a máquina tiver IP público, o log avisa ao iniciar. No Docker, restrinja a publicação (`127.0.0.1:8080:8080` ou o IP da sua rede; veja o `docker-compose.yml`). Para acesso de fora de casa use Tailscale.
+4. **O tráfego da rede local é HTTP sem cifra:** quem estiver no caminho (roteador, repetidor, aparelho comprometido) lê vídeo, títulos e tokens. Prefira cabo e um switch seu. HTTPS na rede local está no Backlog.
+5. **A TV tem a própria coleta.** O ACR ("Serviços de informações de visualização") e a publicidade personalizada da Samsung analisam o que aparece na tela, inclusive do Telão. Desligue em *Configurações → Geral → Termos e política de privacidade* (os nomes variam por modelo) ou bloqueie a TV de sair para a internet no roteador.
+6. **Nome com ponto no DNS da casa** (ex.: `telao.casa`)? Libere com `ALLOWED_HOSTS=telao.casa`.
+
+**Para quem contribui:** `main` é protegida; mudanças entram por branch e pull request com o CI verde (testes nos 3 sistemas, `govulncheck`, `npm audit`, licenças, CodeQL e revisão de dependências). Detalhes técnicos: [ADR 015](docs/adr/015-seguranca-rede.md), [auditoria](docs/auditoria-seguranca.md) e [conformidade](docs/conformidade.md).

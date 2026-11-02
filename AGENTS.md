@@ -58,6 +58,7 @@ internal/db/            → conexão SQLite, migrações (embed), queries
 internal/library/       → modelos de domínio (Movie, Series, Season, Episode, MediaFile)
 internal/scanner/       → varredura da pasta, parser de nomes, watcher (fsnotify)
 internal/probe/         → wrapper do ffprobe (codecs, duração, faixas)
+internal/ffsafe/        → opções de entrada do ffmpeg/ffprobe (protocolos e contêineres permitidos)
 internal/stream/        → direct play (Range) e transcodificação HLS
 internal/subtitles/     → legendas externas e embutidas, SRT→VTT
 internal/api/           → handlers HTTP, rotas, middlewares

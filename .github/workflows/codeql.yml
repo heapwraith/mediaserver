@@ -30,8 +30,16 @@ jobs:
       - uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           languages: ${{ matrix.language }}
-          build-mode: none
+          # Go has no "none" mode: build with an empty frontend stub (the Go
+          # packages only need web/build to exist for go:embed).
+          build-mode: ${{ matrix.language == 'go' && 'manual' || 'none' }}
           queries: security-extended
+
+      - name: Build (Go)
+        if: matrix.language == 'go'
+        run: |
+          make web-stub
+          go build ./...
 
       - uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
