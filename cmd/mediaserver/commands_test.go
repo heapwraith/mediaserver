@@ -120,3 +120,51 @@ func TestServiceUsage(t *testing.T) {
 		t.Error("flags taken for a command")
 	}
 }
+
+func TestResetPinCmd(t *testing.T) {
+	data := t.TempDir()
+	media := t.TempDir()
+	file := filepath.Join(data, db.FileName)
+	migratedDB(t, file, "Ana")
+	conn, err := db.Open(t.Context(), file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	for _, q := range []string{
+		`UPDATE profiles SET pin_hash = 'pbkdf2-sha256$1$aa$bb'`,
+		`INSERT INTO app_state (key, value) VALUES ('admin_pin', 'pbkdf2-sha256$1$aa$bb')`,
+	} {
+		if _, err := conn.ExecContext(t.Context(), q); err != nil {
+			t.Fatal(err)
+		}
+	}
+	flags := []string{"-media-dir", media, "-data-dir", data}
+	run := func(who string) (int, string) {
+		var out, errb bytes.Buffer
+		code := resetPinCmd(append([]string{who}, flags...), &out, &errb)
+		return code, out.String() + errb.String()
+	}
+	count := func(q string) (n int) {
+		if err := conn.QueryRowContext(t.Context(), q).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+
+	if code, out := run("nobody"); code != 1 || !strings.Contains(out, "no profile") {
+		t.Errorf("unknown profile = %d %q", code, out)
+	}
+	if code, out := run("ana"); code != 0 || count(`SELECT COUNT(*) FROM profiles WHERE pin_hash IS NOT NULL`) != 0 {
+		t.Errorf("profile PIN not removed: %d %q", code, out)
+	}
+	if code, _ := run("ana"); code != 1 {
+		t.Errorf("a profile without PIN = %d, want 1", code)
+	}
+	if code, out := run("admin"); code != 0 || count(`SELECT COUNT(*) FROM app_state WHERE key = 'admin_pin'`) != 0 {
+		t.Errorf("admin PIN not removed: %d %q", code, out)
+	}
+	if code := resetPinCmd(nil, &bytes.Buffer{}, &bytes.Buffer{}); code != 2 {
+		t.Errorf("no arguments = %d, want 2", code)
+	}
+}

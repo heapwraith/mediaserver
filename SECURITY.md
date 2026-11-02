@@ -14,12 +14,15 @@ Use **Security → Report a vulnerability** neste repositório do GitHub (relato
 - **Administração:** PIN de administrador opcional para scan, Revisar, TMDB, status, backup e criação de perfis.
 - **FFmpeg:** só lê arquivos locais e pipes e só aceita os contêineres que o scanner reconhece; um arquivo de mídia não consegue abrir conexões de rede.
 - **Backup:** sem o segredo das sessões, sem a chave do TMDB e sem os PINs.
-- **Cadeia de suprimentos:** `govulncheck`, `npm audit`, CodeQL e revisão de dependências no CI; Actions fixadas por hash; Dependabot; binários de release com checksum e atestado de procedência.
+- **CSP:** a interface só executa os próprios arquivos e o script de inicialização do SvelteKit (autorizado por hash); sem `eval` de texto injetado em página, sem scripts de terceiros, sem iframe externo.
+- **PIN esquecido:** `mediaserver reset-pin admin` ou `mediaserver reset-pin <perfil>`, na máquina do servidor.
+- **Cadeia de suprimentos:** `govulncheck`, `npm audit`, CodeQL e revisão de dependências no CI; Actions fixadas por hash; Dependabot; binários de release com checksum, SBOM e atestado de procedência (`gh attestation verify`).
 
 ## O que NÃO protege (limites conhecidos)
 - O tráfego da rede local é **HTTP sem cifra**: quem estiver no caminho (roteador, repetidor, aparelho comprometido) lê o vídeo, os títulos e os tokens. Use cabo/switch próprio ou, para acesso externo, Tailscale.
 - Perfil **sem PIN** é aberto a quem estiver na rede, por desenho. Quem definir o PIN de administrador primeiro vira o administrador.
 - A TV tem seus próprios serviços de coleta (ACR, publicidade personalizada): desligue-os nas configurações dela.
-- Não há CSP completa (`script-src`) por enquanto; está no Backlog, a testar na TV com Chromium 76.
+- A CSP permite `'unsafe-eval'`: o JASSUB (legendas ASS) compila WebAssembly na thread principal, e isso exige `'unsafe-eval'` antes do Chromium 97 (a Tizen 6.5 é Chromium 85). Scripts inline não autorizados e scripts de outros domínios continuam bloqueados.
+- HTTPS na rede local não está disponível: as TVs não aceitam uma autoridade certificadora própria, então só funcionaria com um domínio real e certificado público.
 
 Detalhes: [`docs/auditoria-seguranca.md`](docs/auditoria-seguranca.md) e [ADR 015](docs/adr/015-seguranca-rede.md).

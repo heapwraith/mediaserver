@@ -144,3 +144,24 @@ func TestPinLimiterPerAddressAndEscalates(t *testing.T) {
 		t.Errorf("lock = %v, above the %v limit", l.wait(guest), pinLockMax)
 	}
 }
+
+func TestContentSecurityPolicy(t *testing.T) {
+	index := []byte("<html><body><script>\n\t{ boot(); }\n</script><script src=\"/x.js\"></script></body></html>")
+	csp := contentSecurityPolicy(index)
+	for _, want := range []string{
+		"default-src 'self'", "script-src 'self' 'unsafe-eval' 'sha256-", "object-src 'none'",
+		"frame-ancestors 'self' file:", "worker-src 'self' blob:",
+	} {
+		if !strings.Contains(csp, want) {
+			t.Errorf("CSP lacks %q: %s", want, csp)
+		}
+	}
+	if strings.Count(csp, "'sha256-") != 1 {
+		t.Errorf("only the inline script gets a hash: %s", csp)
+	}
+	for _, bad := range []string{"script-src 'unsafe-inline'", "script-src * ", "http:", "wasm-unsafe-eval"} {
+		if strings.Contains(csp, bad) {
+			t.Errorf("CSP has %q: %s", bad, csp)
+		}
+	}
+}

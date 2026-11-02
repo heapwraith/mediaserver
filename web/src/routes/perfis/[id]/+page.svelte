@@ -2,12 +2,20 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 
-	import { createProfile, deleteProfile, listProfiles, updateProfile } from '#lib/api/client.ts';
+	import {
+		adminAccess,
+		createProfile,
+		deleteProfile,
+		listProfiles,
+		setAdminPin,
+		updateProfile,
+	} from '#lib/api/client.ts';
 	import { clearSession, session, setSession } from '#lib/api/session.svelte.ts';
 	import type { Profile, ProfileInput } from '#lib/api/types.ts';
 	import { focusGroup, focusable } from '#lib/platform/nav.svelte.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import PinPad from '#lib/ui/PinPad.svelte';
 
 	// Avatar colors: dark enough for the white initial (WCAG AA).
 	const COLORS = ['#4338ca', '#0369a1', '#047857', '#a16207', '#c2410c', '#b91c1c', '#be185d', '#7e22ce'];
@@ -26,6 +34,17 @@
 	let error = $state('');
 	let confirmDelete = $state(false);
 	let busy = $state(false);
+	/** First profile of the install: ask for the administrator PIN (can be skipped). */
+	let offerAdminPin = $state(false);
+	async function saveAdminPin(digits: string): Promise<boolean> {
+		try {
+			await setAdminPin(digits);
+		} catch {
+			return false;
+		}
+		await goto('/', { replaceState: true });
+		return true;
+	}
 
 	async function load(profileId: string) {
 		if (profileId === 'novo') {
@@ -75,6 +94,13 @@
 		try {
 			if (isNew) {
 				setSession(await createProfile(input));
+				// The first profile of a new install: offer the administrator PIN.
+				const first = (await listProfiles().catch(() => [])).length === 1;
+				const access = await adminAccess().catch(() => undefined);
+				if (first && access?.enabled === false) {
+					offerAdminPin = true;
+					return;
+				}
 				await goto('/', { replaceState: true });
 			} else {
 				setSession(await updateProfile(id, input));
@@ -186,6 +212,15 @@
 		{/if}
 	</div>
 </div>
+
+{#if offerAdminPin}
+	<PinPad
+		id="first-admin-pin"
+		title="Crie o PIN de administrador (Cancelar para pular)"
+		onsubmit={saveAdminPin}
+		oncancel={() => goto('/', { replaceState: true })}
+	/>
+{/if}
 
 <style>
 	.page {

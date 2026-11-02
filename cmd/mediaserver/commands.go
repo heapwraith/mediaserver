@@ -31,6 +31,8 @@ func command(args []string, stdout, stderr io.Writer) (int, bool) {
 	switch args[0] {
 	case "restore":
 		return restoreCmd(args[1:], stdout, stderr), true
+	case "reset-pin":
+		return resetPinCmd(args[1:], stdout, stderr), true
 	case "service":
 		return serviceCmd(args[1:], stdout, stderr), true
 	}
@@ -225,4 +227,52 @@ func serviceRun(args []string, stderr io.Writer) int {
 		return 1
 	}
 	return code
+}
+
+const resetPinUsage = `usage: mediaserver reset-pin admin|<profile name> [server flags]
+
+Removes the administrator PIN, or the PIN of the profile with that name, for
+whoever forgot it. Run it on the machine of the server (it opens the database
+in DATA_DIR). Sessions of that profile end.
+`
+
+// resetPinCmd: `mediaserver reset-pin admin|<profile> [flags]`.
+func resetPinCmd(args []string, stdout, stderr io.Writer) int {
+	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
+		fmt.Fprint(stderr, resetPinUsage)
+		return 2
+	}
+	who := args[0]
+	cfg, _, err := config.Load(args[1:], os.Getenv, stderr)
+	if err != nil {
+		fmt.Fprintln(stderr, "mediaserver: config:", err)
+		return 2
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	conn, err := db.Open(ctx, filepath.Join(cfg.DataDir, db.FileName))
+	if err != nil {
+		fmt.Fprintln(stderr, "mediaserver:", err)
+		return 1
+	}
+	defer conn.Close()
+	if who == "admin" {
+		if _, err := conn.ExecContext(ctx, `DELETE FROM app_state WHERE key = 'admin_pin'`); err != nil {
+			fmt.Fprintln(stderr, "mediaserver: reset-pin:", err)
+			return 1
+		}
+		fmt.Fprintln(stdout, "administrator PIN removed")
+		return 0
+	}
+	res, err := conn.ExecContext(ctx, `UPDATE profiles SET pin_hash = NULL WHERE name = ? COLLATE NOCASE AND pin_hash IS NOT NULL`, who)
+	if err != nil {
+		fmt.Fprintln(stderr, "mediaserver: reset-pin:", err)
+		return 1
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		fmt.Fprintf(stderr, "mediaserver: no profile named %q with a PIN\n", who)
+		return 1
+	}
+	fmt.Fprintf(stdout, "PIN of %q removed\n", who)
+	return 0
 }

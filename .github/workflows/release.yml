@@ -80,12 +80,22 @@ jobs:
           fi
           make tv-android
 
+      - name: SBOM (every Go module and npm package in the build)
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          path: .
+          format: spdx-json
+          output-file: dist/mediaserver-sbom.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+
       - name: Collect files and checksums
         run: |
           mkdir -p out
           cp dist/mediaserver-* out/
           cp dist/tv/mediaserver-tv.apk out/
           cp dist/tv/webos/*.ipk out/
+          cp dist/mediaserver-sbom.spdx.json out/
           (cd out && sha256sum * > SHA256SUMS)
           ls -la out
           ./out/mediaserver-linux-amd64 -version

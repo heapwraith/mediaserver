@@ -309,8 +309,8 @@ O banco guarda perfis, progresso e as correções da Revisar. A biblioteca em si
 | Legenda com acento quebrado | SRT em codificação rara: salve em UTF-8 |
 | HDR convertido parece desbotado | Ainda sem *tone mapping* (Backlog); prefira direct play num aparelho com HDR |
 | Servidor não liga como serviço | `mediaserver service status` e o log (`journalctl --user -u mediaserver`; macOS `~/Library/Logs/mediaserver.log`; Windows `DATA_DIR\mediaserver.log`) |
-| Esqueci o PIN de um perfil | Ainda não há como redefinir (está no Backlog). Crie outro perfil; um perfil só pode ser editado ou apagado por ele mesmo |
-| Esqueci o PIN de administrador | Pare o servidor e rode `sqlite3 data/mediaserver.db "DELETE FROM app_state WHERE key='admin_pin'"` |
+| Esqueci o PIN de um perfil | `./mediaserver reset-pin NomeDoPerfil` na máquina do servidor remove o PIN dele |
+| Esqueci o PIN de administrador | `./mediaserver reset-pin admin` na máquina do servidor (as mesmas opções `-data-dir` do servidor) |
 | `403 bad_host` / "host not allowed" | Você abriu o servidor por um nome com ponto (ex.: `telao.casa`). Libere-o com `ALLOWED_HOSTS=telao.casa`. Por IP, `localhost`, nome sem ponto e `*.local` funciona sempre |
 | Imagens e vídeos dão 401 depois de atualizar o servidor | A sessão antiga acabou: escolha o perfil de novo |
 | `ERR_BLOCKED_BY_RESPONSE` na TV | Algum proxy ou versão antiga bloqueia o iframe do app. Os apps só podem embutir a interface por páginas `file://` (veja [ADR 015](docs/adr/015-seguranca-rede.md)) |
@@ -465,16 +465,17 @@ O Telão é feito para a **rede de casa**. Política e como reportar uma falha: 
 - **Sessão para tudo:** lista, detalhes, vídeo, imagens e legendas só respondem a quem escolheu um perfil. Um site aberto no navegador da casa não consegue ler nem alterar nada: pedidos com `Host` de domínio externo (DNS rebinding) e gravações de outra origem (CSRF) são recusados, e só os apps de TV podem embutir a interface.
 - **PIN de perfil** (4 dígitos, PBKDF2) com bloqueio crescente por perfil e endereço.
 - **PIN de administrador (opcional):** em *Configurações → Servidor*. Com ele, scan, Revisar, mesclar/separar, TMDB, status, backup e **criar perfil** pedem o PIN (vale 30 min); assistir continua livre. *Sair de todos os aparelhos* encerra todas as sessões.
+- **CSP:** a interface só executa os próprios arquivos (testado nas TVs Samsung): scripts injetados ou de outros sites não rodam.
 - **Backup sem segredos** (sessões, chave do TMDB e PINs ficam de fora).
 - **FFmpeg contido:** lê só arquivos locais, só os contêineres que o scanner conhece, e não abre conexão de rede, mesmo com um arquivo de mídia malicioso.
 - **Instalação isolada:** o contêiner Docker roda sem capabilities, somente leitura e sem root; a unidade systemd tem sandbox.
 
 **O que é com você**
-1. **Defina o PIN de administrador logo na instalação.** Sem ele, quem entrar na rede e criar um perfil vê a biblioteca e pode fazer scan, editar a Revisar e baixar o backup. Quem definir o PIN primeiro é o administrador. Esqueceu? Pare o servidor e rode `sqlite3 data/mediaserver.db "DELETE FROM app_state WHERE key='admin_pin'"`. O log avisa a cada início enquanto não houver PIN.
+1. **Defina o PIN de administrador logo na instalação.** Sem ele, quem entrar na rede e criar um perfil vê a biblioteca e pode fazer scan, editar a Revisar e baixar o backup. Quem definir o PIN primeiro é o administrador. Esqueceu? Na máquina do servidor, rode `./mediaserver reset-pin admin` (para o PIN de um perfil: `./mediaserver reset-pin NomeDoPerfil`). O log avisa a cada início enquanto não houver PIN, e ao criar o primeiro perfil a interface já oferece criá-lo.
 2. **Ponha PIN nos perfis** que não devem ser abertos por qualquer um. Perfil sem PIN é aberto por desenho.
 3. **Não exponha a porta à internet.** O servidor escuta em todas as interfaces, inclusive IPv6: confira no roteador que **não há encaminhamento de porta** e que o firewall IPv6 bloqueia entrada. Se a máquina tiver IP público, o log avisa ao iniciar. No Docker, restrinja a publicação (`127.0.0.1:8080:8080` ou o IP da sua rede; veja o `docker-compose.yml`). Para acesso de fora de casa use Tailscale.
-4. **O tráfego da rede local é HTTP sem cifra:** quem estiver no caminho (roteador, repetidor, aparelho comprometido) lê vídeo, títulos e tokens. Prefira cabo e um switch seu. HTTPS na rede local está no Backlog.
+4. **O tráfego da rede local é HTTP sem cifra:** quem estiver no caminho (roteador, repetidor, aparelho comprometido) lê vídeo, títulos e tokens. Prefira cabo e um switch seu. HTTPS na rede local não é possível por enquanto: as TVs não aceitam um certificado próprio.
 5. **A TV tem a própria coleta.** O ACR ("Serviços de informações de visualização") e a publicidade personalizada da Samsung analisam o que aparece na tela, inclusive do Telão. Desligue em *Configurações → Geral → Termos e política de privacidade* (os nomes variam por modelo) ou bloqueie a TV de sair para a internet no roteador.
 6. **Nome com ponto no DNS da casa** (ex.: `telao.casa`)? Libere com `ALLOWED_HOSTS=telao.casa`.
 
-**Para quem contribui:** `main` é protegida; mudanças entram por branch e pull request com o CI verde (testes nos 3 sistemas, `govulncheck`, `npm audit`, licenças, CodeQL e revisão de dependências). Detalhes técnicos: [ADR 015](docs/adr/015-seguranca-rede.md), [auditoria](docs/auditoria-seguranca.md) e [conformidade](docs/conformidade.md).
+**Para quem contribui:** `main` é protegida; mudanças entram por branch e pull request com o CI verde (testes nos 3 sistemas, `govulncheck`, `npm audit`, licenças, CodeQL e revisão de dependências). Releases têm checksum, SBOM e atestado de procedência (`gh attestation verify`, veja [docs/release.md](docs/release.md)). Detalhes técnicos: [ADR 015](docs/adr/015-seguranca-rede.md), [auditoria](docs/auditoria-seguranca.md) e [conformidade](docs/conformidade.md).
