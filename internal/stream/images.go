@@ -36,11 +36,8 @@ const (
 )
 
 // Images generates and serves the 16:9 WebP images of movies, series,
-// seasons, episodes and media files, cached in Dir.
-//
-// shortcut: images are generated on the first request and cache entries of
-// removed items are never deleted; add a background warm-up and cleanup after
-// the scan if the first page load or the cache size becomes a problem.
+// seasons, episodes and media files, cached in Dir. A request generates what it
+// needs; after each scan, Run generates the rest and cleans what left the library.
 type Images struct {
 	db      *sql.DB
 	root    *os.Root
@@ -52,6 +49,7 @@ type Images struct {
 	sem  chan struct{}
 	mu   sync.Mutex
 	jobs map[string]*job
+	wake chan struct{}
 }
 
 type job struct {
@@ -69,8 +67,126 @@ func NewImages(db *sql.DB, root *os.Root, ffmpeg, dir string, logger *slog.Logge
 	}
 	return &Images{
 		db: db, root: root, rootDir: rootDir, ffmpeg: ffmpeg, dir: dir, log: logger,
-		sem: make(chan struct{}, maxJobs), jobs: map[string]*job{},
+		sem: make(chan struct{}, maxJobs), jobs: map[string]*job{}, wake: make(chan struct{}, 1),
 	}, nil
+}
+
+// Trigger asks for a sweep (after a scan); it never blocks.
+func (im *Images) Trigger() {
+	select {
+	case im.wake <- struct{}{}:
+	default: // one is already queued
+	}
+}
+
+// Run sweeps on every Trigger until ctx ends. Nothing runs at startup, so the
+// cleaning only ever follows a scan that worked.
+func (im *Images) Run(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-im.wake:
+			if err := im.Sweep(ctx); err != nil && ctx.Err() == nil {
+				im.log.Warn("image sweep failed", "err", err)
+			}
+		}
+	}
+}
+
+// Sweep deletes the cache of what left the library, then generates what is
+// missing, so the dominant color is there on the first listing.
+func (im *Images) Sweep(ctx context.Context) error {
+	if err := im.clean(ctx); err != nil {
+		return err
+	}
+	return im.warm(ctx)
+}
+
+// imageOwners are the ids ServeImage answers for (see sources).
+const imageOwners = `SELECT id FROM movies UNION SELECT id FROM series UNION SELECT id FROM seasons
+	UNION SELECT id FROM episodes UNION SELECT id FROM media_files WHERE status IN ('ok', 'review')`
+
+func (im *Images) clean(ctx context.Context) error {
+	// Listed before the query: a folder made after it may be of a new owner.
+	entries, err := os.ReadDir(im.dir)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("image cache: %w", err)
+	}
+	ids, err := im.ids(ctx, imageOwners)
+	if err != nil {
+		return err
+	}
+	owners := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		owners[id] = true
+	}
+	for _, e := range entries {
+		if e.IsDir() && !owners[e.Name()] {
+			if err := os.RemoveAll(filepath.Join(im.dir, e.Name())); err != nil {
+				im.log.WarnContext(ctx, "remove old images", "id", e.Name(), "err", err)
+			}
+		}
+	}
+	if _, err := im.db.ExecContext(ctx, `DELETE FROM image_cache WHERE owner_id NOT IN (`+imageOwners+`)`); err != nil {
+		return fmt.Errorf("clean image colors: %w", err)
+	}
+	return nil
+}
+
+// warm generates what the screens list, one at a time: the other slot of the
+// semaphore stays free for requests. Seasons and extras wait for a request.
+func (im *Images) warm(ctx context.Context) error {
+	ids, err := im.ids(ctx, `SELECT id FROM movies UNION ALL SELECT id FROM series UNION ALL SELECT id FROM episodes`)
+	if err != nil {
+		return err
+	}
+	start, made := time.Now(), 0
+	for _, id := range ids {
+		src, err := im.sources(ctx, id)
+		if errors.Is(err, ErrNotFound) {
+			continue // left the library in the meantime
+		}
+		if err != nil {
+			return err
+		}
+		key := im.sourceKey(&src)
+		if _, err := os.Stat(filepath.Join(im.dir, id, key)); err == nil {
+			continue // done, or failed for good
+		}
+		if err := im.generate(ctx, id, key, src); err != nil {
+			if ctx.Err() != nil || errors.Is(err, exec.ErrNotFound) {
+				return err
+			}
+			im.log.WarnContext(ctx, "image generation failed", "id", id, "err", err)
+			continue
+		}
+		made++
+	}
+	if made > 0 {
+		im.log.InfoContext(ctx, "images generated", "count", made, "took_s", int(time.Since(start).Seconds()))
+	}
+	return nil
+}
+
+func (im *Images) ids(ctx context.Context, query string) ([]string, error) {
+	rows, err := im.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("image owners: %w", err)
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("image owners: %w", err)
+		}
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("image owners: %w", err)
+	}
+	return ids, nil
 }
 
 // sources are the candidate images of an owner (relative paths, "" = none).
