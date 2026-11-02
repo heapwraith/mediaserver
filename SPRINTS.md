@@ -377,14 +377,14 @@ Benchmarks sem mudança relevante: listagens de 0,7 a 11,8 ms, Início em 22,6 m
 - Transcodificação: *tone mapping* HDR→SDR (hoje um HDR convertido para H.264 fica desbotado)
 - Transcodificação: manter 5.1 quando o cliente suporta (hoje o áudio convertido é AAC estéreo)
 - Transcodificação: pausar o FFmpeg quando ele está muito à frente do player (*throttling*)
-- Perfis: redefinir um PIN esquecido (hoje só o próprio perfil edita ou apaga a si mesmo)
+- Perfis: redefinir um PIN esquecido pela interface (hoje só pela linha de comando: `mediaserver reset-pin`)
 - Transcodificação: matar os FFmpeg filhos se o servidor cair à força (Job Object no Windows, `Pdeathsig` no Linux); no encerramento normal nada sobra
 
 Revisão do sistema (01/11/2026), por prioridade:
 
 - **Conformidade ([docs/conformidade.md](docs/conformidade.md)):** confirmar a licença da fonte padrão do JASSUB; buscar "Telão" no INPI; PIN de administrador e backup (itens de segurança abaixo)
 
-- **Auditoria de segurança ([docs/auditoria-seguranca.md](docs/auditoria-seguranca.md)), 02/11/2026:** já corrigidos o vazamento de segredos no backup, CSRF, DNS rebinding, sessão sem prazo, bloqueio de PIN por endereço e cabeçalhos ([ADR 015](docs/adr/015-seguranca-rede.md)). PIN de administrador (opcional), aviso de IPv6/IPv4 público e exemplo de `ports` também feitos. Segunda rodada: sessão para todo o acervo (token de mídia), FFmpeg com whitelists, revogar sessões, sandbox (systemd e Docker), CI de segurança e `main` protegida. Abertas: HTTPS na rede local e CSP completa (testar na TV com Chromium 76), serviço do Windows com conta limitada
+- **Auditoria de segurança ([docs/auditoria-seguranca.md](docs/auditoria-seguranca.md)), 02/11/2026:** já corrigidos o vazamento de segredos no backup, CSRF, DNS rebinding, sessão sem prazo, bloqueio de PIN por endereço e cabeçalhos ([ADR 015](docs/adr/015-seguranca-rede.md)). PIN de administrador (opcional), aviso de IPv6/IPv4 público e exemplo de `ports` também feitos. Segunda rodada: sessão para todo o acervo (token de mídia), FFmpeg com whitelists, revogar sessões, sandbox (systemd e Docker), CI de segurança e `main` protegida. Terceira rodada (testada na The Frame): CSP, `reset-pin`, PIN de administrador no primeiro perfil, SBOM no release. Abertas: serviço do Windows com conta limitada; HTTPS na rede local descartado por ora (a TV não aceita CA própria)
 - **Scanner — perda de progresso:** se uma subpasta fica ilegível por um momento (permissão, HD externo ou rede instável), os arquivos dela são apagados do banco junto com o progresso. Usar o status `missing` (já existe no esquema) e só apagar depois de alguns scans ou dias
 - **Servidor sem o HD de mídias:** se o `MEDIA_DIR` não existe na inicialização (HD externo desligado), o servidor não sobe; como serviço, fica reiniciando sem parar. Subir em modo degradado, avisar na interface e tentar de novo
 - **Serviço no Windows — firewall:** o `service install` deveria criar a regra de firewall para o binário instalado. A regra atual vale só para o caminho de dev; sem ela a TV não alcança o servidor

@@ -33,7 +33,22 @@ As provas abaixo foram feitas numa instância local descartável (`MEDIA_DIR` va
 | Instalação | Sandbox no systemd e no contêiner Docker (somente leitura, sem capabilities). |
 | `SECURITY.md` | Como reportar e os limites conhecidos. |
 
-**Não feito, por precisar de teste na TV:** HTTPS na rede local e CSP completa. **Não feito no Windows:** o serviço roda como SYSTEM; trocar para uma conta limitada pode tirar o acesso à pasta de mídias do usuário, e não há como testar aqui.
+## Terceira rodada: verificação na TV real (02/11/2026)
+
+Com o app Tizen em modo de depuração, usei o DevTools remoto da The Frame (Tizen 6.5, Chromium 85) para testar **no aparelho**:
+
+| Teste | Resultado |
+|---|---|
+| Iframe da interface com `frame-ancestors 'self' file:` | Carrega (a página `file://` do app é aceita). `X-Frame-Options` não pode ser usado. |
+| Sessão salva, token de mídia, imagens, listas | Todos 200; imagens carregam. |
+| Vídeo em *direct play* com `stream?m=…` | Toca em 1080p, retomando de onde parou, sem erro. |
+| CSP: script inline injetado, script de `example.com` | Bloqueados na TV. |
+| CSP: `WebAssembly.Module` na thread principal | **Bloqueado** sem `'unsafe-eval'` (Chromium 85): quebraria o JASSUB. Corrigido, e confirmado na TV. |
+| Worker de `blob:` compilando WebAssembly | Funciona. |
+
+Também: `mediaserver reset-pin`, PIN de administrador oferecido no primeiro perfil, SBOM e atestado no release, CSP completa.
+
+**Não feito:** HTTPS na rede local (descartado: a TV não aceita CA própria; só com domínio real e certificado público); serviço do Windows com conta limitada (pode tirar o acesso à pasta de mídias do usuário, e não há como testar aqui); PIN de perfil com mais de 4 dígitos (o teclado da TV é de 4); perda de progresso com subpasta ilegível e servidor sem o HD de mídias (disponibilidade, no Backlog).
 
 ## O que está bom
 

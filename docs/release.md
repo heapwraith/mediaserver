@@ -8,6 +8,7 @@ O workflow [`release.yml`](../.github/workflows/release.yml) gera tudo, exceto o
 | `mediaserver-tv.apk` (Android TV, Google TV, Fire TV) | `make tv-android` |
 | `com.mediaserver.tv_<versão>_all.ipk` (LG) | `make tv-webos` |
 | `SHA256SUMS` | `sha256sum` de todos acima |
+| `mediaserver-sbom.spdx.json` | SBOM (SPDX): todos os módulos Go e pacotes npm do build |
 | `mediaserver.wgt` (Samsung) | **à mão**: `make tv-tizen` com o seu certificado Samsung ([guia](tv/samsung.md)) |
 
 - **Rodar à mão** (Actions → Release → *Run workflow*): só gera os arquivos e guarda como *artifact* por 7 dias. Serve pra testar; nada é publicado.
@@ -58,3 +59,11 @@ No GitHub (Settings → Secrets and variables → Actions), crie:
 5. Revise o rascunho no GitHub e clique em **Publish release**.
 
 A versão vem da tag: `mediaserver -version` mostra `v1.0.0`, e o APK recebe `versionName 1.0.0` / `versionCode 10000`. Os pacotes da LG (`appinfo.json`) e da Samsung (`config.xml`) têm a versão fixa nos arquivos: atualize-os em versões novas.
+
+## Verificar um release
+Cada arquivo do release tem um **atestado de procedência** (assinado pelo GitHub com Sigstore): prova qual commit e qual workflow o geraram.
+
+```bash
+sha256sum -c SHA256SUMS
+gh attestation verify mediaserver-linux-amd64 --repo heapwraith/mediaserver
+```

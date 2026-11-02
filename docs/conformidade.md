@@ -51,7 +51,7 @@ Pendente: a fonte padrão embutida no JASSUB (`default.woff2`) não declara lice
 
 - O servidor guarda nome e cor do perfil, PIN (hash PBKDF2-SHA256 com sal), histórico de reprodução e o caminho dos arquivos. Tudo local, **sem telemetria, sem conta externa, sem fonte/CDN externo**.
 - Uso doméstico por pessoa física, sem fim econômico, está fora do alcance da LGPD (art. 4º, I). Se alguém operar o Telão para **terceiros** (empresa, hotel, condomínio), passa a ser controlador de dados e precisa de base legal, aviso de privacidade e canal do titular. Fica registrado aqui e deve entrar no README se o projeto crescer.
-- O log JSON registra o play (`playback`) com caminho/ID e IP do cliente na rede local. Não enviar logs a terceiros sem anonimizar.
+- O log JSON registra o play (`playback`) com o ID da mídia e os codecs que o aparelho declarou, e cada pedido da API com método, caminho (sem a query, onde ficam os tokens), status e duração. **Não registra IP, perfil, token nem chave do TMDB.** Mesmo assim, não envie logs a terceiros sem revisar.
 
 ## 7. Segurança (risco de responsabilidade e de reputação)
 

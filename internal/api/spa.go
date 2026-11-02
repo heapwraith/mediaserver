@@ -4,10 +4,13 @@ package api
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/base64"
 	"io/fs"
 	"log/slog"
 	"net/http"
 	"path"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -20,6 +23,7 @@ type spaHandler struct {
 	files   http.Handler
 	index   []byte
 	modTime time.Time
+	csp     string
 }
 
 func newSPAHandler(fsys fs.FS, logger *slog.Logger) http.Handler {
@@ -29,6 +33,7 @@ func newSPAHandler(fsys fs.FS, logger *slog.Logger) http.Handler {
 		index, err := fs.ReadFile(fsys, "index.html")
 		if err == nil {
 			h.index = index
+			h.csp = contentSecurityPolicy(index)
 		}
 	}
 	if h.index == nil {
@@ -52,6 +57,9 @@ func (h *spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	name := strings.TrimPrefix(path.Clean("/"+r.URL.Path), "/")
 	if name != "" && name != "index.html" {
 		if info, err := fs.Stat(h.fsys, name); err == nil && !info.IsDir() {
+			if name == "index.html" {
+				w.Header().Set("Content-Security-Policy", h.csp)
+			}
 			if strings.HasPrefix(name, "_app/immutable/") {
 				w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 			} else {
@@ -67,7 +75,41 @@ func (h *spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	w.Header().Set("Content-Security-Policy", h.csp)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-cache")
 	http.ServeContent(w, r, "index.html", h.modTime, bytes.NewReader(h.index))
+}
+
+var inlineScript = regexp.MustCompile(`(?s)<script>(.*?)</script>`)
+
+// contentSecurityPolicy is the policy of the interface: only our own files,
+// plus the one inline script SvelteKit writes into index.html (allowed by its
+// hash, so an injected script would not run). 'unsafe-eval' is for JASSUB:
+// before Chromium 97 (Tizen 6.5 is Chromium 85) WebAssembly.Module needs it on
+// the main thread, and JASSUB tests WebAssembly there; newer browsers would
+// only need 'wasm-unsafe-eval', which old ones reject. Measured on the TV.
+// style-src keeps 'unsafe-inline' because Svelte sets style attributes.
+// frame-ancestors allows only the TV apps (file:// pages).
+func contentSecurityPolicy(index []byte) string {
+	inline := inlineScript.FindAllSubmatch(index, -1)
+	scripts := append(make([]string, 0, 2+len(inline)), "'self'", "'unsafe-eval'")
+	for _, m := range inline {
+		sum := sha256.Sum256(m[1])
+		scripts = append(scripts, "'sha256-"+base64.StdEncoding.EncodeToString(sum[:])+"'")
+	}
+	return strings.Join([]string{
+		"default-src 'self'",
+		"script-src " + strings.Join(scripts, " "),
+		"style-src 'self' 'unsafe-inline'",
+		"img-src 'self' data: blob:",
+		"media-src 'self' blob:",
+		"font-src 'self' data: blob:",
+		"connect-src 'self'",
+		"worker-src 'self' blob:",
+		"object-src 'none'",
+		"base-uri 'self'",
+		"form-action 'self'",
+		"frame-ancestors 'self' file:",
+	}, "; ")
 }
