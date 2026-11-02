@@ -194,7 +194,7 @@ Implementação e verificações automáticas/Edge concluídas. O aceite manual 
 - [x] Tela inicial de configuração: IP/porta do servidor (salvo localmente), com descoberta automática na rede quando possível
 - [x] Mapeamento das teclas do controle (setas, OK, Voltar, Play/Pause, Avançar/Retroceder, teclas coloridas)
 - [x] Foco visível e área de toque grande (layout 10-foot), testado em 720p, 1080p e 4K
-- [ ] **Samsung (Tizen):** empacotamento `.wgt` em `tv/tizen/` — `config.xml`, ícone e `make tv-tizen` prontos; falta gerar e instalar com o Tizen Studio + certificado Samsung (usuário, [guia](docs/tv/samsung.md))
+- [x] **Samsung (Tizen):** empacotamento `.wgt` em `tv/tizen/` — gerado com o Tizen Studio 6.1 + certificado Samsung (perfil `mediaserver`) e instalado na The Frame 2022 (QN50LS03BAGXZD, Tizen 6.5) em 01/11/2026; o app abre e chama o servidor ([guia](docs/tv/samsung-the-frame.md))
 - [x] **LG (webOS):** empacotamento `.ipk` em `tv/webos/`
 - [x] **Android TV / Google TV / Fire TV:** wrapper WebView `.apk` em `tv/android/`, com *leanback launcher*
 - [ ] Teste de codecs nativos de cada plataforma e ajuste da decisão de direct play — ajuste feito (Tizen/webOS: `mkv`, `ac3`, `eac3`), "Este aparelho" nas Configurações e log `playback` no servidor; falta conferir em aparelho real

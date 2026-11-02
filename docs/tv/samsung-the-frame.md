@@ -76,12 +76,14 @@ Descubra o IP do PC com `ipconfig` (o **Endereço IPv4** do Wi-Fi ou da Ethernet
 ## 3. Modo desenvolvedor na The Frame
 
 1. Saia do **Modo Arte** (aperte o botão Power rapidamente até aparecer a TV).
-2. Abra **Apps** (aperte Home e vá até Apps).
-3. Na tela de Apps, digite **1 2 3 4 5**.
-   - O controle da The Frame não tem números: aperte o botão **123** / das cores e use o teclado numérico que aparece na tela.
-4. Ligue **Developer mode** (*On*). Em **Host PC IP**, coloque o **IP do PC** (passo 2) e confirme.
-5. **Reinicie a TV:** segure o botão Power do controle até ela desligar e ligar de novo (ou tire da tomada por 30 s).
-6. Em Apps, deve aparecer **DEVELOP MODE** no topo.
+2. Abra **Apps**. Na interface nova (menu lateral com Busca, Arte, Jogos, Início...), Apps fica dentro de **Início**, na fileira de apps.
+3. Desça até o fim da tela de Apps e abra **Configurações de apps** (engrenagem). Ali, digite **1 2 3 4 5**.
+   - O controle da The Frame não tem números: aperte o botão **123** e use o teclado numérico da tela.
+4. Ligue **Developer mode** (*On*) e confirme.
+5. **Reinicie a TV** pela tomada (30 s). Na 1ª vez, o campo de IP fica travado em `0.0.0.0` até esse reinício.
+6. Volte em **Configurações de apps**, digite **1 2 3 4 5** de novo e preencha **Host PC IP** com o **IP do PC** (passo 2).
+   - O campo tem 4 blocos e não abre teclado: selecione cada bloco e digite os números (botão **123**). Confira cada bloco, porque um número que sobrou gruda no próximo (ex.: `188` em vez de `18`).
+7. Confirme e **reinicie pela tomada** de novo. Em Apps, deve aparecer **DEVELOP MODE** no topo.
 
 ---
 
@@ -89,6 +91,19 @@ Descubra o IP do PC com `ipconfig` (o **Endereço IPv4** do Wi-Fi ou da Ethernet
 
 1. Baixe e instale o **Tizen Studio**: [developer.samsung.com → Installing TV SDK](https://developer.samsung.com/smarttv/develop/getting-started/setting-up-sdk/installing-tv-sdk.html). Use a pasta padrão `C:\tizen-studio`.
 2. Abra o **Package Manager** → aba **Extension SDK** → instale **Samsung Certificate Extension** e **TV Extensions** (a mais nova).
+   - Com a versão só de linha de comando (`web-cli_Tizen_Studio_*.exe`, instalada como administrador), o gerenciador de pacotes falha ao atualizar: as pastas ficam do administrador e ele tenta trocar o próprio `.jar` e o próprio Java enquanto roda. O que funcionou (6.1, em 01/11/2026):
+     ```powershell
+     # PowerShell como administrador, uma vez: dá as pastas ao seu usuário
+     icacls C:\tizen-studio /grant "${env:USERDOMAIN}\${env:USERNAME}:(OI)(CI)F" /T /Q
+     icacls C:\tizen-studio-data /grant "${env:USERDOMAIN}\${env:USERNAME}:(OI)(CI)F" /T /Q
+     icacls $env:LOCALAPPDATA\.package-manager /grant "${env:USERDOMAIN}\${env:USERNAME}:(OI)(CI)F" /T /Q
+     # PowerShell comum: roda o gerenciador a partir de cópias do Java e do .jar
+     Copy-Item -Recurse C:\tizen-studio\jdk C:\tizen-studio-jdk8
+     Copy-Item -Recurse C:\tizen-studio\package-manager C:\tizen-studio\pm-run
+     cd C:\tizen-studio\pm-run
+     C:\tizen-studio-jdk8\bin\java.exe -jar PackageManagerV2-cli.jar install --accept-license "Certificate-Manager,cert-add-on,TV-SAMSUNG-Extension-Tools"
+     ```
+     O Certificate Manager fica em `C:\tizen-studio\tools\certificate-manager\certificate-manager.exe`.
 3. Coloque as ferramentas no PATH. No PowerShell (vale para os próximos terminais):
    ```powershell
    setx PATH "$env:PATH;C:\tizen-studio\tools;C:\tizen-studio\tools\ide\bin"
@@ -106,7 +121,7 @@ sdb connect IP-DA-TV
 sdb devices
 ```
 
-O `sdb devices` deve listar a TV, com um nome tipo `QN55LS03BAGXZD`. Anote esse nome.
+O `sdb devices` deve listar a TV, com um nome tipo `QN55LS03BAGXZD`. Anote esse nome. O DUID (vai no certificado) sai com `sdb shell 0 getduid`.
 
 **Certificado Samsung:** a TV só instala apps assinados com ele, e o certificado inclui o identificador da TV.
 
