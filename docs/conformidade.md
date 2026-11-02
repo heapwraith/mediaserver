@@ -55,7 +55,7 @@ Pendente: a fonte padrão embutida no JASSUB (`default.woff2`) não declara lice
 
 ## 7. Segurança (risco de responsabilidade e de reputação)
 
-O servidor escuta em `0.0.0.0` sem autenticação de rede. Para uso em casa é aceitável. Em 02/11/2026 uma auditoria de segurança ([auditoria-seguranca.md](auditoria-seguranca.md)) corrigiu o vazamento de segredos no backup, CSRF, DNS rebinding e o bloqueio de PIN; **o PIN de administrador continua aberto e precisa sair antes de recomendar o uso a outras pessoas**. Tabela original:
+O servidor escuta em `0.0.0.0` sem autenticação de rede. Para uso em casa é aceitável. Em 02/11/2026 uma auditoria de segurança ([auditoria-seguranca.md](auditoria-seguranca.md)) corrigiu o vazamento de segredos no backup, CSRF, DNS rebinding e o bloqueio de PIN; o PIN de administrador agora existe, mas é opcional (desligado por padrão): recomende defini-lo. Tabela original:
 
 | Prioridade | Item | Risco |
 |---|---|---|
@@ -83,7 +83,7 @@ Aviso de garantia: a GPL já traz "sem garantia"; o README repete que o projeto 
 
 **Ainda abertas**
 - [x] Backup sem segredos, `guard` (Host/Origin/Content-Type), sessão com prazo e PIN por endereço ([ADR 015](adr/015-seguranca-rede.md)).
-- [ ] Criar o PIN de administrador (Backlog, prioridade alta; mexe em autenticação e merece sprint própria).
+- [x] PIN de administrador opcional (ADR 015). Recomendado definir na instalação.
 - [ ] Confirmar a licença da fonte padrão do JASSUB (`default.woff2`): o pacote não a identifica.
 - [ ] Buscar "Telão" no INPI (classes 9, 38, 41 e 42).
 - [ ] Opcional: cabeçalho SPDX também nos `.ts` e `.svelte`.

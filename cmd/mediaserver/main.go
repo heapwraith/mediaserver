@@ -201,6 +201,12 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 		return fmt.Errorf("listen %s: %w", srv.Addr, err)
 	}
 
+	if addrs, err := net.InterfaceAddrs(); err == nil {
+		if pub := publicAddrs(cfg.Host, addrs); len(pub) > 0 {
+			logger.Warn("this machine has addresses reachable from the internet: make sure the router does not forward the port or allow inbound IPv6 to it",
+				"addrs", pub, "port", cfg.Port)
+		}
+	}
 	logger.Info("server ready",
 		"version", version,
 		"addr", ln.Addr().String(),

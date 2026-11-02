@@ -447,4 +447,6 @@ Decisões de arquitetura em [`docs/adr/`](docs/adr/).
 - O servidor recusa pedidos com `Host` de domínio externo (proteção contra *DNS rebinding*) e pedidos de gravação vindos de outro site (CSRF).
 - O backup (`/api/admin/backup`) **não leva** o segredo das sessões, a chave do TMDB nem os PINs: depois de restaurar, defina os PINs de novo.
 - A sessão de um perfil vale 90 dias.
+- **PIN de administrador (opcional):** em Configurações → Servidor → *Definir PIN de administrador*. Com ele, scan, Revisar, TMDB e backup pedem o PIN (vale 30 min); assistir continua livre. Sem ele (o padrão) essas ações ficam abertas a quem estiver na rede. Esqueceu o PIN? Pare o servidor e rode `sqlite3 data/mediaserver.db "DELETE FROM app_state WHERE key='admin_pin'"`. Defina o PIN logo na instalação: quem definir primeiro é o dono.
+- Se a máquina tiver IPv6 público ou IPv4 público, o servidor avisa no log ao iniciar.
 - Detalhes: [docs/auditoria-seguranca.md](docs/auditoria-seguranca.md) (achados e o que falta), [ADR 015](docs/adr/015-seguranca-rede.md) (decisões) e [docs/conformidade.md](docs/conformidade.md) (licenças e leis).

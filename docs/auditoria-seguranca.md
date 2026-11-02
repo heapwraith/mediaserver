@@ -15,7 +15,10 @@ As provas abaixo foram feitas numa instância local descartável (`MEDIA_DIR` va
 | 6 | `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy: no-referrer`. **Resta:** uma CSP completa (`script-src`, `worker-src`...): o JASSUB, o hls.js e o script embutido do SvelteKit exigem testar numa TV com Chromium 76 antes. |
 | 7 | `/api/health` não devolve mais a versão e só envia CORS `*` a páginas de app (`file://`/`null`), não a sites `http(s)`. |
 
-**Ainda abertas:** PIN de administrador (item 2, com a tela de Configurações), CSP completa, aviso na inicialização para IPv6 público, exemplo de `ports` restrito no Docker.
+| 2 | PIN de administrador opcional ([ADR 015](adr/015-seguranca-rede.md)): scan, Revisar, mesclar/separar, TMDB e backup pedem `X-Admin`. Desligado por padrão. |
+| exposição | Aviso no log com IPv6 global ou IPv4 público; exemplo de `ports` restrito no `docker-compose.yml`. |
+
+**Ainda aberta:** CSP completa (`script-src`, `worker-src`), a testar na TV com Chromium 76.
 
 ## O que está bom
 

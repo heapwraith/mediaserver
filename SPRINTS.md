@@ -384,9 +384,7 @@ Revisão do sistema (01/11/2026), por prioridade:
 
 - **Conformidade ([docs/conformidade.md](docs/conformidade.md)):** confirmar a licença da fonte padrão do JASSUB; buscar "Telão" no INPI; PIN de administrador e backup (itens de segurança abaixo)
 
-- **Auditoria de segurança ([docs/auditoria-seguranca.md](docs/auditoria-seguranca.md)), 02/11/2026:** já corrigidos o vazamento de segredos no backup, CSRF, DNS rebinding, sessão sem prazo, bloqueio de PIN por endereço e cabeçalhos ([ADR 015](docs/adr/015-seguranca-rede.md)). Abertos: PIN de administrador (abaixo), CSP completa (testar na TV com Chromium 76), aviso de IPv6 público na inicialização, `ports` restrito no exemplo do Docker
-- **Segurança — backup:** o backup já sai sem segredos e sem PINs; falta restringir `/api/admin/backup` e `/api/admin/status` a um perfil administrador
-- **Segurança — administração:** Revisar, scan e mesclar/separar séries não pedem nada na rede local. Criar um PIN de administrador para Revisar e Configurações
+- **Auditoria de segurança ([docs/auditoria-seguranca.md](docs/auditoria-seguranca.md)), 02/11/2026:** já corrigidos o vazamento de segredos no backup, CSRF, DNS rebinding, sessão sem prazo, bloqueio de PIN por endereço e cabeçalhos ([ADR 015](docs/adr/015-seguranca-rede.md)). PIN de administrador (opcional), aviso de IPv6/IPv4 público e exemplo de `ports` também feitos. Aberta: CSP completa (testar na TV com Chromium 76)
 - **Scanner — perda de progresso:** se uma subpasta fica ilegível por um momento (permissão, HD externo ou rede instável), os arquivos dela são apagados do banco junto com o progresso. Usar o status `missing` (já existe no esquema) e só apagar depois de alguns scans ou dias
 - **Servidor sem o HD de mídias:** se o `MEDIA_DIR` não existe na inicialização (HD externo desligado), o servidor não sobe; como serviço, fica reiniciando sem parar. Subir em modo degradado, avisar na interface e tentar de novo
 - **Serviço no Windows — firewall:** o `service install` deveria criar a regra de firewall para o binário instalado. A regra atual vale só para o caminho de dev; sem ela a TV não alcança o servidor

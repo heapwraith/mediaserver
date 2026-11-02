@@ -1,3 +1,4 @@
+import { admin, askAdmin } from './admin.svelte';
 import { clearSession, session } from './session.svelte';
 import type {
 	Collection,
@@ -30,6 +31,7 @@ import type {
 
 /** Header of the profile session (internal/api/session.go). */
 export const PROFILE_HEADER = 'X-Profile';
+export const ADMIN_HEADER = 'X-Admin';
 
 /**
  * An error answered by the API ({"error": "...", "code": "..."}), or a
@@ -59,6 +61,7 @@ export async function api<T>(
 		headers.set('Accept', 'application/json');
 		if (init.body !== undefined) headers.set('Content-Type', 'application/json');
 		if (session.token !== '') headers.set(PROFILE_HEADER, session.token);
+		if (admin.token !== '') headers.set(ADMIN_HEADER, admin.token);
 		res = await fetchFn(path, { ...init, headers });
 	} catch {
 		throw new ApiError(0, 'servidor indisponível');
@@ -133,28 +136,62 @@ export const listFonts = (mediaId: string) => api<string[]>(`/api/media/${mediaI
 export const stopPlayback = (p: Playback) =>
 	api<unknown>(p.url.replace(/\/index\.m3u8$/, ''), { method: 'DELETE', keepalive: true });
 
+/**
+ * Runs an administrator action. When the server answers that the administrator
+ * PIN is needed, asks for it (PIN pad) and tries once more.
+ */
+export async function withAdmin<T>(run: () => Promise<T>): Promise<T> {
+	try {
+		return await run();
+	} catch (e) {
+		if (!(e instanceof ApiError) || e.code !== 'admin_required') throw e;
+		admin.token = '';
+		if (await askAdmin()) return run();
+		throw e;
+	}
+}
+
+export const adminAccess = () => api<{ enabled: boolean; unlocked: boolean }>('/api/admin/access');
+/** Checks the administrator PIN; the token is kept for the next calls. */
+export async function unlockAdmin(pin: string): Promise<void> {
+	admin.token = (await api<{ token: string }>('/api/admin/unlock', json('POST', { pin }))).token;
+}
+/** Sets, changes or (empty PIN) removes the administrator PIN. */
+export async function setAdminPin(pin: string): Promise<void> {
+	admin.token = (
+		await withAdmin(() => api<{ token: string }>('/api/admin/pin', json('PUT', { pin })))
+	).token;
+}
+
 export const metadataStatus = () => api<MetadataStatus>('/api/metadata/status');
 export const saveMetadataSettings = (s: { enabled?: boolean; key?: string }) =>
-	api<MetadataStatus>('/api/metadata/settings', json('PUT', s));
-export const syncMetadata = () => api<unknown>('/api/metadata/sync', { method: 'POST' });
-export const metadataReview = () => api<MetadataReviewItem[]>('/api/metadata/review');
+	withAdmin(() => api<MetadataStatus>('/api/metadata/settings', json('PUT', s)));
+export const syncMetadata = () =>
+	withAdmin(() => api<unknown>('/api/metadata/sync', { method: 'POST' }));
+export const metadataReview = () =>
+	withAdmin(() => api<MetadataReviewItem[]>('/api/metadata/review'));
 export const answerMetadata = (id: string, answer: { tmdb_id: number } | { skip: true }) =>
-	api<unknown>(`/api/metadata/${id}`, json('PUT', answer));
+	withAdmin(() => api<unknown>(`/api/metadata/${id}`, json('PUT', answer)));
 export const scanStatus = () => api<ScanStatus>('/api/library/scan');
-export const startScan = () => api<{ started: boolean }>('/api/library/scan', { method: 'POST' });
-export const reviewQueue = () => api<ReviewItem[]>('/api/review');
+export const startScan = () =>
+	withAdmin(() => api<{ started: boolean }>('/api/library/scan', { method: 'POST' }));
+export const reviewQueue = () => withAdmin(() => api<ReviewItem[]>('/api/review'));
 export const correctFile = (id: string, c: Correction) =>
-	api<unknown>(`/api/review/${id}`, { method: 'PUT', body: JSON.stringify(c) });
+	withAdmin(() => api<unknown>(`/api/review/${id}`, { method: 'PUT', body: JSON.stringify(c) }));
 export const mergeSeries = (sourceIds: string[], targetId: string) =>
-	api<{ series_id: string }>('/api/series/merge', {
-		method: 'POST',
-		body: JSON.stringify({ source_ids: sourceIds, target_id: targetId }),
-	});
+	withAdmin(() =>
+		api<{ series_id: string }>('/api/series/merge', {
+			method: 'POST',
+			body: JSON.stringify({ source_ids: sourceIds, target_id: targetId }),
+		}),
+	);
 export const splitSeries = (seriesId: string, fileIds: string[], title: string) =>
-	api<{ series_id: string }>('/api/series/split', {
-		method: 'POST',
-		body: JSON.stringify({ series_id: seriesId, file_ids: fileIds, title }),
-	});
+	withAdmin(() =>
+		api<{ series_id: string }>('/api/series/split', {
+			method: 'POST',
+			body: JSON.stringify({ series_id: seriesId, file_ids: fileIds, title }),
+		}),
+	);
 
 const json = (method: string, body: unknown, keepalive = false): RequestInit => ({
 	method,
@@ -198,10 +235,15 @@ export const serverStatus = () => api<ServerStatus>('/api/admin/status');
  * Downloads a backup of the database. It needs the profile header, so it is
  * fetched and saved from a blob instead of followed as a link.
  */
-export async function downloadBackup(fetchFn: typeof fetch = fetch): Promise<string> {
+export const downloadBackup = (fetchFn: typeof fetch = fetch): Promise<string> =>
+	withAdmin(() => fetchBackup(fetchFn));
+
+async function fetchBackup(fetchFn: typeof fetch): Promise<string> {
 	let res: Response;
 	try {
-		res = await fetchFn('/api/admin/backup', { headers: { [PROFILE_HEADER]: session.token } });
+		res = await fetchFn('/api/admin/backup', {
+			headers: { [PROFILE_HEADER]: session.token, [ADMIN_HEADER]: admin.token },
+		});
 	} catch {
 		throw new ApiError(0, 'servidor indisponível');
 	}

@@ -5,7 +5,9 @@
 
 	import { fetchHealth } from '#lib';
 	import {
+		adminAccess,
 		downloadBackup,
+		setAdminPin,
 		metadataStatus,
 		saveMetadataSettings,
 		scanStatus,
@@ -29,6 +31,7 @@
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import ErrorNotice from '#lib/ui/ErrorNotice.svelte';
+	import PinPad from '#lib/ui/PinPad.svelte';
 	import { subtitleCSS } from '#lib/ui/subtitles.ts';
 
 	const POLL_MS = 1000;
@@ -149,6 +152,27 @@
 		} catch (e) {
 			backupNote = '';
 			backupError = e;
+		}
+	}
+
+	// PIN de administrador: protege scan, Revisar, TMDB e backup. Sem ele (o
+	// padrão) tudo fica aberto a quem estiver na rede.
+	let adminOn = $state<boolean | undefined>();
+	let settingPin = $state(false);
+	let pinError = $state('');
+	void adminAccess()
+		.then((a) => (adminOn = a.enabled))
+		.catch(() => undefined);
+	async function savePin(pin: string): Promise<boolean> {
+		pinError = '';
+		try {
+			await setAdminPin(pin);
+			adminOn = pin !== '';
+			settingPin = false;
+			return true;
+		} catch {
+			pinError = 'Não foi possível salvar o PIN.';
+			return false;
 		}
 	}
 
@@ -312,6 +336,19 @@
 			<Button onclick={backup}>Baixar backup</Button>
 		{/if}
 	</div>
+	<div class="bar" use:focusGroup={{ orientation: 'horizontal' }}>
+		<Button id="settings:admin-pin" onclick={() => (settingPin = true)}>
+			{adminOn === true ? 'Trocar PIN de administrador' : 'Definir PIN de administrador'}
+		</Button>
+		{#if adminOn === true}
+			<Button onclick={() => void savePin('')}>Remover PIN de administrador</Button>
+		{/if}
+	</div>
+	<p class="note">
+		{adminOn === true
+			? 'Scan, Revisar, TMDB e backup pedem o PIN de administrador.'
+			: 'Sem PIN de administrador, qualquer aparelho da rede faz scan, edita o Revisar e baixa o backup.'}
+	</p>
 	{#if backupNote !== ''}<p class="note">{backupNote}</p>{/if}
 	{#if backupError !== undefined}<ErrorNotice error={backupError} onretry={() => void backup()} />{/if}
 </section>
@@ -340,6 +377,16 @@
 {#await health then h}
 	{#if h}<p class="note">Servidor{h.version ? ` ${h.version}` : ''} · banco {h.db}</p>{/if}
 {/await}
+
+{#if settingPin}
+	<PinPad
+		id="admin-new-pin"
+		title="Novo PIN de administrador"
+		error={pinError}
+		onsubmit={savePin}
+		oncancel={() => (settingPin = false)}
+	/>
+{/if}
 
 <style>
 	h1 {

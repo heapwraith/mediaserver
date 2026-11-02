@@ -11,6 +11,8 @@ O servidor é doméstico e escuta em todas as interfaces, sem login de rede. Uma
 - **Cabeçalhos:** `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy: no-referrer`. A CSP completa fica para depois, testada na TV com Chromium 76 (JASSUB, hls.js e o script embutido do SvelteKit).
 - **Sessão:** token `id.exp.mac` com validade de 90 dias, dentro da assinatura.
 - **PIN:** bloqueio por perfil **e endereço**, dobrando de 30 s até 15 min, para um convidado não trancar o perfil dos outros.
+- **PIN de administrador (opcional, desligado por padrão):** hash em `app_state.admin_pin`; com ele, scan, Revisar, mesclar/separar, TMDB e backup exigem o cabeçalho `X-Admin` (token de 30 min assinado com o hash do PIN; trocar o PIN encerra as sessões). `POST /api/admin/unlock`, `PUT /api/admin/pin`, `GET /api/admin/access`. A interface pede o PIN na hora da ação (`withAdmin`). Desligado por padrão para não mudar o uso de quem já tem a casa funcionando.
+- **Aviso de exposição:** na inicialização, o log avisa se há endereço IPv6 global ou IPv4 público.
 - **`/api/health`:** sem versão; CORS `*` só para páginas que não são `http(s)` (os apps de TV, que descobrem o servidor a partir de `file://`).
 
 ## Alternativas descartadas
@@ -19,4 +21,5 @@ O servidor é doméstico e escuta em todas as interfaces, sem login de rede. Uma
 
 ## Consequências
 - Quem usar um nome com ponto no DNS da casa (ex.: `telao.casa`) precisa pôr `ALLOWED_HOSTS=telao.casa`.
-- Ainda falta o **PIN de administrador** (Revisar, scan, mesclar/separar, backup, status) e a CSP completa; estão no Backlog.
+- Quem definir o PIN de administrador primeiro é o dono (não há conta); o reset é pelo banco, com o servidor parado.
+- Fica no Backlog a CSP completa (precisa de teste na TV com Chromium 76).

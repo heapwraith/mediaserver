@@ -9,6 +9,8 @@
 	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 
+	import { admin, finishAdmin } from '#lib/api/admin.svelte.ts';
+	import { ApiError, unlockAdmin } from '#lib/api/client.ts';
 	import { session } from '#lib/api/session.svelte.ts';
 	import favicon from '#lib/assets/favicon.svg';
 	import { goBack, trackNavigation } from '#lib/platform/back.ts';
@@ -18,9 +20,26 @@
 	import { settings } from '#lib/platform/settings.svelte.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import ExitDialog from '#lib/ui/ExitDialog.svelte';
+	import PinPad from '#lib/ui/PinPad.svelte';
 	import type { LayoutProps } from './$types';
 
 	let { children }: LayoutProps = $props();
+
+	let adminError = $state('');
+	async function tryAdminPin(pin: string): Promise<boolean> {
+		adminError = '';
+		try {
+			await unlockAdmin(pin);
+			finishAdmin(true);
+			return true;
+		} catch (e) {
+			adminError =
+				e instanceof ApiError && e.code === 'pin_locked'
+					? 'Muitas tentativas. Espere um pouco.'
+					: 'PIN errado.';
+			return false;
+		}
+	}
 
 	// The rail (ADR 013): only what is there to watch. Revisar lives in Configurações.
 	const menu = [
@@ -204,6 +223,16 @@
 		>
 	</defs>
 </svg>
+
+{#if admin.prompt}
+	<PinPad
+		id="admin-pin"
+		title="PIN de administrador"
+		error={adminError}
+		onsubmit={tryAdminPin}
+		oncancel={() => finishAdmin(false)}
+	/>
+{/if}
 
 {#if askingExit}
 	<ExitDialog onexit={exitApp} oncancel={() => (askingExit = false)} />

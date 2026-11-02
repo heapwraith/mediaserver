@@ -42,3 +42,32 @@ describe('imageSrcset', () => {
 		);
 	});
 });
+
+describe('withAdmin', () => {
+	it('asks for the PIN on admin_required and tries once more', async () => {
+		const { admin, finishAdmin } = await import('./admin.svelte');
+		const { ApiError, withAdmin } = await import('./client');
+		let calls = 0;
+		const p = withAdmin(() => {
+			calls++;
+			if (calls === 1) return Promise.reject(new ApiError(403, 'x', 'admin_required'));
+			return Promise.resolve('done');
+		});
+		await vi.waitFor(() => expect(admin.prompt).toBeDefined());
+		finishAdmin(true);
+		await expect(p).resolves.toBe('done');
+		expect(calls).toBe(2);
+	});
+
+	it('gives up when the PIN pad is cancelled, and lets other errors through', async () => {
+		const { admin, finishAdmin } = await import('./admin.svelte');
+		const { ApiError, withAdmin } = await import('./client');
+		const p = withAdmin(() => Promise.reject(new ApiError(403, 'x', 'admin_required')));
+		await vi.waitFor(() => expect(admin.prompt).toBeDefined());
+		finishAdmin(false);
+		await expect(p).rejects.toMatchObject({ code: 'admin_required' });
+		await expect(withAdmin(() => Promise.reject(new ApiError(500, 'boom')))).rejects.toMatchObject({
+			status: 500,
+		});
+	});
+});

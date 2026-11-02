@@ -6,6 +6,9 @@ services:
     build: .
     image: mediaserver
     ports:
+      # Publica em todas as interfaces (a TV precisa alcançar). No Linux o Docker
+      # ignora o ufw: confira que o roteador não encaminha esta porta nem libera IPv6.
+      # Só neste PC: "127.0.0.1:8080:8080". Só na rede de casa: "192.168.0.10:8080:8080".
       - "8080:8080"
     volumes:
       - ${MEDIA_DIR:-./media}:/media:ro # o servidor nunca altera os arquivos
