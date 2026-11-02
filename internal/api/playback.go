@@ -5,6 +5,7 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 	"strings"
 
@@ -41,8 +42,17 @@ func (d Deps) playback(w http.ResponseWriter, r *http.Request) {
 				d.Logger.InfoContext(r.Context(), "playback", "media", id, "direct", pb.Direct,
 					"video", pb.Video, "audio", pb.Audio, "burned", pb.Burned, "caps", strings.Join(req.Caps, ","))
 			}
-			writeJSON(w, http.StatusOK, pb)
-			return
+			if pb.Direct { // <video src> cannot send headers: the URL carries the media token
+				var tok string
+				if tok, err = d.mediaTokenOf(r.Context(), profileFrom(r.Context()).ID); err == nil {
+					pb.URL += "?m=" + url.QueryEscape(tok)
+					writeJSON(w, http.StatusOK, pb)
+					return
+				}
+			} else {
+				writeJSON(w, http.StatusOK, pb)
+				return
+			}
 		}
 	}
 	d.writeError(w, r, err)

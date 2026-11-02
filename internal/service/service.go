@@ -67,6 +67,16 @@ func SystemdUnit(s Spec, user bool) string {
 	if s.User != "" && !user {
 		b.WriteString("User=" + s.User + "\n")
 	}
+	// Sandbox: the server needs the network, the media folder and its data
+	// folder, nothing else. AF_NETLINK lists the network addresses (the warning
+	// about public ones at startup). The namespace-based options (ProtectSystem,
+	// PrivateTmp) need privileges, so only the system unit gets them.
+	b.WriteString("NoNewPrivileges=yes\nLockPersonality=yes\nRestrictRealtime=yes\nRestrictSUIDSGID=yes\n")
+	b.WriteString("RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK\nSystemCallArchitectures=native\n")
+	b.WriteString("ProtectKernelModules=yes\nProtectKernelLogs=yes\nProtectControlGroups=yes\n")
+	if !user {
+		b.WriteString("ProtectSystem=full\nPrivateTmp=yes\nProtectKernelTunables=yes\nProtectHostname=yes\nProtectClock=yes\n")
+	}
 	// SIGTERM is the graceful shutdown (FFmpeg processes stopped, database closed).
 	b.WriteString("Restart=on-failure\nRestartSec=5\nTimeoutStopSec=30\n\n")
 	b.WriteString("[Install]\n")

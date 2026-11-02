@@ -55,6 +55,8 @@ type Deps struct {
 	Started time.Time
 
 	admin *adminState
+	// secrets is Secret behind a lock, so that it can be replaced.
+	secrets *secretBox
 
 	pins *pinLimiter
 }
@@ -63,6 +65,7 @@ type Deps struct {
 func NewRouter(d Deps) http.Handler {
 	d.pins = newPinLimiter()
 	d.admin = &adminState{}
+	d.secrets = &secretBox{v: d.Secret}
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(d.guard)
@@ -72,7 +75,7 @@ func NewRouter(d Deps) http.Handler {
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/health", healthHandler(d))
 		r.Group(func(r chi.Router) {
-			r.Use(d.requireScanner)
+			r.Use(d.requireScanner, d.requireAccess)
 			r.Get("/library/scan", d.scanStatus)
 			r.Group(func(r chi.Router) {
 				r.Use(d.requireAdmin)
@@ -113,8 +116,6 @@ func NewRouter(d Deps) http.Handler {
 			r.Group(func(r chi.Router) {
 				r.Use(d.requireTranscoder)
 				r.Post("/media/{id}/playback", d.playback)
-				r.Get("/transcode/{key}/{file}", d.transcodeFile)
-				r.Delete("/transcode/{key}", d.stopTranscode)
 			})
 			r.Group(func(r chi.Router) {
 				r.Use(d.requireSubtitles)
@@ -124,13 +125,21 @@ func NewRouter(d Deps) http.Handler {
 				r.Get("/media/{id}/fonts/{name}", d.mediaFont)
 			})
 		})
+		// HLS segments: the player (hls.js) asks for them without headers. The
+		// key is 128 random bits given only by POST /playback, so it is the
+		// credential (see ADR 015).
+		r.Group(func(r chi.Router) {
+			r.Use(d.requireScanner, d.requireTranscoder)
+			r.Get("/transcode/{key}/{file}", d.transcodeFile)
+			r.Delete("/transcode/{key}", d.stopTranscode)
+		})
 		r.Group(func(r chi.Router) {
 			r.Use(d.requireProfiles)
 			r.Get("/admin/access", d.adminAccess)
 			r.Post("/admin/unlock", d.adminUnlock)
 			r.With(d.requireProfile, d.requireAdmin).Put("/admin/pin", d.putAdminPin)
 			r.Get("/profiles", d.listProfiles)
-			r.Post("/profiles", d.createProfile)
+			r.With(d.requireAdmin).Post("/profiles", d.createProfile)
 			r.Post("/profiles/{id}/session", d.startSession)
 			r.Group(func(r chi.Router) {
 				r.Use(d.requireProfile)
@@ -141,10 +150,12 @@ func NewRouter(d Deps) http.Handler {
 				r.Put("/watched", d.putWatched)
 				r.Get("/series/{id}/progress", d.seriesProgress)
 				r.Get("/home", d.home)
-				r.Get("/admin/status", d.status)
+				r.Get("/media-token", d.mediaTokenHandler)
 				r.Group(func(r chi.Router) {
 					r.Use(d.requireAdmin)
+					r.Get("/admin/status", d.status)
 					r.Get("/admin/backup", d.backup)
+					r.Post("/admin/revoke", d.revokeSessions)
 				})
 				r.Group(func(r chi.Router) {
 					r.Use(d.requireMetadata)

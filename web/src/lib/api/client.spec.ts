@@ -71,3 +71,20 @@ describe('withAdmin', () => {
 		});
 	});
 });
+
+describe('media token in URLs', () => {
+	it('adds the token of the session to what the browser loads by itself', async () => {
+		const { session } = await import('./session.svelte');
+		const { assURL, vttURL } = await import('./client');
+		const images = await import('./images');
+		session.mediaToken = '';
+		expect(images.imageURL('x')).toBe('/api/images/x?variant=card&w=960');
+		expect(assURL('s')).toBe('/api/subtitles/s/ass');
+		session.mediaToken = 'a.b.c+/=';
+		expect(images.imageURL('x')).toBe('/api/images/x?variant=card&w=960&m=a.b.c%2B%2F%3D');
+		expect(images.imageSrcset('x')).toContain('&m=a.b.c%2B%2F%3D 480w');
+		expect(vttURL('s', 2)).toBe('/api/subtitles/s/vtt?offset=2&m=a.b.c%2B%2F%3D');
+		expect(assURL('s')).toBe('/api/subtitles/s/ass?m=a.b.c%2B%2F%3D');
+		session.mediaToken = '';
+	});
+});

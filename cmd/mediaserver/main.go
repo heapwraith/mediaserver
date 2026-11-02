@@ -207,6 +207,10 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 				"addrs", pub, "port", cfg.Port)
 		}
 	}
+	var adminPin string
+	if err := conn.QueryRowContext(ctx, `SELECT value FROM app_state WHERE key = 'admin_pin'`).Scan(&adminPin); err != nil {
+		logger.Warn("no administrator PIN: anyone on the network can scan, edit Review, change the TMDB key and download the backup; set one in Settings")
+	}
 	logger.Info("server ready",
 		"version", version,
 		"addr", ln.Addr().String(),

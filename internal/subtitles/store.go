@@ -24,6 +24,7 @@ import (
 	"sync"
 	"time"
 
+	"mediaserver/internal/ffsafe"
 	"mediaserver/internal/library"
 )
 
@@ -310,6 +311,7 @@ func (s *Store) extract(ctx context.Context, mediaID string, m media, dir string
 	for _, f := range fonts {
 		args = append(args, "-dump_attachment:"+strconv.Itoa(f.index), "fonts/"+strconv.Itoa(f.index)+f.ext)
 	}
+	args = append(args, ffsafe.Video()...)
 	args = append(args, "-i", "file:"+filepath.Join(s.rootDir, filepath.FromSlash(m.rel)))
 	outputs := 0
 	for _, t := range m.subs {

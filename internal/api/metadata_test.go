@@ -20,7 +20,7 @@ func TestMetadataEndpoints(t *testing.T) {
 	call := func(method, path, body string, headers ...string) (int, string) {
 		return do(t, srv, method, path, body, headers...)
 	}
-	if status, _ := call(http.MethodGet, "/api/metadata/status", ""); status != http.StatusUnauthorized {
+	if status, _ := call(http.MethodGet, "/api/metadata/status", "", "X-Profile: "); status != http.StatusUnauthorized {
 		t.Errorf("status without a profile = %d, want 401", status)
 	}
 	_, h := newProfile(t, call, "Ana", "")

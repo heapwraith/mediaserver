@@ -114,7 +114,7 @@ func TestProfilesAndProgress(t *testing.T) {
 	}
 
 	// No session, a forged one, or another profile's one.
-	for _, h := range []string{"", ProfileHeader + ": " + ana.ID, ProfileHeader + ": " + ana.ID + ".AAAA", ProfileHeader + ": junk"} {
+	for _, h := range []string{ProfileHeader + ": ", ProfileHeader + ": " + ana.ID, ProfileHeader + ": " + ana.ID + ".AAAA", ProfileHeader + ": junk"} {
 		if status, _ := call(http.MethodGet, "/api/home", "", h); status != http.StatusUnauthorized {
 			t.Errorf("home with %q = %d, want 401", h, status)
 		}

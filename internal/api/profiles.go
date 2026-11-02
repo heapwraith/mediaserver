@@ -3,6 +3,9 @@
 package api
 
 import (
+	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math"
@@ -19,10 +22,16 @@ func isNotFound(err error) bool { return errors.Is(err, library.ErrNotFound) }
 type sessionBody struct {
 	Profile library.Profile `json:"profile"`
 	Token   string          `json:"token"`
+	// MediaToken goes in the "m" parameter of media URLs (see mediaToken).
+	MediaToken string `json:"media_token"`
 }
 
 func (d Deps) session(p library.Profile, pinHash string) sessionBody {
-	return sessionBody{Profile: p, Token: sessionToken(d.Secret, p.ID, pinHash, time.Now().Add(sessionTTL))}
+	now := time.Now()
+	return sessionBody{
+		Profile: p, Token: sessionToken(d.secret(), p.ID, pinHash, now.Add(sessionTTL)),
+		MediaToken: mediaToken(d.secret(), p.ID, pinHash, now),
+	}
 }
 
 // GET /api/profiles
@@ -238,4 +247,42 @@ func (d Deps) home(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Cache-Control", "no-store")
 	writeJSON(w, http.StatusOK, h)
+}
+
+type mediaTokenBody struct {
+	Token string `json:"token"`
+}
+
+// mediaTokenHandler gives the profile of the session a fresh media token.
+func (d Deps) mediaTokenHandler(w http.ResponseWriter, r *http.Request) {
+	tok, err := d.mediaTokenOf(r.Context(), profileFrom(r.Context()).ID)
+	if err != nil {
+		d.writeError(w, r, err)
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	writeJSON(w, http.StatusOK, mediaTokenBody{Token: tok})
+}
+
+func (d Deps) mediaTokenOf(ctx context.Context, profileID string) (string, error) {
+	_, hash, err := d.Library.ProfileAuth(ctx, profileID)
+	if err != nil {
+		return "", err
+	}
+	return mediaToken(d.secret(), profileID, hash, time.Now()), nil
+}
+
+// revokeSessions ends every session on every device: it replaces the secret
+// that signs them. Everybody chooses a profile (and types the PIN) again.
+func (d Deps) revokeSessions(w http.ResponseWriter, r *http.Request) {
+	b := make([]byte, 32)
+	_, _ = rand.Read(b) // never fails (crypto/rand)
+	if _, err := d.DB.ExecContext(r.Context(),
+		`UPDATE app_state SET value = ? WHERE key = 'session_secret'`, hex.EncodeToString(b)); err != nil {
+		d.writeError(w, r, fmt.Errorf("replace session secret: %w", err))
+		return
+	}
+	d.secrets.set(b)
+	d.Logger.WarnContext(r.Context(), "all sessions revoked")
+	w.WriteHeader(http.StatusNoContent)
 }

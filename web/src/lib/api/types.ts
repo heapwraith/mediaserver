@@ -219,6 +219,8 @@ export interface Profile {
 export interface Session {
 	profile: Profile;
 	token: string;
+	/** Goes in the `m` parameter of media URLs (images, subtitles, fonts, direct play). */
+	media_token?: string;
 }
 
 /** On update, a missing pin keeps it, "" removes it and 4 digits set it. */

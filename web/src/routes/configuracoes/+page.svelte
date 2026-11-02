@@ -7,6 +7,7 @@
 	import {
 		adminAccess,
 		downloadBackup,
+		revokeSessions,
 		setAdminPin,
 		metadataStatus,
 		saveMetadataSettings,
@@ -15,7 +16,7 @@
 		syncMetadata,
 	} from '#lib/api/client.ts';
 	import tmdbLogo from '#lib/assets/tmdb.svg';
-	import { session } from '#lib/api/session.svelte.ts';
+	import { clearSession, session } from '#lib/api/session.svelte.ts';
 	import type { MetadataStatus, ScanStatus } from '#lib/api/types.ts';
 	import { capabilities } from '#lib/platform/codecs.ts';
 	import { focusGroup, focusable } from '#lib/platform/nav.svelte.ts';
@@ -173,6 +174,16 @@
 		} catch {
 			pinError = 'Não foi possível salvar o PIN.';
 			return false;
+		}
+	}
+
+	async function signOutEverywhere() {
+		try {
+			await revokeSessions();
+			clearSession();
+			await goto('/perfis');
+		} catch {
+			pinError = 'Não foi possível encerrar as sessões.';
 		}
 	}
 
@@ -343,6 +354,7 @@
 		{#if adminOn === true}
 			<Button onclick={() => void savePin('')}>Remover PIN de administrador</Button>
 		{/if}
+		<Button onclick={() => void signOutEverywhere()}>Sair de todos os aparelhos</Button>
 	</div>
 	<p class="note">
 		{adminOn === true

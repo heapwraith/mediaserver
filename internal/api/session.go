@@ -60,10 +60,65 @@ func profileFrom(ctx context.Context) library.Profile {
 	return p
 }
 
+// secretBox holds the session secret; "sign out everywhere" replaces it.
+type secretBox struct {
+	mu sync.RWMutex
+	v  []byte
+}
+
+func (b *secretBox) get() []byte {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	return b.v
+}
+
+func (b *secretBox) set(v []byte) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.v = v
+}
+
+// secret is the current session secret.
+func (d Deps) secret() []byte { return d.secrets.get() }
+
+// mediaTTL is how long a media token lasts. It is the credential of the URLs
+// the browser loads by itself (<video>, <img>, subtitles, fonts), which cannot
+// carry the X-Profile header. It is rounded so that a profile gets the same
+// token for mediaStep: the URLs, and the browser cache with them, stay stable.
+const (
+	mediaTTL  = 36 * time.Hour
+	mediaStep = 12 * time.Hour
+)
+
+func mediaMAC(secret []byte, profileID, pinHash, unix string) string {
+	mac := hmac.New(sha256.New, secret)
+	mac.Write([]byte("media|" + profileID + "|" + pinHash + "|" + unix))
+	return base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+}
+
+// mediaToken is "<id>.<unix>.<hmac>", good for GET/HEAD of media only.
+func mediaToken(secret []byte, profileID, pinHash string, now time.Time) string {
+	exp := now.Truncate(mediaStep).Add(mediaTTL)
+	unix := strconv.FormatInt(exp.Unix(), 10)
+	return profileID + "." + unix + "." + mediaMAC(secret, profileID, pinHash, unix)
+}
+
+func validMediaToken(secret []byte, token, id, pinHash string, now time.Time) bool {
+	parts := strings.Split(token, ".")
+	if len(secret) == 0 || len(parts) != 3 || parts[0] != id {
+		return false
+	}
+	exp, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil || now.Unix() > exp {
+		return false
+	}
+	return hmac.Equal([]byte(parts[2]), []byte(mediaMAC(secret, id, pinHash, parts[1])))
+}
+
 // requireProfiles answers 503 when profiles are not available.
 func (d Deps) requireProfiles(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if d.Library.DB == nil || len(d.Secret) == 0 {
+		if d.Library.DB == nil || len(d.secret()) == 0 {
 			writeJSON(w, http.StatusServiceUnavailable, errorBody{Error: "profiles not available", Code: "unavailable"})
 			return
 		}
@@ -71,28 +126,55 @@ func (d Deps) requireProfiles(next http.Handler) http.Handler {
 	})
 }
 
-// requireProfile checks the session token of the X-Profile header and puts
-// its profile in the request context; 401 without a valid one.
-func (d Deps) requireProfile(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get(ProfileHeader)
-		id, _, _ := strings.Cut(token, ".")
-		if _, err := uuid.Parse(id); err != nil {
-			writeJSON(w, http.StatusUnauthorized, errorBody{Error: "choose a profile", Code: "no_profile"})
-			return
-		}
-		p, hash, err := d.Library.ProfileAuth(r.Context(), id)
-		if err != nil || !validToken(d.Secret, token, id, hash, time.Now()) {
-			if err != nil && !isNotFound(err) {
+// authenticate finds the profile of a request: by the X-Profile session token
+// and, for GET/HEAD only, by the media token in the "m" query parameter.
+func (d Deps) authenticate(r *http.Request, allowMedia bool) (library.Profile, bool, error) {
+	token, media := r.Header.Get(ProfileHeader), false
+	if token == "" && allowMedia && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
+		token, media = r.URL.Query().Get("m"), true
+	}
+	id, _, _ := strings.Cut(token, ".")
+	if !isUUID(id) {
+		return library.Profile{}, false, nil
+	}
+	p, hash, err := d.Library.ProfileAuth(r.Context(), id)
+	if isNotFound(err) {
+		return library.Profile{}, false, nil // a profile that was deleted: no session
+	}
+	if err != nil {
+		return library.Profile{}, false, err
+	}
+	now := time.Now()
+	if media {
+		return p, validMediaToken(d.secret(), token, id, hash, now), nil
+	}
+	return p, validToken(d.secret(), token, id, hash, now), nil
+}
+
+func (d Deps) requireWith(allowMedia bool) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			p, ok, err := d.authenticate(r, allowMedia)
+			if err != nil {
 				d.writeError(w, r, err)
 				return
 			}
-			writeJSON(w, http.StatusUnauthorized, errorBody{Error: "choose a profile", Code: "no_profile"})
-			return
-		}
-		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), profileKey{}, p)))
-	})
+			if !ok {
+				writeJSON(w, http.StatusUnauthorized, errorBody{Error: "choose a profile", Code: "no_profile"})
+				return
+			}
+			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), profileKey{}, p)))
+		})
+	}
 }
+
+// requireProfile checks the session token of the X-Profile header and puts
+// its profile in the request context; 401 without a valid one.
+func (d Deps) requireProfile(next http.Handler) http.Handler { return d.requireWith(false)(next) }
+
+// requireAccess is requireProfile that also takes the media token of the
+// "m" parameter on GET/HEAD, for what the browser loads from a URL.
+func (d Deps) requireAccess(next http.Handler) http.Handler { return d.requireWith(true)(next) }
 
 // PIN attempts: after pinMaxFails wrong PINs a (profile, address) pair is
 // locked for pinLock, doubling at each new lock up to pinLockMax. The address
@@ -175,4 +257,9 @@ func (l *pinLimiter) reset(key string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	delete(l.fails, key)
+}
+
+func isUUID(s string) bool {
+	_, err := uuid.Parse(s)
+	return err == nil
 }

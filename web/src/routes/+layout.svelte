@@ -10,7 +10,7 @@
 	import { page } from '$app/state';
 
 	import { admin, finishAdmin } from '#lib/api/admin.svelte.ts';
-	import { ApiError, unlockAdmin } from '#lib/api/client.ts';
+	import { ApiError, refreshMediaToken, unlockAdmin } from '#lib/api/client.ts';
 	import { session } from '#lib/api/session.svelte.ts';
 	import favicon from '#lib/assets/favicon.svg';
 	import { goBack, trackNavigation } from '#lib/platform/back.ts';
@@ -78,9 +78,17 @@
 	// Início asks whether to leave.
 	let askingExit = $state(false);
 	const atHome = isTV ? () => (askingExit = true) : undefined;
+	// A saved session comes back with a media token that may be old: renew it
+	// before any image loads, then every few hours.
+	let mediaReady = $state(session.token === '');
+	const renew = () =>
+		session.token === '' ? Promise.resolve() : refreshMediaToken().catch(() => undefined);
 	onMount(() => {
 		document.documentElement.classList.toggle('tv', isTV);
 		connectShell();
+		void renew().finally(() => (mediaReady = true));
+		const timer = setInterval(() => void renew(), 6 * 60 * 60 * 1000);
+		return () => clearInterval(timer);
 	});
 
 	function onkeydown(e: KeyboardEvent) {
@@ -163,7 +171,7 @@
 		</nav>
 	{/if}
 	<main class:fullscreen class:bare={profilePages} use:focusGroup={{ id: 'main' }}>
-		{#if allowed}{@render children()}{/if}
+		{#if allowed && (mediaReady || profilePages)}{@render children()}{/if}
 	</main>
 </div>
 

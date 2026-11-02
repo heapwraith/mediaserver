@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -83,9 +84,14 @@ func (d Deps) mediaFonts(w http.ResponseWriter, r *http.Request) {
 		d.writeError(w, r, err)
 		return
 	}
+	tok, err := d.mediaTokenOf(r.Context(), profileFrom(r.Context()).ID)
+	if err != nil {
+		d.writeError(w, r, err)
+		return
+	}
 	urls := make([]string, len(names))
 	for i, n := range names {
-		urls[i] = "/api/media/" + id + "/fonts/" + n
+		urls[i] = "/api/media/" + id + "/fonts/" + n + "?m=" + url.QueryEscape(tok)
 	}
 	writeJSON(w, http.StatusOK, urls)
 }

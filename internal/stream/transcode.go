@@ -24,6 +24,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"mediaserver/internal/ffsafe"
 	"mediaserver/internal/library"
 )
 
@@ -257,9 +258,10 @@ func (t *Transcoder) keyframe(ctx context.Context, src string, at float64) float
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	//nolint:gosec // the binary comes from the operator's config (FFPROBE_PATH); src is a file: path inside MEDIA_DIR
-	out, err := exec.CommandContext(ctx, t.ffprobe, "-v", "error",
-		"-read_intervals", strconv.FormatFloat(at, 'f', 3, 64)+"%+#32", "-select_streams", "v:0",
-		"-show_entries", "packet=pts_time,flags", "-of", "csv=p=0", "file:"+src).Output()
+	out, err := exec.CommandContext(ctx, t.ffprobe, slices.Concat([]string{"-v", "error"}, ffsafe.Video(), []string{
+		"-read_intervals", strconv.FormatFloat(at, 'f', 3, 64) + "%+#32", "-select_streams", "v:0",
+		"-show_entries", "packet=pts_time,flags", "-of", "csv=p=0", "file:" + src,
+	})...).Output()
 	if err != nil {
 		return at
 	}
@@ -370,6 +372,7 @@ func (t *Transcoder) args(src string, p Plan, start float64, dir string) []strin
 	if start > 0 {
 		a = append(a, "-ss", strconv.FormatFloat(start, 'f', 3, 64))
 	}
+	a = append(a, ffsafe.Video()...)
 	a = append(a, "-i", "file:"+src, "-map", "0:v:0?")
 	if p.AudioIndex >= 0 {
 		a = append(a, "-map", "0:"+strconv.Itoa(p.AudioIndex))
