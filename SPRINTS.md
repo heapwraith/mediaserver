@@ -1,6 +1,6 @@
 # SPRINTS.md
 
-Planejamento do projeto. **Sprint ativa: 12.** (As sprints 6, 7, 8, 9 e 11 aguardam só os aceites manuais reservados ao usuário.)
+Planejamento do projeto. **Sprint ativa: 13.** (As sprints 6, 7, 8, 9, 11 e 12 aguardam só os aceites manuais reservados ao usuário.)
 
 Regras:
 - Marcar `[x]` só quando o critério de aceite da tarefa for cumprido.
@@ -324,6 +324,35 @@ Verificado na prévia (Docker com os filmes da Blender e Cyberpunk – Mercenár
 
 ---
 
+## Sprint 13 — Chromium 76 e ajustes do Backlog
+
+**Objetivo:** a interface voltar a abrir no piso oficial (Chromium 76) e fechar os itens pequenos que estavam abertos no Backlog.
+
+- [x] **Chromium 76:** a interface abria em branco, porque o Svelte chama `String.replaceAll` (Chrome 85). Polyfill em `web/src/lib/platform/polyfills.ts`, com `replaceAll` e `Object.hasOwn`
+- [x] **Funções de JavaScript novas:** o `make check` agora procura no JS final, dependências e workers incluídos, as funções mais novas que o Chromium 76 ([ADR 004](docs/adr/004-frontend.md))
+- [x] **Parser — grupo entre parênteses:** `(AnimesTotais) Obi-Wan...` não vira mais uma série separada, e o grupo não conta como sinal de anime
+- [x] **Parser — ano depois do codec:** `Teste HEVC (2026)` vira filme de 2026 em vez de cair em Revisar
+- [x] **Filmes pedem "próximo episódio":** o player só chama `/next` para episódios
+- [x] **Imagens:** depois de cada scan, gera o que falta, um item por vez, e limpa o cache do que saiu da biblioteca (pastas e cores)
+- [x] **Versão do build local:** o `make dev` aplica a versão do git
+- [ ] Abrir numa TV real com Chromium 76 e tocar um vídeo (usuário, se tiver o aparelho)
+
+Verificado no Chromium 76.0.3803.0 de verdade (snapshot do Google, `--no-sandbox`): antes, todas as telas abriam em branco com `e.replaceAll is not a function`; agora Perfis, Início, Filmes, filme, Configurações e a tela de conexão da TV abrem sem erro de JavaScript. O player abre, mas a reprodução **não** foi testada: esse snapshot não traz H.264/AAC.
+
+Verificado numa cópia do banco, com a biblioteca real:
+- Só a série "(AnimesTotais) Obi-Wan Kenobi" mudou: ela sumiu, o S01E02 passou a ser o arquivo de 2160p, e o de 720p foi para Revisar como duplicado.
+- 70 imagens geradas em 81 s (19 MB, 0 falhas, servidor em 58 MB de RAM). Um segundo scan não gera nada de novo, e a pasta da série removida foi apagada.
+- No Edge, filme não pede `/next`. Episódio pede: o card aparece nos créditos e a contagem abre o episódio seguinte.
+
+Benchmarks sem mudança relevante: listagens de 0,7 a 11,8 ms, Início em 22,6 ms e rescan de 10 mil arquivos em ~200 ms.
+
+**Aceite**
+- [x] Todas as telas abrem no Chromium 76 real, sem erro de JavaScript
+- [x] Uma função nova no build (ex.: `structuredClone` fora de `try`) reprova o `make check`
+- [x] Cache de imagens: o que saiu da biblioteca é apagado, e um segundo scan não gera nada de novo
+
+---
+
 ## Backlog (sem sprint)
 
 - Legendas em imagem (PGS, VobSub, DVB) via burn-in com overlay
@@ -342,9 +371,8 @@ Verificado na prévia (Docker com os filmes da Blender e Cyberpunk – Mercenár
 - **Organizador físico** (renomear/mover para o formato padrão), com dry-run, desfazer e modo hardlink
 - Apps nativos para **Apple TV (tvOS)** e **Roku**, que não rodam apps web
 - *Cast* (Chromecast / AirPlay) a partir do navegador do PC
-- Escolha do nome do projeto e troca do placeholder `mediaserver`
+- Trocar o placeholder `mediaserver` por **Telão** no módulo, no binário e nos pacotes (na interface o nome já mudou, [ADR 013](docs/adr/013-identidade-telao.md))
 - Scanner: arquivo ainda "em cópia" no scan de inicialização só é reprocessado quando chega outro evento do disco; reagendar um scan quando `pending > 0`
-- Imagens: pré-gerar após o scan (cor dominante disponível já na 1ª listagem) e limpar o cache de itens removidos
 - Frontend: migrar os estilos dos componentes (hoje em `<style>`) para classes UnoCSS com os tokens do tema (AGENTS.md §9)
 - Transcodificação: *tone mapping* HDR→SDR (hoje um HDR convertido para H.264 fica desbotado)
 - Transcodificação: manter 5.1 quando o cliente suporta (hoje o áudio convertido é AAC estéreo)
@@ -359,15 +387,12 @@ Revisão do sistema (01/11/2026), por prioridade:
 - **Scanner — perda de progresso:** se uma subpasta fica ilegível por um momento (permissão, HD externo ou rede instável), os arquivos dela são apagados do banco junto com o progresso. Usar o status `missing` (já existe no esquema) e só apagar depois de alguns scans ou dias
 - **Servidor sem o HD de mídias:** se o `MEDIA_DIR` não existe na inicialização (HD externo desligado), o servidor não sobe; como serviço, fica reiniciando sem parar. Subir em modo degradado, avisar na interface e tentar de novo
 - **Serviço no Windows — firewall:** o `service install` deveria criar a regra de firewall para o binário instalado. A regra atual vale só para o caminho de dev; sem ela a TV não alcança o servidor
-- **Parser — grupo entre parênteses:** uma tag no início do nome vira parte do título: `(AnimesTotais) Obi-Wan...` virou uma série separada
-- **Parser — ano depois do codec:** um ano que vem depois de uma tag de codec é ignorado (`Teste HEVC (2026)` caiu em Revisar sem ano)
+- **Parser — número entre parênteses no início:** `(500) Days of Summer` perde o `(500)` e vira "Days of Summer": o número é tratado como tag
+- **Parser — ano depois de tag entre colchetes:** `Teste [1080p] (2026)` continua em Revisar. Só uma tag solta (`HEVC`) é coberta, porque um colchete pode ser marcador de episódio (`Title [01] (2020)`)
 - **Versões do mesmo episódio** (ex.: Obi-Wan S01E02 em 720p e 2160p): mostrar uma entrada só, com "versões", e escolher a melhor para cada aparelho
 - **Idioma de áudio preferido por perfil** (ex.: anime sempre em japonês): a coluna `profiles.audio_language` já existe e não é usada. Lembrar também a última faixa escolhida por mídia (`progress.audio_stream` já existe)
 - **"Continuar assistindo":** remover um item da fileira manualmente
 - **Pular abertura — faixa de áudio:** o fingerprint usa a 1ª faixa de áudio. Usar a faixa padrão, ou a do mesmo idioma em todos os episódios
 - **Pular abertura — créditos longos:** créditos maiores que a janela de 4 min (comum na Disney+) são marcados tarde. Aumentar a janela quando o trecho encontrado encosta no início dela
-- **Versão do build local:** o binário de dev e o app da TV mostram "versão dev"; aplicar a versão do git também no `go build` de desenvolvimento
 - **Histórico de sessões:** uma tela "Histórico" (em Configurações/Status) com cada reprodução: perfil, título/episódio, aparelho (TV ou navegador, IP), início, tempo assistido e trecho (de onde até onde), e modo (direto, remux, conversão com GPU, legenda queimada). Filtros por perfil e aparelho. Hoje só o log JSON registra o play (`"msg":"playback"`), sem perfil, título, aparelho nem duração. Dados numa tabela nova, gravada no play e nos salvamentos de progresso (a cada 10 s)
-- **Filmes pedem "próximo episódio":** o player chama `/api/media/{id}/next` também em filme e recebe 404 (inofensivo, mas suja o log). Não chamar para filmes, ou responder 204
-- **Compatibilidade — funções de JavaScript novas:** o `make check` barra CSS proibido e o Vite converte a sintaxe, mas nada acusa funções mais novas que o Chromium 76, como `toSorted` (Chrome 110) ou `Array.at` (Chrome 92). Elas passam em todas as checagens e só quebram na TV de 2021, em tempo de execução. Na Sprint 11 quase entrou um `toSorted` na página de Filmes. Acusar no `make check`: por regra do Oxlint, se houver, ou por uma lista de funções proibidas no `web/scripts/check-build.ts`, que já verifica o CSS do build
 - **Docker no WSL — arquivo novo:** um arquivo copiado para `/mnt/c` (pasta do Windows) não gera evento de disco dentro do container, então ele só aparece com scan manual. Reagendar um scan periódico (ex.: a cada 10 min) quando o `MEDIA_DIR` não entrega eventos, ou detectar `/mnt/` e avisar

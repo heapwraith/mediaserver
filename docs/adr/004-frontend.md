@@ -15,9 +15,14 @@ A Sprint 3 entrega a interface web, que também será a das TVs (piso **Chromium
 4. **`:where()` do Svelte 5:** o Svelte escopa alguns seletores com `:where(.svelte-xyz)`. O Chromium 76 descarta a regra inteira por causa disso. Um plugin do Vite troca, no build, por `.svelte-xyz` (uma classe a mais de especificidade).
 5. **Checagem automática do build** (`web/scripts/check-build.ts`, roda no `make check`): mede o JS que a página inicial carrega (gzip) contra 150 KB e procura no CSS final recursos fora do Chromium 76 e blur. `gap` só é aceito em regra com `display:grid` (aproximação).
 6. **`unicorn/no-array-sort` desligada:** a alternativa sugerida, `toSorted()`, só existe a partir do Chrome 110.
+7. **Funções de JavaScript (Sprint 13):** o Vite converte a sintaxe, não as funções. O Svelte 5 chama `String.replaceAll` (Chrome 85) ao criar cada template, e a interface abria em branco no Chromium 76 real sem nenhuma checagem acusar.
+   - **Polyfill** só com o que as dependências usam (`replaceAll`, `Object.hasOwn`), instalado em `hooks.client.ts` e no `shell/main.ts`.
+   - **A checagem do build** agora procura no JS final, dependências e workers incluídos, as funções mais novas que o Chromium 76. O Oxlint não tem regra para isso.
+   - **Usos seguros das dependências** (dentro de `try`) ficam como exceção na tabela. Se uma atualização mudar esse código, a checagem falha e alguém reavalia.
 
 ## Consequências
 
 - Bundle inicial medido: **51,8 KB gzip**.
 - Os controles do player são nossos: legendas, miniaturas na barra e Chromecast precisam ser feitos à mão quando chegarem.
 - O AGENTS.md (§2) foi atualizado para o player próprio.
+- **Testar no Chromium 76 real:** o snapshot do Google (revisão 662092, 76.0.3803.0) abre a interface por CDP. No Windows 11 ele precisa de `--no-sandbox`: com o sandbox, trava ao usar a fonte Archivo, mesmo sem nosso código. Ele não traz H.264/AAC, então não serve para testar reprodução.
