@@ -80,6 +80,9 @@ const boundary = "\x1f"
 
 var (
 	reLeadingGroup = regexp.MustCompile(`^\s*[\[【]([^\]】]*)[\]】]`)
+	// "(AnimesTotais) Obi-Wan": one word, then the title. "(T)Raumschiff" and
+	// "(Untitled) (2009)" are the title itself.
+	reLeadingParen = regexp.MustCompile(`^\s*\(\p{L}[^()\s]*\)[\s._]+(\p{L})`)
 	reBracket      = regexp.MustCompile(`[\[(\{【]([^\[\](){}【】]*)[\])\}】]`)
 
 	reTokSxxEyy = regexp.MustCompile(`^s(\d{1,2})[ ._]?e(\d{1,4})(?:-?e(\d{1,4})|-(\d{1,4}))?(?:v(\d))?$`)
@@ -124,6 +127,10 @@ func parseName(name string) Parsed {
 			p.Group = content
 		}
 		s = s[m[1]:]
+	}
+	// Not p.Group: that counts as evidence of anime, and only [Group] means it.
+	if m := reLeadingParen.FindStringSubmatchIndex(s); m != nil {
+		s = s[m[2]:]
 	}
 
 	// Bracket groups: a year stays as a token; everything else becomes a
@@ -318,6 +325,16 @@ func parseName(name string) Parsed {
 				cut = i
 			}
 			break
+		}
+	}
+	// A year after a release tag still dates a movie ("Title HEVC (2026)"). Only a
+	// tag: a boundary may be an episode marker ("Title [01] (2020)").
+	if p.Year == 0 && cut < n && isStrongTag(lower[cut]) && !p.HasSeason && !p.Special && dashEp == 0 && wordEp == 0 {
+		for _, i := range years {
+			if y := atoi(lower[i]); i > cut && y <= maxYear {
+				p.Year = y
+				break
+			}
 		}
 	}
 

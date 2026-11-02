@@ -207,3 +207,16 @@ Movies/Breaking.Bad.S01E01.mkv	kind=review	title=Breaking Bad	s=1	e=1	reason=fol
 Series/Unknown Thing.mkv	kind=review	title=Unknown Thing	reason=episode_without_season
 S01E01.mkv	kind=review	title=	s=1	e=1	reason=no_title
 01.mkv	kind=review	title=01	reason=no_year
+
+# --- Group in parentheses at the start: not part of the title, not anime -----------
+(AnimesTotais) Obi-Wan.Kenobi.S01E02.Part.II.2160p.WEB-DL.DDP5.1.H.265-Dual.mkv	kind=series	title=Obi-Wan Kenobi	s=1	e=2	et=Part II
+(AnimesTotais).Filme.Legal.2020.1080p.mkv	kind=movie	title=Filme Legal	year=2020
+(Untitled) (2009).mkv	kind=movie	title=(Untitled)	year=2009
+(T)Raumschiff Surprise (2004).mkv	kind=movie	title=(T) Raumschiff Surprise	year=2004
+
+# --- Year after a release tag ------------------------------------------------------
+Teste HEVC (2026).mkv	kind=movie	title=Teste	year=2026
+Teste.HEVC.2026.mkv	kind=movie	title=Teste	year=2026
+Show.Name.x265.2021.S01E02.mkv	kind=series	title=Show Name	s=1	e=2
+Filme 1080p 2099.mkv	kind=review	title=Filme	reason=no_year
+Title [01] (2020).mkv	kind=review	title=Title	reason=no_year
