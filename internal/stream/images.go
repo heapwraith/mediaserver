@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package stream
 
 import (
@@ -10,6 +12,7 @@ import (
 	"fmt"
 	"image"
 	"image/png"
+	"io/fs"
 	"log/slog"
 	"math"
 	"net/http"
@@ -513,6 +516,11 @@ func (im *Images) ffmpegRun(ctx context.Context, args []string) ([]byte, error) 
 	cmd.Stderr = &stderr
 	out, err := cmd.Output()
 	if err != nil {
+		// A path with a separator (FFMPEG_PATH=/opt/ffmpeg) is not looked up in
+		// PATH, so a missing file comes as ENOENT instead of exec.ErrNotFound.
+		if errors.Is(err, fs.ErrNotExist) && !errors.Is(err, exec.ErrNotFound) {
+			err = fmt.Errorf("%w: %w", exec.ErrNotFound, err)
+		}
 		return nil, fmt.Errorf("ffmpeg: %w: %s", err, strings.TrimSpace(stderr.String()))
 	}
 	return out, nil
