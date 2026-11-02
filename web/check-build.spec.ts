@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { checkCss, inlineStyles, staticImports, withoutSupports } from './scripts/check-build';
+import {
+	checkCss,
+	checkJs,
+	inlineScripts,
+	inlineStyles,
+	staticImports,
+	withoutSupports,
+} from './scripts/check-build';
 import { unwrapSvelteWhere } from './vite.config';
 import { inlineIntoHtml } from './vite.tv.config';
 
@@ -31,6 +38,39 @@ describe('checkCss', () => {
 			'.a{x:1}.c{y:2}',
 		);
 		expect(checkCss('@supports (aspect-ratio:1){.a{aspect-ratio:1}}')).toEqual([]);
+	});
+});
+
+describe('checkJs', () => {
+	it.each([
+		['[1].toSorted()', 'toSorted'],
+		['a.at(-1)', 'at'],
+		['a.findLastIndex(f)', 'findLast'],
+		['Object.groupBy(a,f)', 'groupBy'],
+		['structuredClone(a)', 'structuredClone'],
+		['crypto.randomUUID()', 'randomUUID'],
+	])('rejects %s', (js, want) => {
+		expect(checkJs(js).join()).toContain(want);
+	});
+
+	it.each([
+		// Polyfilled.
+		['a.replaceAll(`x`,`y`);Object.hasOwn(a,b)'],
+		// The two safe uses in the dependencies.
+		['if(e instanceof Date)return e.getTime(),structuredClone(e)'],
+		['try{return structuredClone(e)}catch{return e}'],
+		['function f(){try{return crypto.randomUUID()}catch{}}'],
+		// Same letters, other names.
+		['a.format(b);a.that(c);a.find(f)'],
+	])('accepts %s', (js) => {
+		expect(checkJs(js)).toEqual([]);
+	});
+
+	it('reads inline scripts', () => {
+		expect(inlineScripts('<script>a()</script><p></p><script type="x">b()</script>')).toEqual([
+			'a()',
+			'b()',
+		]);
 	});
 });
 

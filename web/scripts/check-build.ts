@@ -1,8 +1,9 @@
 // Checks the production build (run by `make check` after `vite build`):
 //   1. the JS needed to open the home page is < 150 KB gzip (AGENTS.md §8);
 //   2. the final CSS uses nothing Chromium 76 lacks (AGENTS.md §6) and no
-//      blur/backdrop-filter (§7). Rules inside @supports are allowed.
-// The TV page (web/build-tv, CSS inlined in its index.html) gets check 2.
+//      blur/backdrop-filter (§7). Rules inside @supports are allowed;
+//   3. the final JS, dependencies included, calls no function Chromium 76 lacks.
+// The TV page (web/build-tv, inlined in its index.html) gets checks 2 and 3.
 // Usage: node scripts/check-build.ts [build dir] [TV page dir]
 
 import { readFileSync, readdirSync } from 'node:fs';
@@ -24,6 +25,37 @@ const forbidden: [RegExp, string][] = [
 	[/(?:^|[;{])\s*(?:-webkit-)?backdrop-filter\s*:/, 'backdrop-filter (AGENTS.md §7)'],
 	[/blur\(/, 'blur() (AGENTS.md §7)'],
 ];
+
+// The build converts syntax, not functions. replaceAll and Object.hasOwn are not
+// here because Svelte and SvelteKit need them: see src/lib/platform/polyfills.ts.
+const forbiddenJs: [RegExp, string][] = [
+	[/\.at\(/, 'at (Chrome 92)'],
+	[/\.toSorted\(/, 'toSorted (Chrome 110)'],
+	[/\.toReversed\(/, 'toReversed (Chrome 110)'],
+	[/\.toSpliced\(/, 'toSpliced (Chrome 110)'],
+	[/\.findLast(?:Index)?\(/, 'findLast (Chrome 97)'],
+	[/\b(?:Object|Map)\.groupBy\(/, 'groupBy (Chrome 117)'],
+	[/\bArray\.fromAsync\(/, 'Array.fromAsync (Chrome 121)'],
+	[/\bPromise\.any\(/, 'Promise.any (Chrome 85)'],
+	[/\bPromise\.withResolvers\(/, 'Promise.withResolvers (Chrome 119)'],
+	[/\bAbortSignal\.timeout\(/, 'AbortSignal.timeout (Chrome 103)'],
+	[/\bAbortSignal\.any\(/, 'AbortSignal.any (Chrome 116)'],
+	[/\bURL\.canParse\(/, 'URL.canParse (Chrome 120)'],
+	[/\.replaceChildren\(/, 'replaceChildren (Chrome 86)'],
+	[/\.(?:is|to)WellFormed\(/, 'isWellFormed (Chrome 111)'],
+	[/\bnew WeakRef\(/, 'WeakRef (Chrome 84)'],
+	[/\bnew AggregateError\(/, 'AggregateError (Chrome 85)'],
+	[/\bIntl\.Segmenter\b/, 'Intl.Segmenter (Chrome 87)'],
+	// Svelte's $state.snapshot: inside a try, or for a Date (our settings have none).
+	[/(?<!getTime\(\),|try\{return )\bstructuredClone\(/, 'structuredClone (Chrome 98)'],
+	// hls.js tries it and has a fallback.
+	[/(?<!try\{return )\bcrypto\.randomUUID\(/, 'crypto.randomUUID (Chrome 92)'],
+];
+
+/** The functions Chromium 76 lacks that a script calls. */
+export function checkJs(js: string): string[] {
+	return forbiddenJs.filter(([re]) => re.test(js)).map(([, name]) => name);
+}
 
 /** Removes @supports blocks: what is inside them is an optional enhancement. */
 export function withoutSupports(css: string): string {
@@ -66,6 +98,11 @@ export function checkCss(css: string): string[] {
 /** The CSS of the <style> blocks of a page. */
 export function inlineStyles(html: string): string[] {
 	return [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1] ?? '');
+}
+
+/** The code of the inline <script> blocks of a page. */
+export function inlineScripts(html: string): string[] {
+	return [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1] ?? '');
 }
 
 /** Static imports (not dynamic import()) of a built JS file. */
@@ -118,10 +155,22 @@ function main(build: string, tv?: string): number {
 			failed = true;
 		}
 	}
+	// Every script, workers and lazy chunks too: they all run on the TV.
+	const immutable = join(build, '_app/immutable');
+	for (const f of readdirSync(immutable, { recursive: true, encoding: 'utf8' })) {
+		if (!f.endsWith('.js')) continue;
+		for (const p of checkJs(readFileSync(join(immutable, f), 'utf8'))) {
+			console.error(`${f}: ${p}`);
+			failed = true;
+		}
+	}
 	if (tv !== undefined) {
 		const html = readFileSync(join(tv, 'index.html'), 'utf8');
 		console.log(`TV page: ${kb(gzipSync(html).length)} gzip`);
-		for (const p of inlineStyles(html).flatMap(checkCss)) {
+		for (const p of [
+			...inlineStyles(html).flatMap(checkCss),
+			...inlineScripts(html).flatMap(checkJs),
+		]) {
 			console.error(`${tv}/index.html: ${p}`);
 			failed = true;
 		}
