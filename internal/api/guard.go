@@ -23,8 +23,10 @@ func (d Deps) guard(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h := w.Header()
 		h.Set("X-Content-Type-Options", "nosniff")
-		// No X-Frame-Options / frame-ancestors: the TV apps (Tizen, webOS) show the
-		// interface inside an <iframe> of their file:// page (web/src/shell).
+		// Only the TV apps may embed the interface: Tizen and webOS show it in an
+		// <iframe> of their file:// page (web/src/shell). A web page (http/https)
+		// cannot frame it (clickjacking). No X-Frame-Options: it cannot name file:.
+		h.Set("Content-Security-Policy", "frame-ancestors 'self' file:")
 		h.Set("Referrer-Policy", "no-referrer")
 
 		if !d.hostAllowed(r.Host) {

@@ -49,9 +49,12 @@ func TestGuard(t *testing.T) {
 					t.Errorf("%s = %q, want %q", k, rec.Header().Get(k), v)
 				}
 			}
-			// The TV apps embed the interface in an iframe.
-			if rec.Header().Get("X-Frame-Options") != "" || rec.Header().Get("Content-Security-Policy") != "" {
-				t.Error("the interface must stay embeddable by the TV apps")
+			// Only the TV apps (file:// pages) and the server itself may frame it.
+			if got := rec.Header().Get("Content-Security-Policy"); got != "frame-ancestors 'self' file:" {
+				t.Errorf("Content-Security-Policy = %q", got)
+			}
+			if rec.Header().Get("X-Frame-Options") != "" {
+				t.Error("X-Frame-Options cannot allow file: and would block the TV apps")
 			}
 		})
 	}
