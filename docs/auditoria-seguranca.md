@@ -20,6 +20,21 @@ As provas abaixo foram feitas numa instância local descartável (`MEDIA_DIR` va
 
 **Ainda aberta:** CSP completa (`script-src`, `worker-src`), a testar na TV com Chromium 76.
 
+## Segunda rodada (02/11/2026)
+
+| Item | O que mudou |
+|---|---|
+| Mídia aberta a quem está na rede | Tudo exige sessão de perfil; URLs de `<video>`/`<img>`/legenda levam token de mídia (ADR 015). Testado num Chromium real contra o Docker: início, detalhes e player (HLS) com imagens, API e segmentos em 200. |
+| FFmpeg com arquivo malicioso | `-protocol_whitelist file,pipe` e `-format_whitelist` em todas as chamadas (`internal/ffsafe`); testado com mp4, m4v, mov, avi, ts, webm e mkv no FFmpeg 9. |
+| Criar perfil e `status` abertos | Exigem o PIN de administrador quando ele existe. |
+| Sessão sem revogação | `Sair de todos os aparelhos` (Configurações). |
+| Primeiro uso | O log avisa, a cada início, que não há PIN de administrador. |
+| CI | `govulncheck`, `npm audit`, licenças, CodeQL, dependency-review, Dependabot, Actions por hash, atestado de procedência no release. |
+| Instalação | Sandbox no systemd e no contêiner Docker (somente leitura, sem capabilities). |
+| `SECURITY.md` | Como reportar e os limites conhecidos. |
+
+**Não feito, por precisar de teste na TV:** HTTPS na rede local e CSP completa. **Não feito no Windows:** o serviço roda como SYSTEM; trocar para uma conta limitada pode tirar o acesso à pasta de mídias do usuário, e não há como testar aqui.
+
 ## O que está bom
 
 - **Arquivos fora de `MEDIA_DIR`:** a mídia é aberta com `os.Root` (`stream.openFile`), que recusa `..` e symlinks que escapam. Os nomes de segmento HLS, de fonte e de chave têm *regex* fixa; as imagens aceitam só variante e largura de uma lista.

@@ -1,5 +1,6 @@
 import { admin, askAdmin } from './admin.svelte';
-import { clearSession, session } from './session.svelte';
+import { mediaParam } from './images';
+import { clearSession, session, setMediaToken } from './session.svelte';
 import type {
 	Collection,
 	CollectionDetail,
@@ -129,8 +130,9 @@ export const startPlayback = (
 		method: 'POST',
 		body: JSON.stringify({ caps, audio, start, subtitle }),
 	});
-export const vttURL = (id: string, offset: number) => `/api/subtitles/${id}/vtt?offset=${offset}`;
-export const assURL = (id: string) => `/api/subtitles/${id}/ass`;
+export const vttURL = (id: string, offset: number) =>
+	`/api/subtitles/${id}/vtt?offset=${offset}${mediaParam('&')}`;
+export const assURL = (id: string) => `/api/subtitles/${id}/ass${mediaParam('?')}`;
 export const listFonts = (mediaId: string) => api<string[]>(`/api/media/${mediaId}/fonts`);
 /** Stops an HLS session (its FFmpeg); keepalive survives the page closing. */
 export const stopPlayback = (p: Playback) =>
@@ -200,7 +202,15 @@ const json = (method: string, body: unknown, keepalive = false): RequestInit => 
 });
 
 export const listProfiles = () => api<Profile[]>('/api/profiles');
-export const createProfile = (p: ProfileInput) => api<Session>('/api/profiles', json('POST', p));
+export const createProfile = (p: ProfileInput) =>
+	withAdmin(() => api<Session>('/api/profiles', json('POST', p)));
+/** Renews the media token of the session (it lasts a day and a half). */
+export async function refreshMediaToken(): Promise<void> {
+	setMediaToken((await api<{ token: string }>('/api/media-token')).token);
+}
+/** Ends every session on every device (administrator). */
+export const revokeSessions = () =>
+	withAdmin(() => api<unknown>('/api/admin/revoke', { method: 'POST' }));
 export const startSession = (id: string, pin?: string) =>
 	api<Session>(`/api/profiles/${id}/session`, json('POST', pin === undefined ? {} : { pin }));
 export const updateProfile = (id: string, p: ProfileInput) =>
@@ -229,7 +239,7 @@ export const setWatched = (t: WatchedTarget) => api<unknown>('/api/watched', jso
 export const seriesProgress = (id: string) => api<SeriesProgress>(`/api/series/${id}/progress`);
 export const nextEpisode = (mediaId: string) => api<HomeItem>(`/api/media/${mediaId}/next`);
 
-export const serverStatus = () => api<ServerStatus>('/api/admin/status');
+export const serverStatus = () => withAdmin(() => api<ServerStatus>('/api/admin/status'));
 
 /**
  * Downloads a backup of the database. It needs the profile header, so it is

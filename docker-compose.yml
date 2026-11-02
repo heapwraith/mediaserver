@@ -18,6 +18,14 @@ services:
       MAX_TRANSCODES: ${MAX_TRANSCODES:-2}
       TZ: ${TZ:-UTC}
     restart: unless-stopped
+    # Sandbox: no extra privileges, no capabilities, read-only image; the only
+    # writable places are the data volume and /tmp (memory).
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    read_only: true
+    tmpfs:
+      - /tmp
 
     # GPU NVIDIA (NVENC): use também o docker-compose.nvidia.yml
     #   docker compose -f docker-compose.yml -f docker-compose.nvidia.yml up -d

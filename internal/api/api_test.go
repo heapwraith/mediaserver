@@ -52,6 +52,11 @@ func get(t *testing.T, srv *httptest.Server, path string, headers ...string) (in
 		k, v, _ := strings.Cut(h, ": ")
 		req.Header.Set(k, v)
 	}
+	if _, own := req.Header[http.CanonicalHeaderKey(ProfileHeader)]; !own && needsSession(path) {
+		if tok := defaultSession(t, srv); tok != "" {
+			req.Header.Set(ProfileHeader, tok)
+		}
+	}
 	res, err := srv.Client().Do(req)
 	if err != nil {
 		t.Fatal(err)

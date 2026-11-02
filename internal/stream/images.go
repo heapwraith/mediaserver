@@ -19,10 +19,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"mediaserver/internal/ffsafe"
 )
 
 // Image variants and widths served by /api/images/{id} (AGENTS.md §7).
@@ -422,11 +425,12 @@ func (im *Images) render(ctx context.Context, dir string, src sources) (string, 
 	}
 
 	const fit = "scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,setsar=1"
-	args := []string{"-hide_banner", "-loglevel", "error", "-nostdin", "-y", "-i", "file:" + card}
+	args := slices.Concat([]string{"-hide_banner", "-loglevel", "error", "-nostdin", "-y"}, ffsafe.Image(), []string{"-i", "file:" + card})
 	graph := make([]string, 0, 12)
 	if back == card {
 		graph = append(graph, "[0:v]"+fit+",split=2[c][b]")
 	} else {
+		args = append(args, ffsafe.Image()...)
 		args = append(args, "-i", "file:"+back)
 		graph = append(graph, "[0:v]"+fit+"[c]", "[1:v]"+fit+"[b]")
 	}
@@ -482,13 +486,15 @@ func (im *Images) bestFrame(ctx context.Context, video string, durationMs int64)
 	var frames [][]byte
 	var stats []frameStats
 	for _, ts := range at {
-		out, err := im.ffmpegRun(ctx, []string{
+		out, err := im.ffmpegRun(ctx, slices.Concat([]string{
 			"-hide_banner", "-loglevel", "error", "-nostdin",
-			"-ss", strconv.FormatFloat(ts, 'f', 3, 64), "-i", "file:" + video, "-map", "0:V:0",
+			"-ss", strconv.FormatFloat(ts, 'f', 3, 64),
+		}, ffsafe.Video(), []string{
+			"-i", "file:" + video, "-map", "0:V:0",
 			// thumbnail picks the most representative of 24 frames; then square pixels, max 1080p.
 			"-vf", "thumbnail=24,scale=trunc(iw*sar/2)*2:ih,setsar=1,scale=-2:'min(ih,1080)'",
 			"-frames:v", "1", "-f", "image2pipe", "-c:v", "png", "pipe:1",
-		})
+		}))
 		if errors.Is(err, exec.ErrNotFound) || ctx.Err() != nil {
 			return nil, err
 		}

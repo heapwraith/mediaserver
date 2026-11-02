@@ -47,6 +47,7 @@ func TestSubtitleContent(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		req.Header.Set(ProfileHeader, defaultSession(t, srv))
 		res, err := srv.Client().Do(req)
 		if err != nil {
 			t.Fatal(err)

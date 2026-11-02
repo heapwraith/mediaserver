@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -115,6 +116,13 @@ func do(t *testing.T, srv *httptest.Server, method, path, body string, headers .
 	for _, h := range headers {
 		if k, v, ok := strings.Cut(h, ": "); ok {
 			req.Header.Set(k, v)
+		}
+	}
+	// Most of the API needs a profile session: tests get a default one, unless
+	// they send their own X-Profile ("X-Profile: " with nothing = no session).
+	if _, own := req.Header[http.CanonicalHeaderKey(ProfileHeader)]; !own && needsSession(path) {
+		if tok := defaultSession(t, srv); tok != "" {
+			req.Header.Set(ProfileHeader, tok)
 		}
 	}
 	res, err := srv.Client().Do(req)
@@ -250,4 +258,44 @@ func TestLibraryUnavailable(t *testing.T) {
 			t.Errorf("%s = %d, want 503", p, status)
 		}
 	}
+}
+
+var defaultSessions sync.Map // server URL -> X-Profile token
+
+// needsSession says whether an endpoint asks for a profile session.
+func needsSession(path string) bool {
+	for _, open := range []string{"/api/health", "/api/profiles", "/api/admin/access", "/api/admin/unlock", "/api/transcode/"} {
+		if strings.HasPrefix(path, open) {
+			// Only the profile list, creation and session start are open; one
+			// profile's own routes (/api/profiles/{id}) need a session.
+			return open == "/api/profiles" && strings.Count(path, "/") > 3 && !strings.HasSuffix(path, "/session")
+		}
+	}
+	return strings.HasPrefix(path, "/api/")
+}
+
+// defaultSession creates (once per server) a profile and returns its token.
+func defaultSession(t *testing.T, srv *httptest.Server) string {
+	t.Helper()
+	if v, ok := defaultSessions.Load(srv.URL); ok {
+		return v.(string) //nolint:forcetypeassert // only strings are stored
+	}
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, srv.URL+"/api/profiles",
+		strings.NewReader(`{"name":"Padrão","color":"#3E63DD"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	res, err := srv.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	data, _ := io.ReadAll(res.Body)
+	if res.StatusCode != http.StatusCreated {
+		return "" // a server without profiles (the test checks what it answers)
+	}
+	tok := decode[sessionBody](t, string(data)).Token
+	defaultSessions.Store(srv.URL, tok)
+	return tok
 }

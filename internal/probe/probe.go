@@ -11,9 +11,12 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
+
+	"mediaserver/internal/ffsafe"
 )
 
 // DefaultTimeout bounds a single ffprobe run.
@@ -78,8 +81,9 @@ func (p Prober) Probe(ctx context.Context, file string) (*Result, error) {
 	defer cancel()
 
 	//nolint:gosec // fixed arguments; the binary path comes from the operator's config
-	cmd := exec.CommandContext(ctx, p.Path,
-		"-v", "error", "-print_format", "json", "-show_format", "-show_streams", "-i", file)
+	cmd := exec.CommandContext(ctx, p.Path, slices.Concat(
+		[]string{"-v", "error", "-print_format", "json", "-show_format", "-show_streams"},
+		ffsafe.Video(), []string{"-i", file})...)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	out, err := cmd.Output()

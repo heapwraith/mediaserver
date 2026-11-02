@@ -13,6 +13,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write # signed build provenance (attestation)
+  attestations: write
 
 concurrency:
   group: release-${{ github.ref }}
@@ -23,24 +25,24 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0 # git describe needs the tags (VERSION)
 
-      - uses: actions/setup-go@v7
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
           go-version-file: go.mod
           cache-dependency-path: |
             go.sum
             tools.sum
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24
           cache: npm
           cache-dependency-path: web/package-lock.json
 
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
           java-version: 21
@@ -88,9 +90,14 @@ jobs:
           ls -la out
           ./out/mediaserver-linux-amd64 -version
 
+      - name: Build provenance (who built what, from which commit)
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: out/*
+
       - name: Keep the build (manual run)
         if: github.event_name == 'workflow_dispatch'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: mediaserver-${{ github.sha }}
           path: out/

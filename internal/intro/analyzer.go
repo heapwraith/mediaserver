@@ -11,9 +11,12 @@ import (
 	"log/slog"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
+
+	"mediaserver/internal/ffsafe"
 )
 
 const (
@@ -168,9 +171,10 @@ func (a *Analyzer) chromaprint(ctx context.Context, src string, from, length tim
 	defer cancel()
 	secs := func(d time.Duration) string { return strconv.FormatFloat(d.Seconds(), 'f', 3, 64) }
 	//nolint:gosec // the binary comes from the operator's config (FFMPEG_PATH); src is a file: path inside MEDIA_DIR
-	cmd := exec.CommandContext(ctx, a.ffmpeg, "-hide_banner", "-nostdin", "-loglevel", "error",
-		"-ss", secs(from), "-t", secs(length), "-i", "file:"+src,
-		"-map", "0:a:0", "-ac", "1", "-f", "chromaprint", "-fp_format", "raw", "-")
+	cmd := exec.CommandContext(ctx, a.ffmpeg, slices.Concat(
+		[]string{"-hide_banner", "-nostdin", "-loglevel", "error", "-ss", secs(from), "-t", secs(length)},
+		ffsafe.Video(),
+		[]string{"-i", "file:" + src, "-map", "0:a:0", "-ac", "1", "-f", "chromaprint", "-fp_format", "raw", "-"})...)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	out, err := cmd.Output()

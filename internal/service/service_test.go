@@ -28,8 +28,10 @@ func TestSystemdUnit(t *testing.T) {
 			"User=ana\n",
 			"Restart=on-failure\n",
 			"WantedBy=multi-user.target\n",
+			"NoNewPrivileges=yes\n", "ProtectSystem=full\n", "PrivateTmp=yes\n",
+			"RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK\n",
 		}, []string{"default.target"}},
-		{"user", true, []string{"WantedBy=default.target\n"}, []string{"User=", "multi-user"}},
+		{"user", true, []string{"WantedBy=default.target\n", "NoNewPrivileges=yes\n"}, []string{"User=", "multi-user", "ProtectSystem", "PrivateTmp"}},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			unit := SystemdUnit(spec, c.user)

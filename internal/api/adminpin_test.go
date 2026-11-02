@@ -31,7 +31,7 @@ func TestAdminPin(t *testing.T) {
 	}
 
 	// Setting it needs a profile session.
-	if status, _ := call(http.MethodPut, "/api/admin/pin", `{"pin":"4321"}`); status != http.StatusUnauthorized {
+	if status, _ := call(http.MethodPut, "/api/admin/pin", `{"pin":"4321"}`, "X-Profile: "); status != http.StatusUnauthorized {
 		t.Fatalf("set without profile = %d, want 401", status)
 	}
 	if status, _ := call(http.MethodPut, "/api/admin/pin", `{"pin":"12"}`, profile); status != http.StatusBadRequest {

@@ -81,7 +81,7 @@ func (d Deps) requireAdmin(next http.Handler) http.Handler {
 			d.writeError(w, r, err)
 			return
 		}
-		if hash != "" && !validAdminToken(d.Secret, r.Header.Get(AdminHeader), hash, time.Now()) {
+		if hash != "" && !validAdminToken(d.secret(), r.Header.Get(AdminHeader), hash, time.Now()) {
 			writeJSON(w, http.StatusForbidden, errorBody{Error: "administrator PIN required", Code: "admin_required"})
 			return
 		}
@@ -104,7 +104,7 @@ func (d Deps) adminAccess(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	writeJSON(w, http.StatusOK, adminAccess{
 		Enabled:  hash != "",
-		Unlocked: hash == "" || validAdminToken(d.Secret, r.Header.Get(AdminHeader), hash, time.Now()),
+		Unlocked: hash == "" || validAdminToken(d.secret(), r.Header.Get(AdminHeader), hash, time.Now()),
 	})
 }
 
@@ -144,7 +144,7 @@ func (d Deps) adminUnlock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	d.pins.reset(key)
-	writeJSON(w, http.StatusOK, adminTokenBody{Token: adminToken(d.Secret, hash, time.Now().Add(adminTTL))})
+	writeJSON(w, http.StatusOK, adminTokenBody{Token: adminToken(d.secret(), hash, time.Now().Add(adminTTL))})
 }
 
 // putAdminPin sets, changes or (empty PIN) removes the admin PIN. When one is
@@ -179,5 +179,5 @@ func (d Deps) putAdminPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// The old admin sessions ended with the old hash; this one starts fresh.
-	writeJSON(w, http.StatusOK, adminTokenBody{Token: adminToken(d.Secret, hash, time.Now().Add(adminTTL))})
+	writeJSON(w, http.StatusOK, adminTokenBody{Token: adminToken(d.secret(), hash, time.Now().Add(adminTTL))})
 }

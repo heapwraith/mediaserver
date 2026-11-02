@@ -40,7 +40,7 @@ func TestPlayback(t *testing.T) {
 	status, body := do(t, srv, http.MethodPost, "/api/media/"+id+"/playback",
 		`{"caps": ["mkv", "h264", "aac"], "audio": 1, "start": 12.5}`)
 	pb := decode[stream.Playback](t, body)
-	if status != http.StatusOK || !pb.Direct || pb.URL != "/api/media/"+id+"/stream" || pb.Start != 12.5 {
+	if status != http.StatusOK || !pb.Direct || !strings.HasPrefix(pb.URL, "/api/media/"+id+"/stream?m=") || pb.Start != 12.5 {
 		t.Fatalf("playback = %d %s", status, body)
 	}
 
