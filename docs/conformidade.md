@@ -55,11 +55,11 @@ Pendente: a fonte padrão embutida no JASSUB (`default.woff2`) não declara lice
 
 ## 7. Segurança (risco de responsabilidade e de reputação)
 
-O servidor escuta em `0.0.0.0` sem autenticação de rede. Para uso em casa é aceitável, mas estes itens já estão no Backlog e **precisam sair antes de recomendar o uso a outras pessoas**:
+O servidor escuta em `0.0.0.0` sem autenticação de rede. Para uso em casa é aceitável. Em 02/11/2026 uma auditoria de segurança ([auditoria-seguranca.md](auditoria-seguranca.md)) corrigiu o vazamento de segredos no backup, CSRF, DNS rebinding e o bloqueio de PIN; **o PIN de administrador continua aberto e precisa sair antes de recomendar o uso a outras pessoas**. Tabela original:
 
 | Prioridade | Item | Risco |
 |---|---|---|
-| Alta | `/api/admin/backup` aceita qualquer perfil e o backup leva o segredo que assina as sessões (e a chave do TMDB) | Qualquer pessoa na rede pode forjar a sessão de um perfil com PIN |
+| Parcial | `/api/admin/backup` aceita qualquer perfil (o backup já sai sem segredos e sem PINs; falta o administrador) e o backup levava o segredo que assina as sessões (e a chave do TMDB) | Qualquer pessoa na rede pode forjar a sessão de um perfil com PIN |
 | Alta | Revisar, scan e mesclar/separar séries sem autenticação | Qualquer aparelho da rede altera a biblioteca (não os arquivos) |
 | Média | Subpasta ilegível apaga progresso | Perda de dados do usuário |
 | Média | `usesCleartextTraffic="true"` no app Android | Necessário para HTTP na LAN; documentar que o tráfego não é cifrado e não expor à internet |
@@ -82,7 +82,8 @@ Aviso de garantia: a GPL já traz "sem garantia"; o README repete que o projeto 
 4. [x] Checagem de licenças no `make check` (`web/scripts/check-licenses.ts`): barra dependência de produção do frontend fora da lista compatível com a GPL-3. Para o Go, conferir a licença de módulo novo à mão (todos os atuais são MIT/BSD).
 
 **Ainda abertas**
-- [ ] Corrigir o backup e criar o PIN de administrador (Backlog, prioridade alta; mexe em autenticação e merece sprint própria).
+- [x] Backup sem segredos, `guard` (Host/Origin/Content-Type), sessão com prazo e PIN por endereço ([ADR 015](adr/015-seguranca-rede.md)).
+- [ ] Criar o PIN de administrador (Backlog, prioridade alta; mexe em autenticação e merece sprint própria).
 - [ ] Confirmar a licença da fonte padrão do JASSUB (`default.woff2`): o pacote não a identifica.
 - [ ] Buscar "Telão" no INPI (classes 9, 38, 41 e 42).
 - [ ] Opcional: cabeçalho SPDX também nos `.ts` e `.svelte`.

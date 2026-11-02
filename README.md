@@ -447,4 +447,4 @@ Decisões de arquitetura em [`docs/adr/`](docs/adr/).
 - O servidor recusa pedidos com `Host` de domínio externo (proteção contra *DNS rebinding*) e pedidos de gravação vindos de outro site (CSRF).
 - O backup (`/api/admin/backup`) **não leva** o segredo das sessões, a chave do TMDB nem os PINs: depois de restaurar, defina os PINs de novo.
 - A sessão de um perfil vale 90 dias.
-- Detalhes: [docs/auditoria-seguranca.md](docs/auditoria-seguranca.md).
+- Detalhes: [docs/auditoria-seguranca.md](docs/auditoria-seguranca.md) (achados e o que falta), [ADR 015](docs/adr/015-seguranca-rede.md) (decisões) e [docs/conformidade.md](docs/conformidade.md) (licenças e leis).
