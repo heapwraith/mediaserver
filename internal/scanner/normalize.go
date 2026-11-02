@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package scanner
 
 import (
@@ -97,7 +99,7 @@ func titleScore(s string) int {
 }
 
 // cleanTitle turns separators into spaces and tidies the result.
-// In-word hyphens (Spider-Man) and apostrophes are kept.
+// In-word hyphens (Iron-Fox) and apostrophes are kept.
 func cleanTitle(s string) string {
 	s = strings.Map(func(r rune) rune {
 		if r == '.' || r == '_' {
@@ -105,7 +107,7 @@ func cleanTitle(s string) string {
 		}
 		return r
 	}, s)
-	// Standalone dashes inside the title stay ("Mission Impossible - Dead
+	// Standalone dashes inside the title stay ("Operation Unlikely - Dead
 	// Reckoning"); the ones at the edges are leftovers of removed tags.
 	return strings.Trim(strings.Join(strings.Fields(s), " "), " -–—:,;+~")
 }

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package api holds the HTTP routes, handlers and middlewares.
 package api
 

@@ -93,11 +93,12 @@ fmt: web-deps ## golangci-lint fmt + oxfmt
 	$(LINT) fmt
 	$(NPM) run fmt
 
-check: web-deps web-stub ## golangci-lint run + oxlint + oxfmt --check + svelte-check + build budget/CSS check
+check: web-deps web-stub ## golangci-lint run + oxlint + oxfmt --check + svelte-check + build budget/CSS check + licenses
 	$(LINT) fmt --diff
 	$(LINT) run
 	$(NPM) run check
 	$(NPM) run check:build
+	$(NPM) run check:licenses
 
 bench: web-stub ## Benchmarks (scanner and stream, from Sprint 1 on)
 	$(GO) test -run='^$$' -bench=. -benchmem ./...

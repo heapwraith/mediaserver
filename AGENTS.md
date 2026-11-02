@@ -83,7 +83,7 @@ O usuário configura `MEDIA_DIR` e pode organizar os arquivos **como quiser**: t
 | Sinal no nome / caminho | Classificação |
 |---|---|
 | `S01E01`, `s1e1`, `1x01`, pasta `Temporada 01` / `Season 1` | Série |
-| Episódio absoluto (` - 01`, `EP01`, `E01`) + tags de grupo (`[SubsPlease]`, `[Erai-raws]`) ou pasta com "anime" | Anime |
+| Episódio absoluto (` - 01`, `EP01`, `E01`) + tags de grupo (`[FansubA]`, `[Fansub-B]`) ou pasta com "anime" | Anime |
 | Ano (`(2020)`, `.2020.`) sem marcação de episódio | Filme |
 | Nenhum sinal claro ou sinais conflitantes | **Revisar** |
 
@@ -94,7 +94,7 @@ A pasta onde o arquivo está também conta como pista (ex.: uma pasta chamada `A
 - Anime com episódio absoluto: ` - 01`, ` - 1080`, `EP01`, `E01`, `v2` (versão)
 - Ano: `(2020)`, `.2020.`, `[2020]`
 - Separadores `.`, `_` e `-` tratados como espaço
-- Tags de release ignoradas no título: grupo (`[SubsPlease]`, `(AnimesTotais)`), resolução (`1080p`, `2160p`), codec (`x265`, `HEVC`, `AV1`), fonte (`WEB-DL`, `BluRay`), áudio (`DTS`, `AAC`), hash (`[ABC123EF]`), `REPACK`, `PROPER`
+- Tags de release ignoradas no título: grupo (`[FansubA]`, `(GrupoZ)`), resolução (`1080p`, `2160p`), codec (`x265`, `HEVC`, `AV1`), fonte (`WEB-DL`, `BluRay`), áudio (`DTS`, `AAC`), hash (`[ABC123EF]`), `REPACK`, `PROPER`
 - Títulos com acento, Unicode e caracteres japoneses
 - Extensões de vídeo: `.mkv .mp4 .m4v .avi .webm .mov .ts`
 - Legendas laterais: `.srt .ass .ssa .vtt`, com idioma opcional (`.pt-BR.srt`, `.en.ass`)
@@ -172,7 +172,7 @@ Esses recursos são bloqueados na **`blocklist` do `uno.config.ts`** (ex.: `aspe
 
 ## 7. Design e UX
 
-**Identidade: Telão** ([ADR 013](docs/adr/013-identidade-telao.md)), no nível dos grandes streamings (Netflix, Apple TV, Max): cena de tela cheia, título grande em letra condensada, menu lateral de TV. São só *princípios* de referência: nada de logos, ícones, fontes ou outros assets desses serviços.
+**Identidade: Telão** ([ADR 013](docs/adr/013-identidade-telao.md)), no nível dos grandes streamings: cena de tela cheia, título grande em letra condensada, menu lateral de TV. São só *princípios* de referência: nada de logos, ícones, fontes ou outros assets desses serviços.
 
 **Tema: preto**, único por enquanto, com um destaque laranja.
 

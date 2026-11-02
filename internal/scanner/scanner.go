@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package scanner turns the media folder into a clean virtual library in the
 // database. It only reads the user's files: nothing is ever renamed, moved,
 // written or deleted on disk (AGENTS.md §4).

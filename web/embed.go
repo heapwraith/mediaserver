@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package web embeds the built frontend (web/build) into the Go binary.
 package web
 

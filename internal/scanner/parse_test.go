@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package scanner
 
 import (
@@ -94,18 +96,18 @@ func itoa(n int) string { return strconv.Itoa(n) }
 
 func TestNormTitle(t *testing.T) {
 	tests := []struct{ in, want string }{
-		{"Amélie", "amelie"},
-		{"Cidade de Deus", "cidade de deus"},
-		{"CIDADE.DE.DEUS", "cidade de deus"},
-		{"Grey's Anatomy", "greys anatomy"},
-		{"Law & Order: SVU", "law and order svu"},
-		{"Spider-Man", "spider man"},
+		{"Élodie", "elodie"},
+		{"Cidade de Pedra", "cidade de pedra"},
+		{"CIDADE.DE.PEDRA", "cidade de pedra"},
+		{"Fenn's Anatomy", "fenns anatomy"},
+		{"Rule & Order: SVX", "rule and order svx"},
+		{"Iron-Fox", "iron fox"},
 		{"Ação, Ção & Coração!", "acao cao and coracao"},
 		{"Øresund Brücke", "oresund brucke"},
-		{"葬送のフリーレン", "葬送のフリーレン"},
+		{"旅立ちの鐘守", "旅立ちの鐘守"},
 		{"ブルーロック", "ブルーロック"}, // dakuten kept
 		{"  Spaced   Out  ", "spaced out"},
-		{"Steins;Gate 0", "steins gate 0"},
+		{"Helix;Gate 0", "helix gate 0"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.in, func(t *testing.T) {

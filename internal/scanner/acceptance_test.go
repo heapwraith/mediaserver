@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package scanner
 
 import (
@@ -111,13 +113,13 @@ func TestMessyLibraryAcceptance(t *testing.T) {
 	}
 
 	// Grouping: one series per show, whatever the naming style.
-	for _, show := range []string{"breaking bad", "game of thrones", "greys anatomy", "law and order svu", "cidade invisivel", "elite"} {
+	for _, show := range []string{"cold furnace", "siege of crowns", "fenns anatomy", "rule and order svx", "cidade oculta", "eclat"} {
 		if n := e.count(t, `SELECT count(*) FROM series WHERE norm_title = ?`, show); n != 1 {
 			t.Errorf("series %q: %d rows, want 1", show, n)
 		}
 	}
-	if n := e.count(t, `SELECT count(*) FROM episodes e JOIN series s ON s.id = e.series_id WHERE s.norm_title = 'breaking bad'`); n != 8 {
-		t.Errorf("Breaking Bad has %d episodes, want 8", n)
+	if n := e.count(t, `SELECT count(*) FROM episodes e JOIN series s ON s.id = e.series_id WHERE s.norm_title = 'cold furnace'`); n != 8 {
+		t.Errorf("Cold Furnace has %d episodes, want 8", n)
 	}
 }
 

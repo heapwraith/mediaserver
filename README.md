@@ -8,6 +8,8 @@ Servidor de streaming **local** para filmes, séries e animes. Um binário só (
 - Perfis com "continuar assistindo", legendas SRT/ASS (inclusive as estilizadas de anime) e apps para TVs Samsung, LG e Android.
 - Só rede local, sem contas, sem internet: nada é buscado fora (TMDB etc.).
 
+> **Uso responsável:** o Telão é um *player* para arquivos que **você** tem o direito de assistir (conteúdo próprio, comprado, livre ou com licença). Ele não baixa, não busca e não distribui mídia, e não quebra proteção (DRM). Os nomes de release que o scanner entende (`WEB-DL`, `BluRay`...) são só padrões de nome de arquivo.
+
 > `mediaserver` é um nome provisório. Regras do projeto em [`AGENTS.md`](AGENTS.md); planejamento em [`SPRINTS.md`](SPRINTS.md).
 
 **Sumário:** [Instalação](#instalação) · [Rodar como serviço](#rodar-como-serviço) · [Primeiro uso](#primeiro-uso) · [Organização das pastas](#organização-das-pastas) · [Assistindo](#assistindo) · [TVs](#tvs) · [Configuração](#configuração) · [Backup e restauração](#backup-e-restauração) · [Status do servidor](#status-do-servidor) · [Problemas comuns](#problemas-comuns) · [API](#api) · [Desenvolvimento](#desenvolvimento)
@@ -73,7 +75,7 @@ Teste abrindo `http://IP-DO-PC:8080` no celular, conectado ao mesmo Wi-Fi.
 
 ## Docker (opcional)
 
-Sem instalar Go, Node nem FFmpeg: a imagem já traz tudo.
+Sem instalar Go, Node nem FFmpeg: o `Dockerfile` compila tudo na sua máquina (o projeto **não publica imagem pronta**, ver [`docs/conformidade.md`](docs/conformidade.md)).
 
 ```bash
 MEDIA_DIR=/caminho/das/midias docker compose up -d --build
@@ -129,7 +131,7 @@ sudo ./mediaserver-linux-amd64 service install -media-dir "/srv/midias"
 
 ## Organização das pastas
 
-Qualquer organização funciona: tudo numa pasta só, subpastas aleatórias, nomes de release (`Show.S01E01.1080p.WEB-DL.x265.mkv`, `[SubsPlease] Anime - 01 (1080p).mkv`, `Filme.2020.BluRay.mkv`). Episódios da mesma série em pastas diferentes viram uma série só.
+Qualquer organização funciona: tudo numa pasta só, subpastas aleatórias, nomes de release (`Show.S01E01.1080p.WEB-DL.x265.mkv`, `[FansubA] Anime - 01 (1080p).mkv`, `Filme.2020.BluRay.mkv`). Episódios da mesma série em pastas diferentes viram uma série só.
 
 Para 100% de acerto, este é o formato recomendado:
 
@@ -428,3 +430,11 @@ docs/              ADRs, guias de TV e verificações das sprints
 ```
 
 Decisões de arquitetura em [`docs/adr/`](docs/adr/).
+
+## Licença e avisos
+
+- **Código:** [GNU GPL v3 ou posterior](LICENSE) (`GPL-3.0-or-later`). Sem garantia de nenhum tipo. Feito para a **rede local**: não exponha o servidor à internet sem uma camada de proteção.
+- **Dependências:** lista e licenças em [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md). O `Dockerfile` compila um FFmpeg com `--enable-gpl` (x264, x265). **Não publicamos imagem pronta**: cada pessoa compila a sua com `make docker`. Quem publicar uma imagem precisa cumprir a GPL também para o FFmpeg (veja [`docs/conformidade.md`](docs/conformidade.md)).
+- **Marcas:** Samsung, Tizen, LG, webOS, Android, Google TV, Fire TV e outras citadas são marcas dos seus donos. O projeto não é afiliado, patrocinado nem endossado por eles.
+- **TMDB:** este produto usa a API do TMDB, mas não é endossado nem certificado pelo TMDB. O recurso é opcional e desligado por padrão.
+- **Privacidade:** sem telemetria e sem contas externas. Perfis e histórico ficam só no seu banco local.

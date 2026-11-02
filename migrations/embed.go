@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package migrations embeds the numbered SQL migration files.
 package migrations
 

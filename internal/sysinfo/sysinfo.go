@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package sysinfo measures the server for the status page: CPU of the
 // process and of the computer, memory and NVIDIA GPU use. No CGO: /proc on
 // Linux, getrusage on macOS, kernel32 on Windows, nvidia-smi for the GPU.

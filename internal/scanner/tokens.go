@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package scanner
 
 import (
@@ -56,7 +58,7 @@ var strongTags = setOf(
 )
 
 // weakTags are dropped when they appear after the title, but never end it
-// on their own ("Charlotte's Web" must survive).
+// on their own ("Hazel's Barn" must survive).
 var weakTags = setOf(
 	"web", "hdr", "hdr10", "hdr10+", "dv", "dovi", "sdr", "imax", "hybrid",
 	"extended", "unrated", "uncut", "remastered", "directors", "internal", "limited",

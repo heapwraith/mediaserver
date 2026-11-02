@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package library
 
 import (
@@ -206,7 +208,7 @@ func after(order []epRef, i int, skip func(string) bool) string {
 	return ""
 }
 
-// upNext picks the episode to watch next: the last one touched while it is
+// upNext picks the episode to watch next: the final one touched while it is
 // not finished, else the first unwatched one after it, else the first
 // unwatched (non-special) one of the series. "" when everything was watched
 // or nothing was touched yet.
@@ -472,7 +474,7 @@ func (s Store) HomeOf(ctx context.Context, profileID string) (Home, error) {
 	return h, err
 }
 
-// nextForSeries is the up-next episode of a series when the last one touched
+// nextForSeries is the up-next episode of a series when the final one touched
 // was finished ("" otherwise: it is still in progress, or all is watched).
 func (s Store) nextForSeries(ctx context.Context, profileID, seriesID string) (string, error) {
 	prog, err := s.seriesProgressMap(ctx, profileID, seriesID)

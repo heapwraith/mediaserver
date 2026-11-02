@@ -29,7 +29,7 @@ A Sprint 9 traz o "Pular abertura" e o próximo episódio já nos créditos, com
 
 - **Medido na biblioteca real (HD, 34 episódios): ~2 min**, uns 4 s por episódio.
   - **Origem:** abertura de ~2 min achada em todos os 20 episódios.
-  - **Obi-Wan:** ~37 s em todos os 6.
+  - **Ori-Van:** ~37 s em todos os 6.
   - **Episódio sem par na série:** nenhum marcador, como esperado.
 - **Créditos mais longos que a janela de 4 min** (comum na Disney+) são marcados no começo da janela, e não no começo real. O card aparece mais tarde, mas ainda durante os créditos.
 - **Usa sempre a primeira faixa de áudio.** Se episódios da mesma série alternarem a ordem das faixas, a comparação pode falhar.

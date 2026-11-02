@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package probe reads technical metadata of media files with ffprobe.
 package probe
 

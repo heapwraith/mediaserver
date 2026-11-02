@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package scanner
 
 import (
@@ -175,7 +177,7 @@ func applyFolders(p *Parsed, dir string) {
 	if p.Year == 0 && p.FolderYear != 0 && NormTitle(p.Title) == NormTitle(p.FolderTitle) {
 		p.Year = p.FolderYear
 	}
-	// Movie in its own folder: "Inception (2010)/movie.mkv".
+	// Movie in its own folder: "Dreamfall Protocol (2010)/movie.mkv".
 	if !p.SeasonEpisode && !p.AbsoluteEp && p.Year == 0 && p.FolderYear != 0 && !p.SeasonFolder {
 		p.Title, p.Year = p.FolderTitle, p.FolderYear
 	}

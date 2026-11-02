@@ -23,3 +23,6 @@ Rodar a partir do código exige Go 1.27.3, Node 24, make e FFmpeg. Quem só quer
 - A imagem final tem ~283 MB.
 - Em pasta do Windows montada via `/mnt/c`, o aviso de arquivo novo (inotify) pode não chegar; o scan manual resolve. Não verificado.
 - Mais um artefato para manter; a imagem não faz parte do release v1.0.0.
+
+## Nota de conformidade (02/11/2026)
+Não se publica imagem pronta (Docker Hub/GHCR): só o `Dockerfile`. Motivo: FFmpeg com `--enable-gpl` e patentes de codec. Ver [ADR 014](014-licenca.md) e [conformidade](../conformidade.md).

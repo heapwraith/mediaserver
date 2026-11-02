@@ -6,7 +6,7 @@
 
 ## Contexto
 
-O app não tinha marca, tinha um menu horizontal de site com 7 itens (inclusive telas de administração), destaques vazios quando não havia frame e cards com o título repetido. O usuário pediu uma identidade no nível dos grandes streamings (Netflix, Apple TV, Max). Foram feitas duas rodadas de protótipos com a skill impeccable:
+O app não tinha marca, tinha um menu horizontal de site com 7 itens (inclusive telas de administração), destaques vazios quando não havia frame e cards com o título repetido. O usuário pediu uma identidade no nível dos grandes streamings. Foram feitas duas rodadas de protótipos com a skill impeccable:
 
 1. Três mundos temáticos (cordel, videolocadora, azulejo), recusados por parecerem conceito, não produto.
 2. Três variações do padrão premium com cenas reais (filmes abertos da Blender, CC-BY): Cinema, **Telão** e Sessão. O usuário escolheu o Telão, com fundo preto e destaque laranja.

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package library reads the virtual library built by the scanner: movies,
 // series, seasons, episodes, extras and technical details of media files.
 package library

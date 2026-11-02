@@ -31,12 +31,12 @@ Servidor de streaming próprio e local para filmes, séries e animes. O usuário
 ## Brand Commitments
 - **Nome: Telão** (escolhido pelo usuário em 01/11/2026). Hoje o código usa o placeholder `mediaserver`; a troca do módulo, do binário e dos pacotes é uma tarefa à parte (Backlog). A interface já mostra "Telão".
 - O usuário autorizou substituir a direção visual do AGENTS.md §7 (Apple TV+, só escuro, Inter, uma cor de destaque), registrando em ADR. As regras técnicas continuam.
-- Nada de logos, ícones, fontes ou assets de serviços comerciais (Apple, Netflix etc.).
-- **Direção pinada pelo usuário (01/11/2026):** o padrão premium dos grandes streamings (Netflix, Apple TV, Max), executado no nível deles, com imagem grande de tela cheia. Mundos temáticos (cordel, locadora, azulejo) foram rejeitados.
+- Nada de logos, ícones, fontes ou assets de serviços comerciais (Apple etc.).
+- **Direção pinada pelo usuário (01/11/2026):** o padrão premium dos grandes streamings, executado no nível deles, com imagem grande de tela cheia. Mundos temáticos (cordel, locadora, azulejo) foram rejeitados.
 - **Direção escolhida (01/11/2026):** "Telão" ([ADR 013](docs/adr/013-identidade-telao.md)): menu lateral de ícones que abre ao receber foco, título em letra condensada grande, cena de tela cheia à direita, fundo **preto**, destaque **laranja** (#ff4d2e).
 
 ## Evidence on Hand
-- Biblioteca de teste em `media/` (Alien, Blade Runner 2049, Cidade de Deus, Interestelar, The Matrix, Severance, Dark, Sousou no Frieren, Kimetsu no Yaiba). Os arquivos de teste não são vídeos reais, então não há frames: demonstrações visuais precisam ser rotuladas como sintéticas.
+- Biblioteca de teste em `media/` (arquivos fictícios ou de obras livres, fora do Git). Os arquivos de teste não são vídeos reais, então não há frames: demonstrações visuais precisam ser rotuladas como sintéticas.
 - Sem depoimentos, números de uso ou imprensa; nada disso deve ser inventado.
 
 ## Product Principles

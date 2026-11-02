@@ -32,18 +32,18 @@ describe('finishedCard', () => {
 
 describe('collectionLabel', () => {
 	it('does not repeat the word', () => {
-		expect(collectionLabel('Star Wars')).toBe('Coleção: Star Wars');
-		expect(collectionLabel('Coleção Star Wars')).toBe('Coleção Star Wars');
-		expect(collectionLabel('Star Wars: A Coleção')).toBe('Star Wars: A Coleção');
+		expect(collectionLabel('Star Voyage')).toBe('Coleção: Star Voyage');
+		expect(collectionLabel('Coleção Star Voyage')).toBe('Coleção Star Voyage');
+		expect(collectionLabel('Star Voyage: A Coleção')).toBe('Star Voyage: A Coleção');
 	});
 });
 
 describe('collectionCard', () => {
 	it('opens the collection, with its oldest movie as the image', () => {
-		expect(collectionCard({ id: 7, name: 'Star Wars', count: 3, image_id: 'm1' })).toMatchObject({
+		expect(collectionCard({ id: 7, name: 'Star Voyage', count: 3, image_id: 'm1' })).toMatchObject({
 			href: '/colecao/7',
 			imageId: 'm1',
-			title: 'Star Wars',
+			title: 'Star Voyage',
 			subtitle: '3 filmes',
 		});
 	});

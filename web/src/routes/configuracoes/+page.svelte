@@ -12,6 +12,7 @@
 		startScan,
 		syncMetadata,
 	} from '#lib/api/client.ts';
+	import tmdbLogo from '#lib/assets/tmdb.svg';
 	import { session } from '#lib/api/session.svelte.ts';
 	import type { MetadataStatus, ScanStatus } from '#lib/api/types.ts';
 	import { capabilities } from '#lib/platform/codecs.ts';
@@ -295,7 +296,10 @@
 			<dt>Para revisar</dt>
 			<dd>{meta.review}</dd>
 		</dl>
-		<p class="note">Este produto usa a API do TMDB, mas não é endossado nem certificado pelo TMDB.</p>
+		<p class="note">
+			<img class="tmdb" src={tmdbLogo} alt="TMDB" width="96" height="14" />
+			Este produto usa a API do TMDB, mas não é endossado nem certificado pelo TMDB.
+		</p>
 	</section>
 {/if}
 
@@ -388,6 +392,12 @@
 	.note {
 		margin-top: 2rem;
 		color: var(--text-2);
+	}
+	.tmdb {
+		display: block;
+		width: 6rem;
+		height: auto;
+		margin-bottom: 0.5rem;
 	}
 	.label {
 		margin: 1.5rem 0 0.75rem;

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package api
 
 import (
@@ -125,7 +127,7 @@ func do(t *testing.T, srv *httptest.Server, method, path, body string, headers .
 }
 
 func TestScanEndpoints(t *testing.T) {
-	srv, _, _ := newLibraryServer(t, "The.Matrix.1999.mkv", "Random Video.mkv")
+	srv, _, _ := newLibraryServer(t, "The.Lattice.1999.mkv", "Random Video.mkv")
 
 	status, body := do(t, srv, http.MethodPost, "/api/library/scan", "")
 	if status != http.StatusAccepted || !strings.Contains(body, `"started":true`) {
@@ -199,12 +201,12 @@ func TestReviewEndpoint(t *testing.T) {
 
 func TestSeriesMergeSplitEndpoints(t *testing.T) {
 	srv, sc, fileID := newLibraryServer(t,
-		"[A] Shingeki no Kyojin - 01.mkv", "[A] Shingeki no Kyojin - 02.mkv",
-		"[B] Attack on Titan - 03.mkv")
+		"[A] Kyozoku no Hoero - 01.mkv", "[A] Kyozoku no Hoero - 02.mkv",
+		"[B] Siege of Colossi - 03.mkv")
 	if _, err := sc.Scan(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	snkFile, aotFile := fileID("[A] Shingeki no Kyojin - 01.mkv"), fileID("[B] Attack on Titan - 03.mkv")
+	snkFile, aotFile := fileID("[A] Kyozoku no Hoero - 01.mkv"), fileID("[B] Siege of Colossi - 03.mkv")
 	seriesOf := func(file string) string {
 		st, err := sc.FileState(t.Context(), file)
 		if err != nil {
@@ -220,7 +222,7 @@ func TestSeriesMergeSplitEndpoints(t *testing.T) {
 	}
 
 	status, body = do(t, srv, http.MethodPost, "/api/series/split",
-		`{"series_id":"`+snk+`","file_ids":["`+aotFile+`"],"title":"Attack on Titan"}`)
+		`{"series_id":"`+snk+`","file_ids":["`+aotFile+`"],"title":"Siege of Colossi"}`)
 	if status != 200 || seriesOf(aotFile) == snk {
 		t.Fatalf("split = %d %s", status, body)
 	}

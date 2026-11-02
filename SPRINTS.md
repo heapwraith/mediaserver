@@ -242,7 +242,7 @@ Implementação e verificação automática concluídas ([ADR 009](docs/adr/009-
 - [x] Tela inicial: o que o perfil já terminou (filme, ou série com todos os episódios) sai do destaque, vai para o fim das fileiras com ✓ e entra na fileira nova **"Assista novamente"** (`again` em `/api/home`)
 - [ ] Aceite na TV com o controle remoto (usuário)
 
-Verificado: biblioteca real com 34 episódios analisada em ~2 min; abertura achada em todos os episódios de Origem (~2 min) e de Obi-Wan (~37 s); E2E no Edge (o OK pula para o fim da abertura, o card dos créditos conta e abre o próximo episódio).
+Verificado: biblioteca real com 34 episódios analisada em ~2 min; abertura achada em todos os episódios de Origem (~2 min) e de Ori-Van (~37 s); E2E no Edge (o OK pula para o fim da abertura, o card dos créditos conta e abre o próximo episódio).
 
 **Aceite**
 - A abertura é encontrada na maioria dos episódios de uma temporada que tem abertura, e o OK pula para o fim dela
@@ -315,7 +315,7 @@ Verificado no Edge, numa instância separada com cópia do banco: 40 toques segu
 - [x] Player: pular para um ponto ainda não convertido levava de 5 a 22 s para voltar a tocar. A primeira lista HLS de uma sessão nova saía com um pedaço só e o hls.js esperava um pedaço inteiro para pedir de novo; agora o servidor espera até 3 pedaços (no máximo 1,5 s a mais) e o hls.js começa no segundo pedido. Medido na prévia: pulos de 6 a 20 min voltam em 1,2–1,6 s e "Pular abertura" em 0,15 s. `make bench` sem mudança relevante (ServeRange 1,5 GB/s, rescan de 10 mil arquivos em 76 ms)
 - [ ] Reinstalar o app na The Frame e navegar só com o controle (aceite)
 
-Verificado na prévia (Docker com os filmes da Blender e Cyberpunk – Mercenários): Início, menu lateral, catálogo, série, configurações, perfis e player no estilo do protótipo; `make check` (62 KB gzip de JS inicial) e `make test` passam.
+Verificado na prévia (Docker com filmes abertos da Blender e uma série de teste): Início, menu lateral, catálogo, série, configurações, perfis e player no estilo do protótipo; `make check` (62 KB gzip de JS inicial) e `make test` passam.
 
 **Aceite**
 - Todas as telas no estilo Telão, sem nenhuma tela "de admin" com cara de outro app
@@ -330,7 +330,7 @@ Verificado na prévia (Docker com os filmes da Blender e Cyberpunk – Mercenár
 
 - [x] **Chromium 76:** a interface abria em branco, porque o Svelte chama `String.replaceAll` (Chrome 85). Polyfill em `web/src/lib/platform/polyfills.ts`, com `replaceAll` e `Object.hasOwn`
 - [x] **Funções de JavaScript novas:** o `make check` agora procura no JS final, dependências e workers incluídos, as funções mais novas que o Chromium 76 ([ADR 004](docs/adr/004-frontend.md))
-- [x] **Parser — grupo entre parênteses:** `(AnimesTotais) Obi-Wan...` não vira mais uma série separada, e o grupo não conta como sinal de anime
+- [x] **Parser — grupo entre parênteses:** `(GrupoZ) Ori-Van...` não vira mais uma série separada, e o grupo não conta como sinal de anime
 - [x] **Parser — ano depois do codec:** `Teste HEVC (2026)` vira filme de 2026 em vez de cair em Revisar
 - [x] **Filmes pedem "próximo episódio":** o player só chama `/next` para episódios
 - [x] **Imagens:** depois de cada scan, gera o que falta, um item por vez, e limpa o cache do que saiu da biblioteca (pastas e cores)
@@ -340,7 +340,7 @@ Verificado na prévia (Docker com os filmes da Blender e Cyberpunk – Mercenár
 Verificado no Chromium 76.0.3803.0 de verdade (snapshot do Google, `--no-sandbox`): antes, todas as telas abriam em branco com `e.replaceAll is not a function`; agora Perfis, Início, Filmes, filme, Configurações e a tela de conexão da TV abrem sem erro de JavaScript. O player abre, mas a reprodução **não** foi testada: esse snapshot não traz H.264/AAC.
 
 Verificado numa cópia do banco, com a biblioteca real:
-- Só a série "(AnimesTotais) Obi-Wan Kenobi" mudou: ela sumiu, o S01E02 passou a ser o arquivo de 2160p, e o de 720p foi para Revisar como duplicado.
+- Só a série "(GrupoZ) Ori-Van Kessel" mudou: ela sumiu, o S01E02 passou a ser o arquivo de 2160p, e o de 720p foi para Revisar como duplicado.
 - 70 imagens geradas em 81 s (19 MB, 0 falhas, servidor em 58 MB de RAM). Um segundo scan não gera nada de novo, e a pasta da série removida foi apagada.
 - No Edge, filme não pede `/next`. Episódio pede: o card aparece nos créditos e a contagem abre o episódio seguinte.
 
@@ -382,6 +382,8 @@ Benchmarks sem mudança relevante: listagens de 0,7 a 11,8 ms, Início em 22,6 m
 
 Revisão do sistema (01/11/2026), por prioridade:
 
+- **Conformidade ([docs/conformidade.md](docs/conformidade.md)):** confirmar a licença da fonte padrão do JASSUB; buscar "Telão" no INPI; PIN de administrador e backup (itens de segurança abaixo)
+
 - **Segurança — backup:** `/api/admin/backup` aceita qualquer perfil, inclusive um recém-criado sem PIN por alguém da rede. O backup leva o segredo que assina as sessões, o que permite forjar a sessão de um perfil com PIN. Restringir a um perfil administrador e/ou tirar o segredo do backup
 - **Segurança — administração:** Revisar, scan e mesclar/separar séries não pedem nada na rede local. Criar um PIN de administrador para Revisar e Configurações
 - **Scanner — perda de progresso:** se uma subpasta fica ilegível por um momento (permissão, HD externo ou rede instável), os arquivos dela são apagados do banco junto com o progresso. Usar o status `missing` (já existe no esquema) e só apagar depois de alguns scans ou dias
@@ -389,7 +391,7 @@ Revisão do sistema (01/11/2026), por prioridade:
 - **Serviço no Windows — firewall:** o `service install` deveria criar a regra de firewall para o binário instalado. A regra atual vale só para o caminho de dev; sem ela a TV não alcança o servidor
 - **Parser — número entre parênteses no início:** `(500) Days of Summer` perde o `(500)` e vira "Days of Summer": o número é tratado como tag
 - **Parser — ano depois de tag entre colchetes:** `Teste [1080p] (2026)` continua em Revisar. Só uma tag solta (`HEVC`) é coberta, porque um colchete pode ser marcador de episódio (`Title [01] (2020)`)
-- **Versões do mesmo episódio** (ex.: Obi-Wan S01E02 em 720p e 2160p): mostrar uma entrada só, com "versões", e escolher a melhor para cada aparelho
+- **Versões do mesmo episódio** (ex.: Ori-Van S01E02 em 720p e 2160p): mostrar uma entrada só, com "versões", e escolher a melhor para cada aparelho
 - **Idioma de áudio preferido por perfil** (ex.: anime sempre em japonês): a coluna `profiles.audio_language` já existe e não é usada. Lembrar também a última faixa escolhida por mídia (`progress.audio_stream` já existe)
 - **"Continuar assistindo":** remover um item da fileira manualmente
 - **Pular abertura — faixa de áudio:** o fingerprint usa a 1ª faixa de áudio. Usar a faixa padrão, ou a do mesmo idioma em todos os episódios

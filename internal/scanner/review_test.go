@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package scanner
 
 import (
@@ -115,10 +117,10 @@ func TestCorrectionValidation(t *testing.T) {
 func TestMergeAndSplit(t *testing.T) {
 	e := newEnv(t)
 	for _, rel := range []string{
-		"Shingeki no Kyojin/[Group] Shingeki no Kyojin - 01.mkv",
-		"Shingeki no Kyojin/[Group] Shingeki no Kyojin - 02.mkv",
-		"[Other] Attack on Titan - 03.mkv",
-		"[Other] Attack on Titan - 04.mkv",
+		"Kyozoku no Hoero/[Group] Kyozoku no Hoero - 01.mkv",
+		"Kyozoku no Hoero/[Group] Kyozoku no Hoero - 02.mkv",
+		"[Other] Siege of Colossi - 03.mkv",
+		"[Other] Siege of Colossi - 04.mkv",
 	} {
 		e.write(t, rel)
 	}
@@ -127,8 +129,8 @@ func TestMergeAndSplit(t *testing.T) {
 	if n := e.count(t, `SELECT count(*) FROM series`); n != 2 {
 		t.Fatalf("series = %d, want 2", n)
 	}
-	snk := e.str(t, `SELECT id FROM series WHERE norm_title = 'shingeki no kyojin'`)
-	aot := e.str(t, `SELECT id FROM series WHERE norm_title = 'attack on titan'`)
+	snk := e.str(t, `SELECT id FROM series WHERE norm_title = 'kyozoku no hoero'`)
+	aot := e.str(t, `SELECT id FROM series WHERE norm_title = 'siege of colossi'`)
 
 	got, err := e.sc.MergeSeries(ctx, []string{aot}, snk)
 	if err != nil {
@@ -149,8 +151,8 @@ func TestMergeAndSplit(t *testing.T) {
 	}
 
 	// Split episodes 3 and 4 back out under a new name.
-	ids := []string{e.fileID(t, "[Other] Attack on Titan - 03.mkv"), e.fileID(t, "[Other] Attack on Titan - 04.mkv")}
-	newID, err := e.sc.SplitSeries(ctx, snk, ids, "Attack on Titan (dublado)")
+	ids := []string{e.fileID(t, "[Other] Siege of Colossi - 03.mkv"), e.fileID(t, "[Other] Siege of Colossi - 04.mkv")}
+	newID, err := e.sc.SplitSeries(ctx, snk, ids, "Siege of Colossi (dublado)")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -179,17 +181,17 @@ func TestMergeAndSplit(t *testing.T) {
 
 func TestPromoIgnored(t *testing.T) {
 	const small, big = 21 << 20, 2 << 30
-	const ad = "1XBET.COM_promo_SHREK_dinheiro_livre.mp4"
+	const ad = "1XBET.COM_promo_ADVENTURE_dinheiro_livre.mp4"
 	cases := []struct {
 		rel  string
 		size int64
 		want Kind
 	}{
-		{"anime/Obi-Wan.Kenobi.S01E01-02.720p.WEB-DL.DUAL/" + ad, small, KindIgnored},
-		{"`serie/Obi-Wan.Kenobi.S01E04.1080p.WEB.DUAL/" + ad, small, KindIgnored},
+		{"anime/Ori-Van.Kessel.S01E01-02.720p.WEB-DL.DUAL/" + ad, small, KindIgnored},
+		{"`serie/Ori-Van.Kessel.S01E04.1080p.WEB.DUAL/" + ad, small, KindIgnored},
 		// In a movie's own folder, the ad would be taken for the movie.
-		{"Filmes/Star Wars III (2005)/" + ad, small, KindIgnored},
-		{"Filmes/Star Wars III (2005)/WWW.SITE.TO.mp4", small, KindIgnored},
+		{"Filmes/Star Voyage III (2005)/" + ad, small, KindIgnored},
+		{"Filmes/Star Voyage III (2005)/WWW.SITE.TO.mp4", small, KindIgnored},
 		{"Filmes/Promo.2015.1080p.mkv", small, KindMovie},
 		{"Series/The.Dot.Com.S01E01.mkv", small, KindSeries},
 		{"Filmes/Promo (2015)/promo.mkv", big, KindMovie},

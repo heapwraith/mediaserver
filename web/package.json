@@ -2,6 +2,7 @@
 	"name": "mediaserver-web",
 	"version": "0.0.1",
 	"private": true,
+	"license": "GPL-3.0-or-later",
 	"type": "module",
 	"imports": {
 		"#lib": "./src/lib/index.ts",
@@ -19,6 +20,7 @@
 		"typecheck": "svelte-kit sync && svelte-check --tsgo --tsconfig ./tsconfig.json --fail-on-warnings",
 		"check": "npm run fmt:check && npm run typecheck && npm run lint",
 		"test": "vitest run",
+		"check:licenses": "node scripts/check-licenses.ts",
 		"check:build": "vite build && vite build --config vite.tv.config.ts && node scripts/check-build.ts build build-tv"
 	},
 	"dependencies": {

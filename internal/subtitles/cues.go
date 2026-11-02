@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package subtitles serves subtitles to the player: text subtitles as
 // WebVTT, ASS as it is (rendered by JASSUB or burned in by FFmpeg) and the
 // fonts attached to the video.

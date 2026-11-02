@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package stream serves media files to the clients: direct play (HTTP Range)
 // and the generated images. Files are only ever opened through an os.Root,
 // so nothing outside MEDIA_DIR can be served, even through symlinks.

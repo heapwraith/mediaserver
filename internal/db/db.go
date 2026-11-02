@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package db opens the SQLite database and applies the embedded migrations.
 package db
 

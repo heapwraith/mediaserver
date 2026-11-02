@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Command mediaserver is a local streaming server for movies, series and anime.
 package main
 

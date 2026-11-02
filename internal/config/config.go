@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package config loads the server configuration.
 //
 // Priority (highest first): command-line flags > environment variables >

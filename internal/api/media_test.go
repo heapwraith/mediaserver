@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package api
 
 import (
@@ -23,12 +25,12 @@ func decode[T any](t *testing.T, body string) T {
 }
 
 var libraryFiles = []string{
-	"Filmes/The Matrix (1999)/The Matrix (1999).mkv",
+	"Filmes/The Lattice (1999)/The Lattice (1999).mkv",
 	"Filmes/Alien (1979)/Alien (1979).mkv",
 	"Filmes/Alien (1979)/Alien (1979)-trailer.mkv",
 	"Series/Dark/Season 1/Dark - S01E01.mkv",
 	"Dark.S01E02.1080p.WEB-DL.mkv",
-	"Animes/[SubsPlease] Sousou no Frieren - 01 (1080p) [ABCD1234].mkv",
+	"Animes/[FansubA] Sousou no Aurelin - 01 (1080p) [ABCD1234].mkv",
 }
 
 func TestLibraryEndpoints(t *testing.T) {
@@ -55,16 +57,16 @@ func TestLibraryEndpoints(t *testing.T) {
 
 	_, _, body = get(t, srv, "/api/movies?sort=title&order=desc&limit=1")
 	page := decode[library.List[library.Movie]](t, body)
-	if page.Total != 2 || len(page.Items) != 1 || page.Items[0].Title != "The Matrix" || page.Limit != 1 {
+	if page.Total != 2 || len(page.Items) != 1 || page.Items[0].Title != "The Lattice" || page.Limit != 1 {
 		t.Fatalf("page = %s", body)
 	}
 
 	// Local search ignores case, accents and punctuation.
-	_, _, body = get(t, srv, "/api/movies?q=M%C3%81TRIX!")
-	if found := decode[library.List[library.Movie]](t, body); found.Total != 1 || found.Items[0].Title != "The Matrix" {
+	_, _, body = get(t, srv, "/api/movies?q=L%C3%81TTICE!")
+	if found := decode[library.List[library.Movie]](t, body); found.Total != 1 || found.Items[0].Title != "The Lattice" {
 		t.Fatalf("search = %s", body)
 	}
-	_, _, body = get(t, srv, "/api/animes?q=frieren")
+	_, _, body = get(t, srv, "/api/animes?q=aurelin")
 	if found := decode[library.List[library.Series]](t, body); found.Total != 1 {
 		t.Fatalf("anime search = %s", body)
 	}
@@ -136,7 +138,7 @@ func TestStreamEndpoint(t *testing.T) {
 	if _, err := sc.Scan(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	rel := "Filmes/The Matrix (1999)/The Matrix (1999).mkv"
+	rel := "Filmes/The Lattice (1999)/The Lattice (1999).mkv"
 	id := fileID(rel)
 
 	status, hdr, body := get(t, srv, "/api/media/"+id+"/stream", "Range: bytes=7-12")

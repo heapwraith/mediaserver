@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package scanner
 
 import (
@@ -119,8 +121,8 @@ var sampleLibrary = []string{
 	"Filmes/Avatar (2009)/Avatar-trailer.mkv",
 	"Filmes/Avatar (2009)/Extras/Making Of.mkv",
 	"Filmes/Avatar (2009)/Sample/avatar-sample.mkv",
-	"The.Matrix.1999.1080p.BluRay.x264-SPARKS.mkv",
-	"Cidade de Deus (2002).mkv",
+	"The.Lattice.1999.1080p.BluRay.x264-QUILLS.mkv",
+	"Cidade de Pedra (2002).mkv",
 	// series spread over folders and naming styles
 	"Series/Dark/poster.jpg",
 	"Series/Dark/Season 1/Dark.S01E01.Secrets.mkv",
@@ -131,11 +133,11 @@ var sampleLibrary = []string{
 	"Series/Dark/Trailers/Dark Season 3 Trailer.mkv",
 	"Downloads/dark.s03e01.1080p.web.mkv",
 	// anime: same show in two places, with a v2 release
-	"[SubsPlease] Sousou no Frieren - 01 (1080p) [ABCD1234].mkv",
-	"[SubsPlease] Sousou no Frieren - 01 (1080p) [ABCD1234].ass",
-	"Animes/Sousou no Frieren/[SubsPlease] Sousou no Frieren - 02 (1080p).mkv",
-	"Animes/Sousou no Frieren/[SubsPlease] Sousou no Frieren - 02v2 (1080p).mkv",
-	"Animes/Sousou no Frieren/[SubsPlease] Sousou no Frieren - 03 (1080p).mkv",
+	"[FansubA] Sousou no Aurelin - 01 (1080p) [ABCD1234].mkv",
+	"[FansubA] Sousou no Aurelin - 01 (1080p) [ABCD1234].ass",
+	"Animes/Sousou no Aurelin/[FansubA] Sousou no Aurelin - 02 (1080p).mkv",
+	"Animes/Sousou no Aurelin/[FansubA] Sousou no Aurelin - 02v2 (1080p).mkv",
+	"Animes/Sousou no Aurelin/[FansubA] Sousou no Aurelin - 03 (1080p).mkv",
 	// review queue
 	"Random Video.mkv",
 	"Show - 05.mkv",
@@ -170,8 +172,8 @@ func TestScanSampleLibrary(t *testing.T) {
 		{"avatar poster", `SELECT poster_path FROM movies WHERE title = 'Avatar'`, nil, "Filmes/Avatar (2009)/poster.jpg"},
 		{"avatar fanart", `SELECT fanart_path FROM movies WHERE title = 'Avatar'`, nil, "Filmes/Avatar (2009)/fanart.jpg"},
 		{"avatar year", `SELECT year FROM movies WHERE title = 'Avatar'`, nil, "2009"},
-		{"matrix", `SELECT year FROM movies WHERE title = 'The Matrix'`, nil, "1999"},
-		{"accented title", `SELECT count(*) FROM movies WHERE title = 'Cidade de Deus'`, nil, "1"},
+		{"lattice", `SELECT year FROM movies WHERE title = 'The Lattice'`, nil, "1999"},
+		{"accented title", `SELECT count(*) FROM movies WHERE title = 'Cidade de Pedra'`, nil, "1"},
 		{"corrupt still indexed", `SELECT count(*) FROM movies WHERE year = 2015`, nil, "1"},
 
 		{"series count", `SELECT count(*) FROM series`, nil, "2"},
@@ -182,10 +184,10 @@ func TestScanSampleLibrary(t *testing.T) {
 		{"season 2 poster", `SELECT s.poster_path FROM seasons s JOIN series r ON r.id = s.series_id WHERE r.title = 'Dark' AND s.number = 2`, nil, "Series/Dark/season02-poster.jpg"},
 		{"episode title", `SELECT e.title FROM episodes e JOIN seasons s ON s.id = e.season_id JOIN series r ON r.id = e.series_id WHERE r.title = 'Dark' AND s.number = 1 AND e.number = 2`, nil, "Lies"},
 
-		{"frieren is anime", `SELECT kind FROM series WHERE norm_title = 'sousou no frieren'`, nil, "anime"},
-		{"frieren episodes (v2 wins)", `SELECT count(*) FROM episodes e JOIN series s ON s.id = e.series_id WHERE s.norm_title = 'sousou no frieren'`, nil, "3"},
-		{"v2 kept", `SELECT e.version FROM episodes e WHERE e.number = 2 AND e.series_id = (SELECT id FROM series WHERE norm_title = 'sousou no frieren')`, nil, "2"},
-		{"v1 superseded", `SELECT status FROM media_files WHERE rel_path LIKE '%Frieren - 02 (1080p).mkv'`, nil, "ignored"},
+		{"aurelin is anime", `SELECT kind FROM series WHERE norm_title = 'sousou no aurelin'`, nil, "anime"},
+		{"aurelin episodes (v2 wins)", `SELECT count(*) FROM episodes e JOIN series s ON s.id = e.series_id WHERE s.norm_title = 'sousou no aurelin'`, nil, "3"},
+		{"v2 kept", `SELECT e.version FROM episodes e WHERE e.number = 2 AND e.series_id = (SELECT id FROM series WHERE norm_title = 'sousou no aurelin')`, nil, "2"},
+		{"v1 superseded", `SELECT status FROM media_files WHERE rel_path LIKE '%Aurelin - 02 (1080p).mkv'`, nil, "ignored"},
 
 		{"trailer linked to movie", `SELECT count(*) FROM extras x JOIN movies m ON m.id = x.owner_id WHERE x.extra_type = 'trailer' AND m.title = 'Avatar'`, nil, "1"},
 		{"extra linked to movie", `SELECT count(*) FROM extras x JOIN movies m ON m.id = x.owner_id WHERE x.extra_type = 'other' AND x.title = 'Making Of'`, nil, "1"},
@@ -201,7 +203,7 @@ func TestScanSampleLibrary(t *testing.T) {
 		{"sub forced", `SELECT is_forced FROM subtitles WHERE rel_path LIKE '%en.forced.srt'`, nil, "1"},
 		{"anime ass sidecar", `SELECT codec FROM subtitles WHERE rel_path LIKE '%.ass'`, nil, "ass"},
 		{"embedded subs (corrupt file has none)", `SELECT count(*) FROM subtitles WHERE source = 'embedded'`, nil, "17"},
-		{"probe data", `SELECT video_codec FROM media_files WHERE rel_path = 'Cidade de Deus (2002).mkv'`, nil, "h264"},
+		{"probe data", `SELECT video_codec FROM media_files WHERE rel_path = 'Cidade de Pedra (2002).mkv'`, nil, "h264"},
 	}
 	for _, c := range checks {
 		t.Run(c.name, func(t *testing.T) {
@@ -219,8 +221,8 @@ func TestIncrementalScan(t *testing.T) {
 	}
 	e.scan(t)
 	calls := e.prober.calls.Load()
-	matrixID := e.fileID(t, "The.Matrix.1999.1080p.BluRay.x264-SPARKS.mkv")
-	movieID := e.str(t, `SELECT id FROM movies WHERE media_file_id = ?`, matrixID)
+	latticeID := e.fileID(t, "The.Lattice.1999.1080p.BluRay.x264-QUILLS.mkv")
+	movieID := e.str(t, `SELECT id FROM movies WHERE media_file_id = ?`, latticeID)
 	darkID := e.str(t, `SELECT id FROM series WHERE title = 'Dark'`)
 
 	// No changes: nothing probed, everything unchanged, IDs stable.
@@ -233,22 +235,22 @@ func TestIncrementalScan(t *testing.T) {
 	}
 
 	// Changed in place (new size): re-probed, same ID.
-	p := filepath.Join(e.root, "Cidade de Deus (2002).mkv")
+	p := filepath.Join(e.root, "Cidade de Pedra (2002).mkv")
 	if err := os.WriteFile(p, []byte("a different, longer content"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	cdd := e.fileID(t, "Cidade de Deus (2002).mkv")
+	cdd := e.fileID(t, "Cidade de Pedra (2002).mkv")
 	st = e.scan(t)
-	if st.Updated != 1 || e.fileID(t, "Cidade de Deus (2002).mkv") != cdd {
+	if st.Updated != 1 || e.fileID(t, "Cidade de Pedra (2002).mkv") != cdd {
 		t.Fatalf("update: %+v", st)
 	}
 
 	// Renamed + moved: same media_file and movie IDs.
-	newRel := "Filmes/Matrix/The Matrix (1999).mkv"
-	if err := os.MkdirAll(filepath.Join(e.root, "Filmes", "Matrix"), 0o750); err != nil {
+	newRel := "Filmes/Lattice/The Lattice (1999).mkv"
+	if err := os.MkdirAll(filepath.Join(e.root, "Filmes", "Lattice"), 0o750); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Rename(filepath.Join(e.root, "The.Matrix.1999.1080p.BluRay.x264-SPARKS.mkv"),
+	if err := os.Rename(filepath.Join(e.root, "The.Lattice.1999.1080p.BluRay.x264-QUILLS.mkv"),
 		filepath.Join(e.root, filepath.FromSlash(newRel))); err != nil {
 		t.Fatal(err)
 	}
@@ -256,10 +258,10 @@ func TestIncrementalScan(t *testing.T) {
 	if st.Moved != 1 || st.Removed != 0 || st.Added != 0 {
 		t.Fatalf("move: %+v", st)
 	}
-	if got := e.fileID(t, newRel); got != matrixID {
-		t.Fatalf("moved file id %s, want %s", got, matrixID)
+	if got := e.fileID(t, newRel); got != latticeID {
+		t.Fatalf("moved file id %s, want %s", got, latticeID)
 	}
-	if got := e.str(t, `SELECT id FROM movies WHERE media_file_id = ?`, matrixID); got != movieID {
+	if got := e.str(t, `SELECT id FROM movies WHERE media_file_id = ?`, latticeID); got != movieID {
 		t.Fatalf("movie id changed: %s -> %s", movieID, got)
 	}
 	if got := e.str(t, `SELECT id FROM series WHERE title = 'Dark'`); got != darkID {
@@ -276,9 +278,9 @@ func TestIncrementalScan(t *testing.T) {
 	}
 
 	// A new subtitle alone triggers a rebuild.
-	e.write(t, "Cidade de Deus (2002).pt-BR.srt")
+	e.write(t, "Cidade de Pedra (2002).pt-BR.srt")
 	e.scan(t)
-	if n := e.count(t, `SELECT count(*) FROM subtitles WHERE rel_path = 'Cidade de Deus (2002).pt-BR.srt'`); n != 1 {
+	if n := e.count(t, `SELECT count(*) FROM subtitles WHERE rel_path = 'Cidade de Pedra (2002).pt-BR.srt'`); n != 1 {
 		t.Fatalf("new sidecar subtitle not linked (%d)", n)
 	}
 }
@@ -286,7 +288,7 @@ func TestIncrementalScan(t *testing.T) {
 func TestPendingFilesWaitForCopy(t *testing.T) {
 	e := newEnv(t)
 	e.sc.opt.MinAge = time.Hour // everything looks "still copying"
-	e.write(t, "The.Matrix.1999.mkv")
+	e.write(t, "The.Lattice.1999.mkv")
 	st := e.scan(t)
 	if st.Pending != 1 || st.Added != 0 {
 		t.Fatalf("pending file was indexed: %+v", st)

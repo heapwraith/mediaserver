@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package service installs the server as a system service that starts with
 // the computer: systemd (Linux), launchd (macOS) or the Windows Service
 // Manager. `mediaserver service install|uninstall|start|stop|status`.

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package scanner
 
 import (
@@ -791,7 +793,7 @@ func onlyPrefixed(images map[string]string, base string) map[string]string {
 	return out
 }
 
-// sortTitle drops leading articles: "The Matrix" sorts as "matrix".
+// sortTitle drops leading articles: "The Lattice" sorts as "lattice".
 func sortTitle(t string) string {
 	n := NormTitle(t)
 	for _, a := range []string{"the ", "a ", "an ", "o ", "os ", "as ", "el ", "la ", "los ", "las ", "le ", "les "} {

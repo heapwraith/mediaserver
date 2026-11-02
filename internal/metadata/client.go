@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package metadata looks movies and series up on TMDB, only when the user
 // turns it on with their own key: genres and, for movies, the collection
 // (docs/adr/012-metadata-tmdb.md).

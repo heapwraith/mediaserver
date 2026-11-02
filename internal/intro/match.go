@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package intro finds the opening and the end credits of episodes: the
 // same audio appears in every episode of a season, so the longest stretch
 // two episodes share near their start is the opening, and near their end,

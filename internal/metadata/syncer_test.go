@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package metadata
 
 import (
@@ -182,7 +184,7 @@ func TestSearchWithOneAnswer(t *testing.T) {
 	e := newEnv(t)
 	id := e.movie("A Origem", 2010, ``)
 	e.fake.routes["/search/movie?A Origem"] = `{"results":[
-		{"id":27205,"title":"A Origem","original_title":"Inception","release_date":"2010-07-15"},
+		{"id":27205,"title":"A Origem","original_title":"Dreamfall Protocol","release_date":"2010-07-15"},
 		{"id":99,"title":"A Origem do Mal","release_date":"2010-01-01"},
 		{"id":98,"title":"A Origem","release_date":"1985-01-01"}]}`
 	e.fake.routes["/movie/27205"] = `{"genres":[{"id":28,"name":"Ação"},{"id":878,"name":"Ficção científica"}],

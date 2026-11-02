@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package scanner
 
 import (
@@ -21,7 +23,7 @@ type Parsed struct {
 	Absolute     int    `json:"absolute,omitempty"`    // anime absolute number
 	Version      int    `json:"version,omitempty"`     // v2
 	EpisodeTitle string `json:"episode_title,omitempty"`
-	Group        string `json:"group,omitempty"` // [SubsPlease]
+	Group        string `json:"group,omitempty"` // [FansubA]
 	Ext          string `json:"ext,omitempty"`
 
 	// Signals used by Classify.
@@ -80,7 +82,7 @@ const boundary = "\x1f"
 
 var (
 	reLeadingGroup = regexp.MustCompile(`^\s*[\[【]([^\]】]*)[\]】]`)
-	// "(AnimesTotais) Obi-Wan": one word, then the title. "(T)Raumschiff" and
+	// "(GrupoZ) Ori-Van": one word, then the title. "(T)Raumschiff" and
 	// "(Untitled) (2009)" are the title itself.
 	reLeadingParen = regexp.MustCompile(`^\s*\(\p{L}[^()\s]*\)[\s._]+(\p{L})`)
 	reBracket      = regexp.MustCompile(`[\[(\{【]([^\[\](){}【】]*)[\])\}】]`)
@@ -379,7 +381,7 @@ func parseName(name string) Parsed {
 }
 
 // tokenize splits on spaces, dots and underscores. Standalone dashes become
-// their own "-" token; in-word dashes (Spider-Man, WEB-DL) are kept.
+// their own "-" token; in-word dashes (Iron-Fox, WEB-DL) are kept.
 func tokenize(s string) []string {
 	s = strings.Map(func(r rune) rune {
 		switch r {
