@@ -58,8 +58,10 @@
 		const fresh = added.find((a) => !done.has(a.card.key)) ?? added[0];
 		const watching = rows.continue[0];
 		const hero = watching === undefined ? fresh?.hero : () => itemHero(watching);
+		const status = watching === undefined ? 'Novo na biblioteca' : 'Continuar assistindo';
+		const shown = await hero?.().catch(() => fresh?.hero());
 		return {
-			hero: await hero?.().catch(() => fresh?.hero()),
+			hero: shown === undefined ? undefined : { ...shown, status },
 			continue: rows.continue.map(homeCard),
 			next: rows.next.map(homeCard),
 			added: watchedLast(
@@ -84,20 +86,26 @@
 {#await data then d}
 	{#if d.hero !== undefined}
 		{@const hero = d.hero}
-		<Hero title={hero.title} meta={hero.meta} imageId={hero.imageId} color={hero.color}>
+		<Hero
+			title={hero.title}
+			meta={hero.meta}
+			badges={hero.badges}
+			status={hero.status}
+			imageId={hero.imageId}
+			color={hero.color}
+		>
 			{#snippet actions()}
 				{#if hero.play}
 					<PlayButtons id="home:play" play={hero.play} />
 				{/if}
 				{#if hero.trailer}
 					{@const t = hero.trailer}
-					<Button onclick={() => goto(extraCard(t).href)}>
-						Trailer
-					</Button>
+					<Button icon="play" onclick={() => goto(extraCard(t).href)}>Trailer</Button>
 				{/if}
-				<Button onclick={() => goto(hero.details)}>Detalhes</Button>
+				<Button icon="info" onclick={() => goto(hero.details)}>Detalhes</Button>
 			{/snippet}
 		</Hero>
+		<div class="rows">
 		<Row id="continue" title="Continuar assistindo" items={d.continue} />
 		<Row id="next" title="Próximos episódios" items={d.next} />
 		<Row id="added" title="Adicionados recentemente" items={d.added} />
@@ -109,6 +117,7 @@
 			<Row id={`genre:${g.id}`} title={g.name} items={g.items} />
 		{/each}
 		<Row id="again" title="Assista novamente" items={d.again} />
+		</div>
 	{:else}
 		<div class="empty">
 			<h1>Nenhuma mídia ainda</h1>
@@ -125,14 +134,22 @@
 		padding-top: 20vh;
 		text-align: center;
 	}
+	/* the first row rises into the hero's lower fade */
+	.rows {
+		position: relative;
+		margin-top: -7.5rem;
+	}
 	.empty h1 {
 		margin: 0;
-		font-size: 2.5rem;
+		font-family: var(--font-display);
+		font-size: 5rem;
+		font-weight: 400;
+		letter-spacing: 0.01em;
 	}
 	.empty p {
 		margin: 1rem 0 2rem;
 		font-size: 1.25rem;
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--text-2);
 	}
 	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
 	:global(html.tv) .empty p {

@@ -177,6 +177,10 @@
 		<Button primary id="settings:scan" onclick={scan}>
 			{status?.running === true ? 'Escaneando…' : 'Escanear agora'}
 		</Button>
+		<!-- Revisar left the menu (ADR 013): it lives here, with its count. -->
+		<Button id="settings:review" onclick={() => goto('/revisar')}>
+			Revisar{status !== undefined && status.review > 0 ? ` · ${status.review}` : ''}
+		</Button>
 	</div>
 	{#if error !== undefined}<ErrorNotice {error} onretry={() => void refresh()} />{/if}
 	{#if status}
@@ -335,12 +339,22 @@
 
 <style>
 	h1 {
-		margin: 2rem 0 1rem;
-		font-size: 2.5rem;
+		margin: 3rem 0 1.5rem;
+		font-size: 6rem;
+		line-height: 0.9;
+	}
+	/* Telão (ADR 013): each group is a panel. */
+	section {
+		max-width: 80rem;
+		margin-bottom: 1.25rem;
+		padding: 1.75rem 2.25rem 2rem;
+		border-radius: 14px;
+		background: var(--panel);
 	}
 	h2 {
-		margin: 2rem 0 1rem;
-		font-size: 1.5rem;
+		margin: 0 0 1.25rem;
+		font-size: 1.875rem;
+		font-weight: 800;
 	}
 	.bar {
 		display: flex;
@@ -366,28 +380,28 @@
 		font-size: 1.125rem;
 	}
 	dt {
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--text-2);
 	}
 	dd {
 		margin: 0;
 	}
 	.note {
 		margin-top: 2rem;
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--text-2);
 	}
 	.label {
 		margin: 1.5rem 0 0.75rem;
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--text-2);
 	}
 	.intro {
 		max-width: 60rem;
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--text-2);
 	}
 	.field {
 		display: block;
 		max-width: 40rem;
 		margin: 1rem 0 1.5rem;
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--text-2);
 	}
 	input {
 		display: block;
@@ -398,13 +412,13 @@
 		border: 0;
 		border-radius: 12px;
 		background: rgba(255, 255, 255, 0.1);
-		color: rgba(255, 255, 255, 0.92);
+		color: var(--text);
 		font: inherit;
 		font-size: 1.25rem;
 		outline: none;
 	}
 	input:global([data-focused]) {
-		box-shadow: 0 0 0 3px #4c8dff;
+		box-shadow: 0 0 0 4px var(--ring);
 	}
 	.sample {
 		margin-top: 1.5rem;

@@ -32,3 +32,6 @@
 Thumbs.db
 .idea/
 .vscode/
+
+# impeccable (design skill): local state and prototypes
+.impeccable/

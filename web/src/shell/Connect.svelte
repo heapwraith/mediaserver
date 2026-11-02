@@ -96,7 +96,7 @@
 		connectingTo = label(s);
 		error = '';
 		if ((await probe(s, { timeoutMs: 4000 })) === undefined) {
-			error = `Nenhum mediaserver respondeu em ${label(s)}.`;
+			error = `Nenhum servidor do Telão respondeu em ${label(s)}.`;
 			showForm();
 			return;
 		}
@@ -234,7 +234,7 @@
 		bind:this={frame}
 		class="fixed top-0 left-0 h-full w-full border-0 bg-bg"
 		src={appUrl(current, native.platform)}
-		title="mediaserver"
+		title="Telão"
 		allow="autoplay; fullscreen; encrypted-media"
 		onload={() => frame?.focus()}
 	></iframe>
@@ -243,7 +243,17 @@
 		class="mx-auto box-border min-h-screen max-w-[64rem] px-[5vw] py-[8vh] text-text-primary"
 		use:focusGroup={{ id: 'connect' }}
 	>
-		<h1 class="m-0 text-[3.5rem] font-700 tracking-tight">mediaserver</h1>
+		<h1 class="m-0 flex items-center font-display text-[5rem] font-400 leading-none">
+			<svg class="mr-6 h-[5rem] w-[5rem]" viewBox="0 0 64 64" aria-hidden="true"
+				><rect width="64" height="64" rx="16" fill="#ff4d2e" /><path
+					d="M15 23h34v20H15z"
+					fill="none"
+					stroke="#fff"
+					stroke-width="4"
+					stroke-linejoin="round"
+				/><path d="M24 49h16" stroke="#fff" stroke-width="4" stroke-linecap="round" /></svg
+			>TELÃO
+		</h1>
 		<p class="mb-12 mt-2 text-[1.75rem] text-text-secondary">Conectar ao servidor</p>
 
 		{#if phase === 'starting' || phase === 'connecting'}
@@ -325,7 +335,7 @@
 			</section>
 
 			<p class="mt-16 text-[1.375rem] text-text-tertiary">
-				O mediaserver precisa estar rodando num computador desta rede.
+				O servidor do Telão precisa estar rodando num computador desta rede.
 			</p>
 		{/if}
 	</main>
@@ -342,7 +352,7 @@
 		transform: scale(1.08);
 		box-shadow:
 			0 12px 30px rgba(0, 0, 0, 0.5),
-			0 0 0 3px #4c8dff;
+			0 0 0 4px var(--ring);
 	}
 	.field {
 		display: block;
@@ -352,7 +362,7 @@
 		border: 0;
 		border-radius: 12px;
 		background: #1e1e26;
-		color: rgba(255, 255, 255, 0.92);
+		color: var(--text);
 		font: inherit;
 		font-size: 1.75rem;
 		outline: none;

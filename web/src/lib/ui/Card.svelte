@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { imageSrcset } from '../api/images';
 	import type { CardItem } from './cards';
+	import Icon from './Icon.svelte';
 	import { titleGradient } from './move';
 
 	let {
@@ -13,11 +14,10 @@
 	let loaded = $state(false);
 </script>
 
-<div class="card" class:current>
+<!-- Telão (ADR 013): the title sits on the picture, never repeated below it. -->
+<div class="card" class:current class:bare={failed}>
 	<div class="frame" style:background={item.color ?? titleGradient(item.title)}>
-		{#if failed}
-			<span class="type-title">{item.title}</span>
-		{:else}
+		{#if !failed}
 			<img
 				src={`/api/images/${item.imageId}?variant=card&w=480`}
 				srcset={imageSrcset(item.imageId)}
@@ -30,25 +30,31 @@
 				onerror={() => (failed = true)}
 			/>
 		{/if}
+		<div class="shade"></div>
+		<div class="label" class:with-bar={item.progress !== undefined}>
+			<p class="title">{item.title}</p>
+			{#if item.subtitle}<p class="subtitle">{item.subtitle}</p>{/if}
+		</div>
 		{#if item.progress !== undefined}
 			<div class="bar"><div class="fill" style:transform={`scaleX(${item.progress})`}></div></div>
 		{/if}
-		{#if item.watched}<span class="check" role="img" aria-label="Assistido">✓</span>{/if}
+		{#if item.watched}<span class="check" role="img" aria-label="Assistido"><Icon name="check" size="1.25rem" /></span>{/if}
 	</div>
-	<p class="title">{item.title}</p>
-	{#if item.subtitle}<p class="subtitle">{item.subtitle}</p>{/if}
 </div>
 
 <style>
 	.frame {
 		position: relative;
 		padding-top: 56.25%; /* 16:9 without aspect-ratio (Chromium 76) */
-		border-radius: 12px;
+		border-radius: var(--radius);
 		overflow: hidden;
-		transition: transform 200ms ease-out;
+		background: var(--panel);
+		transition:
+			transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+			box-shadow 220ms ease-out;
 	}
 	img,
-	.type-title {
+	.shade {
 		position: absolute;
 		top: 0;
 		left: 0;
@@ -63,74 +69,86 @@
 	img.loaded {
 		opacity: 1;
 	}
-	.type-title {
-		display: flex;
-		align-items: flex-end;
-		box-sizing: border-box;
-		padding: 1rem;
-		font-size: 1.5rem;
-		font-weight: 700;
-		line-height: 1.1;
-		color: rgba(255, 255, 255, 0.92);
+	.shade {
+		background: linear-gradient(0deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0) 58%);
 	}
-	/* Progress: a thin bar at the bottom of the image. */
+	.label {
+		position: absolute;
+		left: 1.125rem;
+		right: 1.125rem;
+		bottom: 1rem;
+	}
+	.label.with-bar {
+		bottom: 1.375rem;
+	}
+	.title,
+	.subtitle {
+		margin: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.title {
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
+		-webkit-box-orient: vertical;
+		font-family: var(--font-display);
+		font-size: 2.5rem;
+		font-weight: 400;
+		line-height: 0.95;
+		letter-spacing: 0.01em;
+		text-transform: uppercase;
+		color: var(--text);
+	}
+	.subtitle {
+		margin-top: 0.25rem;
+		white-space: nowrap;
+		font-size: 1.125rem;
+		font-weight: 600;
+		color: #d6d3d1;
+	}
+	/* No picture: the title alone, large, over the dominant-color gradient. */
+	.bare .title {
+		font-size: 3.25rem;
+		-webkit-line-clamp: 3;
+		line-clamp: 3;
+	}
 	.bar {
 		position: absolute;
-		left: 0.75rem;
-		right: 0.75rem;
-		bottom: 0.75rem;
+		left: 0;
+		right: 0;
+		bottom: 0;
 		height: 0.375rem;
-		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.3);
+		background: rgba(255, 255, 255, 0.25);
 		overflow: hidden;
 	}
 	.fill {
 		width: 100%;
 		height: 100%;
-		background: #4c8dff;
+		background: var(--accent);
 		transform-origin: left center;
 	}
 	.check {
 		position: absolute;
 		top: 0.75rem;
 		right: 0.75rem;
-		width: 2rem;
-		height: 2rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.25rem;
+		height: 2.25rem;
 		border-radius: 999px;
-		background: rgba(11, 11, 15, 0.75);
-		color: rgba(255, 255, 255, 0.92);
-		font-size: 1.125rem;
-		font-weight: 700;
-		line-height: 2rem;
-		text-align: center;
-	}
-	.title,
-	.subtitle {
-		margin: 0.75rem 0 0;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		font-size: 1rem;
-		color: rgba(255, 255, 255, 0.92);
-	}
-	.subtitle {
-		margin-top: 0.25rem;
-		font-size: 0.875rem;
-		color: rgba(255, 255, 255, 0.6);
+		background: rgba(0, 0, 0, 0.75);
+		color: var(--text);
 	}
 	/* Focus (AGENTS.md §7): the row/grid holding the card has data-focused. */
 	:global([data-focused]) .current .frame {
-		transform: scale(1.08);
-		box-shadow:
-			0 16px 40px rgba(0, 0, 0, 0.6),
-			0 0 0 3px rgba(255, 255, 255, 0.92);
+		transform: scale(1.1);
+		box-shadow: var(--focus-ring);
+		z-index: 2;
 	}
 	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
-	:global(html.tv) .title {
-		font-size: 1.625rem;
-	}
-	:global(html.tv) .subtitle,
-	:global(html.tv) .check {
+	:global(html.tv) .subtitle {
 		font-size: 1.5rem;
 	}
 </style>

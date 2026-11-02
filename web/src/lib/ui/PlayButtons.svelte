@@ -4,12 +4,12 @@
 	import Button from './Button.svelte';
 	import type { PlayAction } from './hero';
 
-	/** "▶ Continuar · faltam X" + "Do início", or "▶ Assistir". */
+	/** "Continuar · faltam X" + "Do início", or "Assistir" (with the play icon). */
 	let { play, id }: { play: PlayAction; id: string } = $props();
 </script>
 
-<Button primary {id} onclick={() => goto(play.href)}>{play.label}</Button>
+<Button primary icon="play" {id} onclick={() => goto(play.href)}>{play.label}</Button>
 {#if play.restart !== undefined}
 	{@const restart = play.restart}
-	<Button id={`${id}:restart`} onclick={() => goto(restart)}>Do início</Button>
+	<Button icon="restart" id={`${id}:restart`} onclick={() => goto(restart)}>Do início</Button>
 {/if}

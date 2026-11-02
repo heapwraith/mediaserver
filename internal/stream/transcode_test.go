@@ -3,6 +3,7 @@ package stream
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -271,5 +272,57 @@ func TestTranscoderStats(t *testing.T) {
 	}
 	if used, limit := tr.Slots(); used != 1 || limit != 2 {
 		t.Errorf("slots = %d/%d", used, limit)
+	}
+}
+
+// The first playlist of a new session waits briefly for a few segments:
+// with one, hls.js plays nothing until its next reload, a segment later.
+func TestServePlaylistWaitsForSegments(t *testing.T) {
+	playlist := func(n int) string {
+		var b strings.Builder
+		b.WriteString("#EXTM3U\n#EXT-X-TARGETDURATION:4\n")
+		for i := range n {
+			fmt.Fprintf(&b, "#EXTINF:4.0,\nseg%d.m4s\n", i)
+		}
+		return b.String()
+	}
+	tests := []struct {
+		name    string
+		later   int // segments written 200 ms after the request (0: none)
+		want    int
+		minWait time.Duration
+		maxWait time.Duration
+	}{
+		{"more segments come quickly", 3, 3, 150 * time.Millisecond, time.Second},
+		{"only one segment: served after the extra wait", 0, 1, playlistExtraWait - 100*time.Millisecond, playlistExtraWait + time.Second},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			file := filepath.Join(dir, playlistName)
+			if err := os.WriteFile(file, []byte(playlist(1)), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			if tc.later > 0 {
+				go func() {
+					time.Sleep(200 * time.Millisecond)
+					_ = os.WriteFile(file, []byte(playlist(tc.later)), 0o600)
+				}()
+			}
+			s := &session{done: make(chan struct{})}
+			rec := httptest.NewRecorder()
+			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/index.m3u8", http.NoBody)
+			start := time.Now()
+			if err := servePlaylist(rec, req, s, dir); err != nil {
+				t.Fatal(err)
+			}
+			took := time.Since(start)
+			if got := strings.Count(rec.Body.String(), "#EXTINF"); got != tc.want {
+				t.Errorf("segments = %d, want %d", got, tc.want)
+			}
+			if took < tc.minWait || took > tc.maxWait {
+				t.Errorf("took %v, want between %v and %v", took, tc.minWait, tc.maxWait)
+			}
+		})
 	}
 }

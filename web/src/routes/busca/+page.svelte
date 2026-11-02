@@ -76,17 +76,17 @@
 		border: 0;
 		border-radius: 999px;
 		background: rgba(255, 255, 255, 0.1);
-		color: rgba(255, 255, 255, 0.92);
+		color: var(--text);
 		font: inherit;
 		font-size: 1.5rem;
 		outline: none;
 	}
 	input:global([data-focused]) {
-		box-shadow: 0 0 0 3px #4c8dff;
+		box-shadow: 0 0 0 4px var(--ring);
 	}
 	.note {
 		font-size: 1.25rem;
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--text-2);
 	}
 	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
 	:global(html.tv) .note {

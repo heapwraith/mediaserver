@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-	<!-- App icon of the TV apps (tv/*): play on the accent color, theme background. -->
-	<rect width="512" height="512" rx="112" fill="#0B0B0F"/>
-	<circle cx="256" cy="256" r="168" fill="#4C8DFF"/>
-	<path d="M222 178 L346 256 L222 334 Z" fill="#0B0B0F" stroke="#0B0B0F" stroke-width="16" stroke-linejoin="round"/>
+	<!-- Telão (docs/adr/013): the orange tile with a screen. -->
+	<rect width="512" height="512" rx="112" fill="#FF4D2E"/>
+	<path d="M120 184h272v160H120z" fill="none" stroke="#fff" stroke-width="32" stroke-linejoin="round"/>
+	<path d="M192 392h128" stroke="#fff" stroke-width="32" stroke-linecap="round"/>
 </svg>

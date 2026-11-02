@@ -200,8 +200,8 @@
 	h1 {
 		margin: 1.5rem 0 2rem;
 		text-align: center;
-		font-size: 2.5rem;
-		font-weight: 600;
+		font-size: 4.5rem;
+		line-height: 1;
 	}
 	.field {
 		display: block;
@@ -210,7 +210,7 @@
 	.field > span {
 		display: block;
 		margin-bottom: 0.75rem;
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--text-2);
 		font-size: 1.125rem;
 	}
 	input {
@@ -220,12 +220,12 @@
 		border: 0;
 		border-radius: 12px;
 		background: rgba(255, 255, 255, 0.1);
-		color: rgba(255, 255, 255, 0.92);
+		color: var(--text);
 		font: inherit;
 		font-size: 1.375rem;
 	}
 	input:global([data-focused]) {
-		box-shadow: 0 0 0 3px #4c8dff;
+		box-shadow: 0 0 0 4px var(--ring);
 	}
 	.colors {
 		display: flex;
@@ -241,13 +241,13 @@
 		transition: transform 200ms ease-out;
 	}
 	.swatch.selected {
-		box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.92);
+		box-shadow: 0 0 0 3px var(--text);
 	}
 	.swatch:global([data-focused]) {
 		transform: scale(1.08);
 		box-shadow:
 			0 12px 30px rgba(0, 0, 0, 0.5),
-			0 0 0 3px #4c8dff;
+			0 0 0 4px var(--ring);
 	}
 	.bar {
 		display: flex;

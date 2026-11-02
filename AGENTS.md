@@ -170,9 +170,9 @@ Esses recursos são bloqueados na **`blocklist` do `uno.config.ts`** (ex.: `aspe
 
 ## 7. Design e UX
 
-**Inspiração: Apple TV+ / tvOS.** Visual cinematográfico e minimalista, com o conteúdo em primeiro plano. São só *princípios* de referência: nada de logos, ícones, fontes (SF Pro) ou outros assets da Apple.
+**Identidade: Telão** ([ADR 013](docs/adr/013-identidade-telao.md)), no nível dos grandes streamings (Netflix, Apple TV, Max): cena de tela cheia, título grande em letra condensada, menu lateral de TV. São só *princípios* de referência: nada de logos, ícones, fontes ou outros assets desses serviços.
 
-**Tema: escuro**, único por enquanto.
+**Tema: preto**, único por enquanto, com um destaque laranja.
 
 ### Princípios
 1. **Conteúdo primeiro:** a imagem do título ocupa a tela, e a interface some ao redor dela.
@@ -182,7 +182,8 @@ Esses recursos são bloqueados na **`blocklist` do `uno.config.ts`** (ex.: `aspe
 5. **Funciona sem pôster oficial:** o layout é pensado para frames extraídos do vídeo, não para pôsteres de divulgação.
 
 ### Estrutura das telas
-- **Início:** *hero* no topo (frame grande do título em destaque + título + linha de metadados + `▶ Continuar/Assistir` + `Trailer`), seguido de fileiras horizontais: *Continuar assistindo*, *Próximos episódios*, *Adicionados recentemente*, *Filmes*, *Séries*, *Animes*.
+- **Menu:** trilho lateral de ícones à esquerda (Buscar, Início, Filmes, Séries, Animes; Configurações e perfil no rodapé), que abre com os rótulos ao receber o foco. Revisar fica dentro de Configurações.
+- **Início:** *hero* no topo (cena do título à direita esmaecendo no preto + título grande + selos de qualidade/áudio + estado em laranja + `Assistir/Continuar` + `Detalhes`), seguido de fileiras horizontais: *Continuar assistindo*, *Próximos episódios*, *Adicionados recentemente*, *Filmes*, *Séries*, *Animes*.
 - **Detalhes:** frame de fundo em tela cheia com gradiente escuro embaixo, título grande, metadados (tipo · ano · duração/nº de episódios · resolução), botões de ação e trailer opcional no fundo (§4). Séries/animes: abas de temporada e lista de episódios com miniatura, número, duração e barra de progresso.
 - **Player:** sobreposição mínima que some após 3 s sem interação; barra de progresso grande com miniatura do ponto; ±10 s; menu de áudio e legenda; card "Próximo episódio" nos últimos segundos.
 - **Perfis, Revisar e Configurações:** mesma linguagem visual, sem telas "de admin" com cara de outro app.
@@ -197,7 +198,7 @@ Esses recursos são bloqueados na **`blocklist` do `uno.config.ts`** (ex.: `aspe
   - Extrair a cor dominante para o placeholder enquanto a imagem carrega.
 
 ### Foco e navegação
-- Elemento em foco: **escala 1.08 + sombra elevada + contorno claro de 3 px**. Nunca depender só de mudança de cor.
+- Elemento em foco: **escala 1.08–1.1 + sombra elevada + anel branco de 4 px**. Nunca depender só de mudança de cor.
 - **Navegação espacial com `lrud`** (setas movem o foco para o item mais próximo naquela direção), encapsulada numa *action* do Svelte em `web/src/lib/platform/`.
 - A fileira rola para manter o item em foco visível; o foco lembra a última posição de cada fileira ao voltar.
 - **Voltar** sempre fecha o nível atual (player → detalhes → início). No início, Voltar pergunta se quer sair do app (só nas TVs).
@@ -209,11 +210,11 @@ Esses recursos são bloqueados na **`blocklist` do `uno.config.ts`** (ex.: `aspe
 - Respeitar `prefers-reduced-motion` e ter opção "Reduzir animações" nas configurações (ligada por padrão em TVs com pouca memória).
 
 ### Tokens visuais (definidos no `theme` do `uno.config.ts`)
-- **Cores:** fundo `#0B0B0F`, superfícies em 2–3 níveis um pouco mais claros, texto principal branco a 92%, secundário a 60%, terciário a 40%, **uma única cor de destaque** para ação principal e progresso. Nunca preto puro nem branco puro. Contraste mínimo WCAG AA.
-- **Tipografia:** **Inter** (auto-hospedada, fonte variável). Escala de títulos grande e generosa; corpo com no mínimo **24 px em 1080p na TV** e 16 px no PC.
+- **Cores:** fundo preto `#000`, painéis `#121212` e `#1c1c1e`, texto `#f5f5f4` / `#a8a29e` / `#8f8882`, **um único destaque laranja `#ff4d2e`** para estado e progresso (não para texto corrido). Contraste mínimo WCAG AA.
+- **Tipografia:** **Bebas Neue** nos títulos e **Archivo** no resto (auto-hospedadas via Fontsource). Escala de títulos grande; corpo com no mínimo **24 px em 1080p na TV** e 16 px no PC.
 - **Espaçamento:** grade de 8 px.
 - **Área segura na TV:** margem de 5% nas bordas (overscan).
-- **Raio de borda:** 12 px nos cards, 999 px nos botões.
+- **Raio de borda:** 10 px nos cards e nos botões; pílula só em selos pequenos.
 
 ### Tamanhos de tela
 - PC: de 1280 px até ultrawide; a interface escala sem esticar o conteúdo.

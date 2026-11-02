@@ -50,7 +50,7 @@
 		align-items: center;
 		justify-content: center;
 		/* No blur (AGENTS.md §7): a dark veil is enough. */
-		background: rgba(11, 11, 15, 0.85);
+		background: rgba(0, 0, 0, 0.85);
 	}
 	.box {
 		padding: 3rem 4rem;

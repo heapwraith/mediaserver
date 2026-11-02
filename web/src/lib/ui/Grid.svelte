@@ -60,6 +60,11 @@
 		grid?.children[index]?.scrollIntoView({ block: 'nearest' });
 	}
 
+	/** On focus, show the selected cell, not the whole (tall) list. */
+	function reveal() {
+		grid?.children[index]?.scrollIntoView({ block: 'nearest' });
+	}
+
 	function onKey(a: Action): boolean {
 		const item = items[index];
 		if (a === 'enter') {
@@ -84,7 +89,7 @@
 		class="grid"
 		style:grid-template-columns={minWidth > 0 ? `repeat(auto-fill, minmax(${minWidth}rem, 1fr))` : '1fr'}
 		bind:this={grid}
-		use:focusable={{ id, onKey }}
+		use:focusable={{ id, onKey, reveal }}
 	>
 		{#each items as item, i (key(item))}
 			<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->

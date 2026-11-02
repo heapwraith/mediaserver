@@ -28,15 +28,27 @@
 {#await data then { movie, hero: h }}
 	{@const progress = marked[movie.media_id] ?? h.progress}
 	{@const watched = progress?.watched === true}
-	<Hero title={h.title} meta={h.meta} imageId={h.imageId} color={h.color} trailerSrc={h.trailerSrc}>
+	<Hero
+		compact
+		title={h.title}
+		meta={h.meta}
+		badges={h.badges}
+		imageId={h.imageId}
+		color={h.color}
+		trailerSrc={h.trailerSrc}
+	>
 		{#snippet actions()}
 			<PlayButtons id="movie:play" play={moviePlay(movie, progress)} />
 			{#if h.trailer}
 				{@const t = h.trailer}
-				<Button onclick={() => goto(extraCard(t).href)}>Assistir trailer</Button>
+				<Button icon="play" onclick={() => goto(extraCard(t).href)}>Trailer</Button>
 			{/if}
-			<Button id="movie:watched" onclick={() => toggleWatched(movie.media_id, watched)}>
-				{watched ? '✓ Assistido' : 'Marcar como assistido'}
+			<Button
+				id="movie:watched"
+				icon={watched ? 'check' : undefined}
+				onclick={() => toggleWatched(movie.media_id, watched)}
+			>
+				{watched ? 'Assistido' : 'Marcar como assistido'}
 			</Button>
 			{#if movie.collection}
 				{@const c = movie.collection}

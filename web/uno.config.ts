@@ -40,25 +40,28 @@ export default defineConfig({
 		],
 	],
 	theme: {
+		// Telão (docs/adr/013-identidade-telao.md). The same values live as CSS
+		// variables in src/app.css for the components' own <style>.
 		colors: {
-			bg: '#0B0B0F',
+			bg: '#000000',
 			surface: {
-				1: '#15151B',
-				2: '#1E1E26',
-				3: '#282832',
+				1: '#121212',
+				2: '#1C1C1E',
+				3: '#2A2A2D',
 			},
 			text: {
-				primary: 'rgba(255, 255, 255, 0.92)',
-				secondary: 'rgba(255, 255, 255, 0.60)',
-				tertiary: 'rgba(255, 255, 255, 0.40)',
+				primary: '#F5F5F4',
+				secondary: '#A8A29E',
+				tertiary: '#8F8882',
 			},
-			accent: '#4C8DFF',
+			accent: '#FF4D2E',
 		},
 		fontFamily: {
-			sans: '"Inter Variable", Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+			sans: '"Archivo Variable", Archivo, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+			display: '"Bebas Neue", "Archivo Variable", Impact, sans-serif',
 		},
 		borderRadius: {
-			card: '12px',
+			card: '10px',
 			pill: '999px',
 		},
 	},

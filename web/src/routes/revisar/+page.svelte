@@ -344,8 +344,9 @@
 
 <style>
 	h1 {
-		margin: 2rem 0 1rem;
-		font-size: 2.5rem;
+		margin: 3rem 0 1.5rem;
+		font-size: 6rem;
+		line-height: 0.9;
 	}
 	h2 {
 		margin: 2rem 0 0.5rem;
@@ -354,11 +355,11 @@
 	}
 	.message {
 		font-size: 1.125rem;
-		color: #4c8dff;
+		color: var(--accent);
 	}
 	.note,
 	.reason {
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--text-2);
 	}
 	.panel {
 		max-width: 60rem;
@@ -378,7 +379,7 @@
 	label {
 		display: block;
 		margin: 1rem 0;
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--text-2);
 	}
 	input {
 		display: block;
@@ -389,13 +390,13 @@
 		border: 0;
 		border-radius: 12px;
 		background: rgba(255, 255, 255, 0.1);
-		color: rgba(255, 255, 255, 0.92);
+		color: var(--text);
 		font: inherit;
 		font-size: 1.25rem;
 		outline: none;
 	}
 	input:global([data-focused]) {
-		box-shadow: 0 0 0 3px #4c8dff;
+		box-shadow: 0 0 0 4px var(--ring);
 	}
 	.chip {
 		padding: 1rem 1.25rem;
@@ -411,14 +412,14 @@
 	}
 	.chip span {
 		margin-top: 0.25rem;
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--text-2);
 	}
 	.chip.on {
 		background: #284a8a;
 	}
 	:global([data-focused]) .chip.current {
 		transform: scale(1.03);
-		box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.92);
+		box-shadow: 0 0 0 3px var(--text);
 	}
 	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
 	:global(html.tv) .message,

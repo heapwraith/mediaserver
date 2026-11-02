@@ -1,6 +1,6 @@
 # SPRINTS.md
 
-Planejamento do projeto. **Sprint ativa: 11.** (As sprints 6, 7, 8 e 9 aguardam só os aceites manuais reservados ao usuário.)
+Planejamento do projeto. **Sprint ativa: 12.** (As sprints 6, 7, 8, 9 e 11 aguardam só os aceites manuais reservados ao usuário.)
 
 Regras:
 - Marcar `[x]` só quando o critério de aceite da tarefa for cumprido.
@@ -263,7 +263,7 @@ Verificado: biblioteca real com 34 episódios analisada em ~2 min; abertura acha
 - [x] Seção "Docker" no `README.md`, com o limite da descoberta automática (bridge vs `network_mode: host`)
 - [x] ADR [011 — Docker](docs/adr/011-docker.md)
 
-Verificado: build ok, container `healthy`, scan com `/media`, banco persiste após `down`/`up`, FFmpeg 9.0.2 compilado do código-fonte, e transcodificação de MKV HEVC 10-bit + DTS para H.264/AAC na CPU (playlist em 0,5 s) e na RTX 5070 com NVENC (`encoder: nvenc`, playlist em 0,7 s); abertura da Sprint 9 achada no container (dois episódios de teste, erro de ~1 s); acessível pelo IP da rede (`192.168.18.8:8080`). Pendente só: aviso de arquivo novo em `/mnt/c` (inotify), não verificado. `make fmt`, `make check` e `make test` passam.
+Verificado: build ok, container `healthy`, scan com `/media`, banco persiste após `down`/`up`, FFmpeg 9.0.2 compilado do código-fonte, e transcodificação de MKV HEVC 10-bit + DTS para H.264/AAC na CPU (playlist em 0,5 s) e na RTX 5070 com NVENC (`encoder: nvenc`, playlist em 0,7 s); abertura da Sprint 9 achada no container (dois episódios de teste, erro de ~1 s); acessível pelo IP da rede (`192.168.18.8:8080`). Verificado em 01/11/2026: arquivo novo em `/mnt/c` **não** dispara o watcher no container (scan manual resolve; correção no Backlog). `make fmt`, `make check` e `make test` passam.
 
 **Aceite**
 - [x] `docker build` conclui (imagem de ~283 MB; a estimativa de 100–150 MB não considerava o FFmpeg)
@@ -293,6 +293,34 @@ Verificado no Edge, numa instância separada com cópia do banco: 40 toques segu
 - Com o TMDB desligado, o servidor não faz nenhuma chamada de rede
 - A chave do TMDB nunca volta pela API nem aparece no log
 - Um título sem certeza vai para Revisar e nunca recebe gênero errado sozinho
+
+---
+
+## Sprint 12 — Identidade Telão
+
+**Objetivo:** o app ganha nome e cara próprios, no nível dos grandes streamings: **Telão**, tema preto com destaque laranja, menu lateral de TV e título em letra condensada sobre a cena ([ADR 013](docs/adr/013-identidade-telao.md)).
+
+- [x] ADR 013 e `AGENTS.md` §2/§7 com a nova direção (regras técnicas do §6/§7 mantidas)
+- [x] Tokens (cores, raios, foco) no `uno.config.ts` e `app.css`; fontes Bebas Neue + Archivo auto-hospedadas no lugar da Inter
+- [x] Menu lateral de ícones que abre ao receber foco; Revisar sai do menu e vai para Configurações
+- [x] Destaque (hero) com a cena à direita, título grande, selos e estado em laranja
+- [x] Cards e fileiras: título sobre a imagem, sem repetir embaixo; card sem imagem com o título grande
+- [x] Série/filme: lista de episódios com número grande, miniatura, progresso e duração
+- [x] Perfis, Busca, Configurações, Revisar, Status, Player, erros e diálogos no mesmo estilo
+- [x] Marca: logo, favicon, nome "Telão" na interface e nos apps de TV (o placeholder `mediaserver` no código continua no Backlog)
+- [x] Player: "Pular abertura" pedia dois cliques quando o pulo abria uma sessão HLS nova (ela começa no segmento, antes do fim da abertura); agora vai ao segundo exato e o botão some
+- [x] Player: seletor de áudio e legenda com muitas faixas passava da tela; agora rola dentro do painel e acompanha a seleção do controle
+- [x] Lista de episódios: ao voltar do menu lateral a página saltava para o meio da lista (o foco rolava a lista inteira); agora mostra só o episódio selecionado
+- [x] Player: barra de volume em laranja (desenhada no tema; o Chromium 76 não tem `accent-color`) e painel de legendas terminando acima da barra de progresso
+- [x] Player: pular para um ponto ainda não convertido levava de 5 a 22 s para voltar a tocar. A primeira lista HLS de uma sessão nova saía com um pedaço só e o hls.js esperava um pedaço inteiro para pedir de novo; agora o servidor espera até 3 pedaços (no máximo 1,5 s a mais) e o hls.js começa no segundo pedido. Medido na prévia: pulos de 6 a 20 min voltam em 1,2–1,6 s e "Pular abertura" em 0,15 s. `make bench` sem mudança relevante (ServeRange 1,5 GB/s, rescan de 10 mil arquivos em 76 ms)
+- [ ] Reinstalar o app na The Frame e navegar só com o controle (aceite)
+
+Verificado na prévia (Docker com os filmes da Blender e Cyberpunk – Mercenários): Início, menu lateral, catálogo, série, configurações, perfis e player no estilo do protótipo; `make check` (62 KB gzip de JS inicial) e `make test` passam.
+
+**Aceite**
+- Todas as telas no estilo Telão, sem nenhuma tela "de admin" com cara de outro app
+- Navegação completa só com o controle na The Frame, com o foco visível a 3 m
+- `make check` passa (CSS proibido e orçamento de 150 KB gzip) e `make test` passa
 
 ---
 
@@ -342,3 +370,4 @@ Revisão do sistema (01/11/2026), por prioridade:
 - **Histórico de sessões:** uma tela "Histórico" (em Configurações/Status) com cada reprodução: perfil, título/episódio, aparelho (TV ou navegador, IP), início, tempo assistido e trecho (de onde até onde), e modo (direto, remux, conversão com GPU, legenda queimada). Filtros por perfil e aparelho. Hoje só o log JSON registra o play (`"msg":"playback"`), sem perfil, título, aparelho nem duração. Dados numa tabela nova, gravada no play e nos salvamentos de progresso (a cada 10 s)
 - **Filmes pedem "próximo episódio":** o player chama `/api/media/{id}/next` também em filme e recebe 404 (inofensivo, mas suja o log). Não chamar para filmes, ou responder 204
 - **Compatibilidade — funções de JavaScript novas:** o `make check` barra CSS proibido e o Vite converte a sintaxe, mas nada acusa funções mais novas que o Chromium 76, como `toSorted` (Chrome 110) ou `Array.at` (Chrome 92). Elas passam em todas as checagens e só quebram na TV de 2021, em tempo de execução. Na Sprint 11 quase entrou um `toSorted` na página de Filmes. Acusar no `make check`: por regra do Oxlint, se houver, ou por uma lista de funções proibidas no `web/scripts/check-build.ts`, que já verifica o CSS do build
+- **Docker no WSL — arquivo novo:** um arquivo copiado para `/mnt/c` (pasta do Windows) não gera evento de disco dentro do container, então ele só aparece com scan manual. Reagendar um scan periódico (ex.: a cada 10 min) quando o `MEDIA_DIR` não entrega eventos, ou detectar `/mnt/` e avisar

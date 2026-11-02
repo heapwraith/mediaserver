@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onDestroy, onMount, untrack } from 'svelte';
+	import { onDestroy, onMount, tick, untrack } from 'svelte';
 
 	import { goto } from '$app/navigation';
 
@@ -44,6 +44,7 @@
 	} from '#lib/ui/progress.ts';
 	import { attach, type Source } from '#lib/ui/source.ts';
 	import { attachASS, defaultSubtitle, subtitleCSS, type ASSRenderer } from '#lib/ui/subtitles.ts';
+	import Icon from '#lib/ui/Icon.svelte';
 	import { clock } from '#lib/ui/time.ts';
 
 	// Own player on the native <video> (ADR 004): Chromium 76 safe; hls.js
@@ -240,6 +241,7 @@
 		}
 		audio = m.audio;
 		markers = m.markers ?? [];
+		introSkipped = false;
 		if (settings.matchFrameRate) matchFrameRate(m.fps ?? 0);
 		// The default track (or the first), like the server picks it.
 		audioSel = Math.max(
@@ -310,9 +312,13 @@
 		burned = p.burned === true;
 		audioIndex = track;
 		offset = p.direct ? 0 : p.start;
+		// A direct play seeks once its metadata loads; an HLS session (cut on a
+		// segment boundary, a few seconds early) starts loading at the exact
+		// second asked for.
 		pendingSeek = p.direct && p.start > 0 ? p.start : undefined;
-		time = p.start;
-		const s = await attach(el, p, onFatal);
+		const startAt = p.direct ? 0 : Math.max(0, at - p.start);
+		time = p.direct ? p.start : p.start + startAt;
+		const s = await attach(el, p, onFatal, startAt);
 		if (token === playToken) source = s;
 		else s.destroy();
 	}
@@ -365,7 +371,10 @@
 	// Opening and credits found by the server: "Pular abertura", and the
 	// next-episode card as soon as the credits start.
 	let markers: Marker[] = $state([]);
-	const introEnd = $derived(skipIntro(time, markers));
+	// Once skipped, the button stays away: a new HLS session starts on a
+	// segment boundary a little before the requested point.
+	let introSkipped = $state(false);
+	const introEnd = $derived(introSkipped ? null : skipIntro(time, markers));
 	const countdown = $derived(
 		next === undefined || nextCanceled ? null : nextCountdown(time, duration, creditsAt(markers)),
 	);
@@ -375,7 +384,10 @@
 	});
 
 	function skipToEnd() {
-		if (introEnd !== null) seekTo(introEnd);
+		const end = introEnd; // read it before hiding the button: hiding clears it
+		if (end === null) return;
+		introSkipped = true;
+		seekTo(end);
 	}
 
 	$effect(() => {
@@ -404,7 +416,14 @@
 		// Between sessions, or before the first seek of a direct play, the
 		// element's time is not the media's.
 		// While a seek waits, `time` is where the user is going.
-		if (video === undefined || source === undefined || pendingSeek !== undefined || seekTimer !== undefined) return;
+		if (
+			video === undefined ||
+			source === undefined ||
+			pendingSeek !== undefined ||
+			seekTimer !== undefined ||
+			waiting
+		)
+			return;
 		time = offset + video.currentTime;
 		if (!paused && shouldSave(time, lastSave, Date.now())) persist();
 	}
@@ -485,6 +504,15 @@
 			}, settleMs);
 		}
 	}
+
+	// The remote moves the selection: keep it in view in long lists.
+	$effect(() => {
+		void audioSel;
+		void subSel;
+		if (panel === 'audio' || panel === 'subs') {
+			void tick().then(() => root?.querySelector('.panel .option.sel')?.scrollIntoView({ block: 'nearest' }));
+		}
+	});
 
 	function open(p: Exclude<Panel, ''>) {
 		if (p === 'subs') subSel = appliedSub;
@@ -716,7 +744,9 @@
 	{/if}
 
 	{#if introEnd !== null && countdown === null}
-		<button tabindex="-1" class="pill skip kfocus" onclick={skipToEnd}>Pular abertura ›</button>
+		<button tabindex="-1" class="pill skip kfocus" onclick={skipToEnd}
+			>Pular abertura <Icon name="next" /></button
+		>
 	{/if}
 
 	{#if countdown !== null && next !== undefined}
@@ -727,7 +757,7 @@
 			{#if settings.autoplayNext}<p class="next-count">Começa em {countdown} s</p>{/if}
 			<div class="next-buttons">
 				<button tabindex="-1" class="pill" class:kfocus={nextSel === 0} onclick={goNext}>
-					▶ Assistir agora
+					<Icon name="play" /> Assistir agora
 				</button>
 				<button
 					tabindex="-1"
@@ -744,7 +774,7 @@
 	<div class="overlay">
 		<div class="top">
 			<button tabindex="-1" class="pill" class:kfocus={kfocus('back')} onclick={() => goBack()}>
-				‹ Voltar
+				<Icon name="back" /> Voltar
 			</button>
 			<p class="title">{title}</p>
 			<div class="tools">
@@ -839,6 +869,7 @@
 			{#if panel === 'audio'}
 				<div class="panel" role="listbox" aria-label="Áudio">
 					<p class="panel-title">Áudio</p>
+					<div class="options">
 					{#each audio as t, i (t.index)}
 						<!-- svelte-ignore a11y_click_events_have_key_events -->
 						<div
@@ -852,10 +883,12 @@
 							{trackName(t)}
 						</div>
 					{/each}
+					</div>
 				</div>
 			{:else if panel === 'subs'}
 				<div class="panel" role="listbox" aria-label="Legendas">
 					<p class="panel-title">Legendas</p>
+					<div class="options">
 					<!-- svelte-ignore a11y_click_events_have_key_events -->
 					<div
 						class="option"
@@ -880,6 +913,7 @@
 							{subName(s)}
 						</div>
 					{/each}
+					</div>
 				</div>
 			{:else if panel === 'volume'}
 				<div class="panel volume-panel" aria-label="Volume">
@@ -896,6 +930,7 @@
 							step="0.05"
 							tabindex="-1"
 							aria-label="Volume"
+							style:--pct={`${(muted ? 0 : volume) * 100}%`}
 							value={muted ? 0 : volume}
 							oninput={(e) => setVolume(Number(e.currentTarget.value))}
 							onchange={(e) => e.currentTarget.blur()}
@@ -927,7 +962,7 @@
 				<span class="time">{clock(time)}</span>
 				<div class="buttons">
 					<button tabindex="-1" onclick={() => seek(-SEEK_S)} aria-label="Voltar 10 segundos">
-						−10
+						<Icon name="replay10" size="2rem" />
 					</button>
 					<button
 						tabindex="-1"
@@ -935,10 +970,10 @@
 						onclick={toggle}
 						aria-label={paused ? 'Reproduzir' : 'Pausar'}
 					>
-						{paused ? '▶' : '❚❚'}
+						<Icon name={paused ? 'play' : 'pause'} size="1.75rem" />
 					</button>
 					<button tabindex="-1" onclick={() => seek(SEEK_S)} aria-label="Avançar 10 segundos">
-						+10
+						<Icon name="forward10" size="2rem" />
 					</button>
 				</div>
 				<span class="time end">−{clock(duration - time)}</span>
@@ -972,7 +1007,7 @@
 	}
 	.next-label {
 		margin: 0;
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--text-2);
 		font-size: 1rem;
 	}
 	.next-title {
@@ -982,7 +1017,7 @@
 	}
 	.next-count {
 		margin: 0.5rem 0 0;
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--text-2);
 	}
 	.next-buttons {
 		display: flex;
@@ -1061,38 +1096,54 @@
 		height: 3rem;
 		padding: 0 1.5rem;
 		border: 0;
-		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.14);
-		color: rgba(255, 255, 255, 0.92);
+		border-radius: var(--radius);
+		background: rgba(120, 113, 108, 0.45);
+		color: var(--text);
 		font: inherit;
 		font-size: 1.125rem;
-		font-weight: 600;
+		font-weight: 700;
 		cursor: pointer;
 		transition: transform 200ms ease-out;
+	}
+	.pill > :global(.icon) {
+		margin-right: 0.5rem;
+	}
+	.skip > :global(.icon) {
+		margin: 0 0 0 0.5rem;
 	}
 	.pill.icon {
 		width: 3rem;
 		padding: 0;
 	}
 	.pill.on {
-		background: rgba(255, 255, 255, 0.92);
-		color: #0b0b0f;
+		background: var(--text);
+		color: #000;
 	}
 	/* Focus with the remote (AGENTS.md §7: scale + outline). */
 	.pill.kfocus {
 		transform: scale(1.08);
 		box-shadow:
 			0 12px 30px rgba(0, 0, 0, 0.5),
-			0 0 0 3px #4c8dff;
+			0 0 0 4px var(--ring);
 	}
 	.panel {
 		position: absolute;
 		top: 4.5rem;
 		right: 0;
-		width: 28rem;
+		display: flex;
+		flex-direction: column;
+		width: 30rem;
+		/* ends above the progress bar: long track lists scroll inside */
+		max-height: calc(70vh - 4.5rem);
 		padding: 1rem;
-		border-radius: 12px;
-		background: rgba(30, 30, 38, 0.96);
+		border-radius: var(--radius);
+		background: rgba(18, 18, 18, 0.97);
+		box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
+	}
+	.options {
+		flex: 1;
+		min-height: 0;
+		overflow-y: auto;
 	}
 	.panel-title {
 		margin: 0 0 0.5rem;
@@ -1102,20 +1153,45 @@
 		padding: 0.75rem 1rem;
 		border-radius: 8px;
 		cursor: pointer;
-		color: rgba(255, 255, 255, 0.8);
+		color: var(--text-2);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 	.option.sel {
-		background: rgba(255, 255, 255, 0.92);
-		color: #0b0b0f;
+		background: var(--text);
+		color: #000;
 	}
 	.volume-row {
 		display: flex;
 		align-items: center;
 	}
+	/* Drawn in the theme: orange up to the level (accent-color needs Chrome 93). */
 	.volume {
 		flex: 1;
+		height: 0.5rem;
 		margin-left: 1rem;
+		border-radius: 999px;
+		background: linear-gradient(90deg, var(--accent) var(--pct), rgba(255, 255, 255, 0.25) var(--pct));
+		-webkit-appearance: none;
+		appearance: none;
 		cursor: pointer;
+	}
+	.volume::-webkit-slider-thumb {
+		width: 1.375rem;
+		height: 1.375rem;
+		border: 0;
+		border-radius: 999px;
+		background: var(--text);
+		-webkit-appearance: none;
+		appearance: none;
+	}
+	.volume::-moz-range-thumb {
+		width: 1.375rem;
+		height: 1.375rem;
+		border: 0;
+		border-radius: 999px;
+		background: var(--text);
 	}
 
 	/* Bottom: progress bar and the play controls, centered on screen. */
@@ -1134,7 +1210,7 @@
 	}
 	.fill {
 		height: 100%;
-		background: #4c8dff;
+		background: var(--accent);
 		transform-origin: left;
 	}
 	.controls {
@@ -1146,7 +1222,7 @@
 	.time {
 		font-size: 1.125rem;
 		font-variant-numeric: tabular-nums;
-		color: rgba(255, 255, 255, 0.8);
+		color: var(--text-2);
 	}
 	.time.end {
 		text-align: right;
@@ -1156,22 +1232,25 @@
 		align-items: center;
 	}
 	.buttons button {
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		margin: 0 0.5rem;
 		min-width: 4rem;
-		height: 3rem;
+		height: 4rem;
 		border: 0;
 		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.14);
-		color: rgba(255, 255, 255, 0.92);
+		background: rgba(120, 113, 108, 0.45);
+		color: var(--text);
 		font: inherit;
 		font-size: 1.125rem;
 		font-weight: 600;
 		cursor: pointer;
 	}
 	.buttons .play {
-		min-width: 5rem;
-		background: rgba(255, 255, 255, 0.92);
-		color: #0b0b0f;
+		min-width: 5.5rem;
+		background: var(--text);
+		color: #000;
 	}
 	.error {
 		position: absolute;
@@ -1190,7 +1269,7 @@
 	}
 	.error-hint {
 		margin-top: 0.75rem !important;
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--text-2);
 		font-size: 1.25rem;
 	}
 	:global(html.tv) .error-hint {
@@ -1204,7 +1283,7 @@
 		height: 4rem;
 		margin: -2rem 0 0 -2rem;
 		border: 0.375rem solid rgba(255, 255, 255, 0.2);
-		border-top-color: rgba(255, 255, 255, 0.92);
+		border-top-color: var(--text);
 		border-radius: 50%;
 		animation: spin 900ms linear infinite;
 	}

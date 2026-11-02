@@ -41,7 +41,12 @@ const (
 	idleTimeout      = 20 * time.Second // no playlist/segment request: FFmpeg is stopped
 	reapEvery        = 5 * time.Second
 	playlistWait     = 15 * time.Second // for the first segment of a new session
-	maxStderr        = 4 << 10
+	// A new session's first playlist holds a few segments when they come
+	// quickly: with one, hls.js plays nothing until its next reload, a whole
+	// segment later (a seek or "Pular abertura" took ~5 s).
+	playlistMinSegments = 3
+	playlistExtraWait   = 1500 * time.Millisecond
+	maxStderr           = 4 << 10
 )
 
 var (
@@ -449,16 +454,22 @@ func (t *Transcoder) ServeFile(w http.ResponseWriter, r *http.Request, key, name
 	return nil
 }
 
-// servePlaylist waits for the first segment of a new session. FFmpeg
+// servePlaylist waits for the first segments of a new session (see
+// playlistMinSegments). FFmpeg
 // rewrites the playlist in place (a temp file + rename fails on Windows
 // while it is being read), so a torn read is read again.
 func servePlaylist(w http.ResponseWriter, r *http.Request, s *session, dir string) error {
 	file := filepath.Join(dir, playlistName)
 	deadline := time.Now().Add(playlistWait)
+	var enough time.Time // set at the first segment: how long to wait for more
 	for {
 		data, err := os.ReadFile(file) //nolint:gosec // dir is DATA_DIR/transcode/<hex key>
-		if err == nil && bytes.HasPrefix(data, []byte("#EXTM3U")) && bytes.HasSuffix(data, []byte("\n")) &&
-			bytes.Contains(data, []byte("#EXTINF")) {
+		ready := err == nil && bytes.HasPrefix(data, []byte("#EXTM3U")) && bytes.HasSuffix(data, []byte("\n"))
+		n := bytes.Count(data, []byte("#EXTINF"))
+		if ready && n > 0 && enough.IsZero() {
+			enough = time.Now().Add(playlistExtraWait)
+		}
+		if ready && n > 0 && (s == nil || n >= playlistMinSegments || time.Now().After(enough)) {
 			w.Header().Set("Content-Type", "application/vnd.apple.mpegurl")
 			w.Header().Set("Cache-Control", "no-cache")
 			_, _ = w.Write(data)

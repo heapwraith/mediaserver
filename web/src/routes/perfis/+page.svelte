@@ -61,6 +61,18 @@
 
 <div class="page">
 	{#await profiles then list}
+		<div class="brand" aria-label="Telão">
+			<svg viewBox="0 0 64 64" aria-hidden="true"
+				><rect width="64" height="64" rx="16" fill="var(--accent)" /><path
+					d="M15 23h34v20H15z"
+					fill="none"
+					stroke="#fff"
+					stroke-width="4"
+					stroke-linejoin="round"
+				/><path d="M24 49h16" stroke="#fff" stroke-width="4" stroke-linecap="round" /></svg
+			>
+			<span>Telão</span>
+		</div>
 		<h1>{list.length === 0 ? 'Crie o primeiro perfil' : editing ? 'Editar perfis' : 'Quem está assistindo?'}</h1>
 		<div class="profiles" use:focusGroup={{ id: 'profiles', orientation: 'horizontal' }}>
 			{#each list as p (p.id)}
@@ -106,10 +118,26 @@
 		padding-top: 18vh;
 		text-align: center;
 	}
+	.brand {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin-bottom: 4rem;
+	}
+	.brand svg {
+		width: 4.5rem;
+		height: 4.5rem;
+		margin-right: 1.25rem;
+	}
+	.brand span {
+		font-family: var(--font-display);
+		font-size: 4rem;
+		letter-spacing: 0.02em;
+	}
 	h1 {
 		margin: 0 0 3rem;
-		font-size: 3rem;
-		font-weight: 600;
+		font-size: 4.5rem;
+		line-height: 1;
 	}
 	.profiles {
 		display: flex;
@@ -126,7 +154,7 @@
 		border: 0;
 		border-radius: 12px;
 		background: transparent;
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--text-2);
 		font: inherit;
 		cursor: pointer;
 		transition: transform 200ms ease-out;
@@ -136,14 +164,14 @@
 		box-shadow: 0 0 0 3px transparent;
 	}
 	.profile:global([data-focused]) {
-		color: rgba(255, 255, 255, 0.92);
+		color: var(--text);
 		transform: scale(1.08);
 	}
 	.profile:global([data-focused]) :global(.avatar),
 	.profile:global([data-focused]) .plus {
 		box-shadow:
 			0 16px 40px rgba(0, 0, 0, 0.6),
-			0 0 0 3px rgba(255, 255, 255, 0.92);
+			0 0 0 3px var(--text);
 	}
 	.plus {
 		display: flex;
@@ -165,7 +193,7 @@
 		min-height: 1.25rem;
 		margin-top: 0.25rem;
 		font-size: 0.875rem;
-		color: rgba(255, 255, 255, 0.4);
+		color: var(--text-3);
 	}
 	.bar {
 		display: flex;

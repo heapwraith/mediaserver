@@ -118,7 +118,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: rgba(11, 11, 15, 0.92);
+		background: rgba(0, 0, 0, 0.92);
 	}
 	.pad {
 		text-align: center;
@@ -137,12 +137,12 @@
 		width: 1.25rem;
 		height: 1.25rem;
 		margin: 0 0.75rem;
-		border: 2px solid rgba(255, 255, 255, 0.6);
+		border: 2px solid var(--text-2);
 		border-radius: 999px;
 	}
 	.dot.on {
-		border-color: rgba(255, 255, 255, 0.92);
-		background: rgba(255, 255, 255, 0.92);
+		border-color: var(--text);
+		background: var(--text);
 	}
 	.error {
 		min-height: 1.5rem;
@@ -162,7 +162,7 @@
 		border: 0;
 		border-radius: 999px;
 		background: rgba(255, 255, 255, 0.1);
-		color: rgba(255, 255, 255, 0.92);
+		color: var(--text);
 		font: inherit;
 		font-size: 1.75rem;
 		font-weight: 600;
@@ -173,12 +173,12 @@
 		font-size: 1rem;
 	}
 	.keys:global([data-focused]) > .key.current {
-		background: rgba(255, 255, 255, 0.92);
-		color: #0b0b0f;
+		background: var(--text);
+		color: #000;
 		transform: scale(1.08);
 		box-shadow:
 			0 12px 30px rgba(0, 0, 0, 0.5),
-			0 0 0 3px #4c8dff;
+			0 0 0 4px var(--ring);
 	}
 	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
 	:global(html.tv) .error,

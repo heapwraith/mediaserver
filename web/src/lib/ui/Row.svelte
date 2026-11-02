@@ -6,6 +6,7 @@
 	import { focusable } from '../platform/nav.svelte';
 	import type { Action } from '../platform/keys';
 	import Card from './Card.svelte';
+	import Icon from './Icon.svelte';
 	import type { CardItem } from './cards';
 	import { recall, remember } from './memory';
 	import { moveIndex, rowStart, rowWindow } from './move';
@@ -23,8 +24,8 @@
 	} = $props();
 
 	// Card width and spacing, in rem (the root font size scales with the screen).
-	const CARD = 20;
-	const SPACE = 1.5;
+	const CARD = 24;
+	const SPACE = 1.125;
 	const PITCH = CARD + SPACE;
 
 	const saved = untrack(() => recall(id));
@@ -83,10 +84,14 @@
 				{/each}
 			</div>
 			{#if start > 0}
-				<button class="page prev" tabindex="-1" aria-label="Anteriores" onclick={() => page(-1)}>‹</button>
+				<button class="page prev" tabindex="-1" aria-label="Anteriores" onclick={() => page(-1)}
+					><Icon name="prev" size="2.5rem" /></button
+				>
 			{/if}
 			{#if start + visible < items.length}
-				<button class="page next" tabindex="-1" aria-label="Próximos" onclick={() => page(1)}>›</button>
+				<button class="page next" tabindex="-1" aria-label="Próximos" onclick={() => page(1)}
+					><Icon name="next" size="2.5rem" /></button
+				>
 			{/if}
 		</div>
 	</section>
@@ -98,16 +103,16 @@
 		margin-bottom: 2.5rem;
 	}
 	h2 {
-		margin: 0 0 1rem;
-		font-size: 1.5rem;
-		font-weight: 600;
-		color: rgba(255, 255, 255, 0.92);
+		margin: 0 0 0.5rem;
+		font-size: 1.875rem;
+		font-weight: 800;
+		color: var(--text);
 	}
 	.viewport {
 		position: relative;
-		/* room for the focused card (scale 1.08) and its shadow */
-		padding: 1rem 1.5rem 1.5rem;
-		margin: -1rem -1.5rem -1.5rem;
+		/* room for the focused card (scale 1.1) and its shadow */
+		padding: 1.25rem 1.5rem 1.75rem;
+		margin: -0.5rem -1.5rem -1.25rem;
 		overflow: hidden;
 	}
 	.track {
@@ -123,12 +128,14 @@
 	.page {
 		position: absolute;
 		top: 0;
-		bottom: 3rem;
-		width: 3rem;
+		bottom: 1.75rem;
+		width: 3.5rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		border: 0;
-		background: rgba(11, 11, 15, 0.7);
-		color: rgba(255, 255, 255, 0.92);
-		font-size: 2.5rem;
+		background: rgba(0, 0, 0, 0.75);
+		color: var(--text);
 		cursor: pointer;
 		opacity: 0;
 		transition: opacity 150ms ease-out;

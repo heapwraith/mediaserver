@@ -9,54 +9,72 @@
 	let {
 		title,
 		meta,
+		badges = [],
+		status,
 		imageId,
 		color,
 		trailerSrc,
+		compact = false,
 		actions,
 	}: {
 		title: string;
 		meta: string;
+		badges?: string[];
+		/** Short status in the accent color, before the meta line. */
+		status?: string;
 		imageId: string;
 		color?: string;
 		/** Muted trailer looping behind the hero (details pages). */
 		trailerSrc?: string;
+		/** Shorter hero for details pages (the episodes start sooner). */
+		compact?: boolean;
 		actions: Snippet;
 	} = $props();
 
 	let playing = $state(false);
+	let failed = $state(false);
 	const trailer = $derived(
 		trailerSrc !== undefined && settings.backgroundTrailer && !settings.reduceMotion ? trailerSrc : '',
 	);
 </script>
 
-<header class="hero" style:background={color ?? titleGradient(title)}>
-	<img
-		class="backdrop"
-		src={`/api/images/${imageId}?variant=backdrop&w=1920`}
-		srcset={imageSrcset(imageId, 'backdrop')}
-		sizes="100vw"
-		alt=""
-		decoding="async"
-		onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')}
-	/>
-	{#if trailer !== ''}
-		<!-- Decorative: muted, no controls (AGENTS.md §7). -->
-		<video
-			class="backdrop trailer"
-			class:playing
-			src={trailer}
-			muted
-			loop
-			autoplay
-			playsinline
-			preload="auto"
-			onplaying={() => (playing = true)}
-		></video>
-	{/if}
-	<div class="shade"></div>
+<!-- Telão (ADR 013): the scene owns the right of the screen and fades into the black. -->
+<header class="hero" class:compact>
+	<div class="scene" style:background={failed ? (color ?? titleGradient(title)) : undefined}>
+		{#if !failed}
+			<img
+				class="backdrop"
+				src={`/api/images/${imageId}?variant=backdrop&w=1920`}
+				srcset={imageSrcset(imageId, 'backdrop')}
+				sizes="73vw"
+				alt=""
+				decoding="async"
+				onerror={() => (failed = true)}
+			/>
+		{/if}
+		{#if trailer !== ''}
+			<!-- Decorative: muted, no controls (AGENTS.md §7). -->
+			<video
+				class="backdrop trailer"
+				class:playing
+				src={trailer}
+				muted
+				loop
+				autoplay
+				playsinline
+				preload="auto"
+				onplaying={() => (playing = true)}
+			></video>
+		{/if}
+		<div class="shade"></div>
+	</div>
 	<div class="content">
-		<h1>{title}</h1>
-		{#if meta}<p class="meta">{meta}</p>{/if}
+		<h1 class:long={title.length > 14}>{title}</h1>
+		<p class="meta">
+			{#if status}<span class="status">{status}</span>{/if}
+			{#if meta}<span>{meta}</span>{/if}
+			{#each badges as b (b)}<span class="badge">{b}</span>{/each}
+		</p>
 		<div class="actions" use:focusGroup={{ orientation: 'horizontal' }}>
 			{@render actions()}
 		</div>
@@ -66,9 +84,20 @@
 <style>
 	.hero {
 		position: relative;
-		margin: 0 -5vw 2.5rem;
-		height: 62vh;
-		min-height: 22rem;
+		/* full bleed: under the rail on the left, to the screen edge on the right */
+		margin: 0 -5vw 0 calc(-1 * var(--content-left));
+		height: 74vh;
+		min-height: 26rem;
+	}
+	.hero.compact {
+		height: 60vh;
+	}
+	.scene {
+		position: absolute;
+		top: 0;
+		right: 0;
+		width: 73%;
+		height: 100%;
 		overflow: hidden;
 	}
 	.backdrop,
@@ -91,36 +120,64 @@
 	}
 	.shade {
 		background:
-			linear-gradient(to top, #0b0b0f 0%, rgba(11, 11, 15, 0) 55%),
-			linear-gradient(to right, rgba(11, 11, 15, 0.85) 0%, rgba(11, 11, 15, 0) 60%);
+			linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.7) 26%, rgba(0, 0, 0, 0) 55%),
+			linear-gradient(0deg, #000 0%, rgba(0, 0, 0, 0) 38%);
 	}
 	.content {
 		position: absolute;
-		left: 5vw;
-		right: 40vw;
-		bottom: 3rem;
+		left: var(--content-left);
+		top: 18%;
+		width: 57.5rem;
+		max-width: 60vw;
+	}
+	.compact .content {
+		top: 16%;
 	}
 	h1 {
-		margin: 0;
-		font-size: 3.5rem;
-		font-weight: 700;
-		line-height: 1.05;
-		letter-spacing: -0.02em;
+		margin: 0 0 1.375rem;
+		font-family: var(--font-display);
+		font-size: 10.5rem;
+		font-weight: 400;
+		line-height: 0.86;
+		letter-spacing: 0.005em;
+		text-transform: uppercase;
+	}
+	.compact h1 {
+		font-size: 8.5rem;
 	}
 	.meta {
-		margin: 1rem 0 0;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		margin: 0 0 1.75rem;
+		font-size: 1.625rem;
+		font-weight: 700;
+		color: var(--text-2);
+	}
+	.meta > span {
+		margin-right: 1.25rem;
+	}
+	.status {
+		color: var(--accent);
+	}
+	.badge {
+		padding: 0 0.5rem;
+		border: 2px solid var(--text-3);
+		border-radius: 4px;
+		color: var(--text);
 		font-size: 1.25rem;
-		color: rgba(255, 255, 255, 0.6);
 	}
 	.actions {
 		display: flex;
-		margin-top: 1.5rem;
 	}
 	.actions > :global(* + *) {
 		margin-left: 1rem;
 	}
-	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
-	:global(html.tv) .meta {
-		font-size: 1.5rem;
+	/* Long titles: smaller, so they stay within two lines. */
+	h1.long {
+		font-size: 7.25rem;
+	}
+	.compact h1.long {
+		font-size: 6.5rem;
 	}
 </style>

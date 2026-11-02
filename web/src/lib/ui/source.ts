@@ -16,11 +16,14 @@ function unload(video: HTMLVideoElement): void {
  * Loads p in video: the file itself, or HLS through hls.js (MSE; loaded
  * only here, outside the initial bundle) or natively when there is no MSE.
  * onFatal: the HLS stream broke (e.g. its session was stopped).
+ * startAt: second of the session to start from (HLS): hls.js loads that part
+ * first instead of the session start and a seek afterwards.
  */
 export async function attach(
 	video: HTMLVideoElement,
 	p: Playback,
 	onFatal: () => void,
+	startAt = 0,
 ): Promise<Source> {
 	if (p.direct) {
 		video.src = p.url;
@@ -37,7 +40,7 @@ export async function attach(
 	}
 	// The session playlist grows while FFmpeg works (EVENT): start at its
 	// beginning, not at the "live" edge. backBufferLength spares TV memory.
-	const hls = new Hls({ startPosition: 0, backBufferLength: 90 });
+	const hls = new Hls({ startPosition: startAt, backBufferLength: 90 });
 	hls.on(Hls.Events.ERROR, (_event, data) => {
 		if (data.fatal) onFatal();
 	});

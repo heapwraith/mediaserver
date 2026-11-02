@@ -10,7 +10,7 @@ import type { Episode, Extra, Movie, Progress, SeriesDetail, SeriesProgress } fr
 import { episodeTitle, formatDuration, playHref, resolution, seasonEpisode } from './cards';
 import { remaining, resumeAt } from './progress';
 
-/** The main button of a hero: "▶ Continuar" (with "Do início") or "▶ Assistir". */
+/** The main button of a hero: "Continuar" (with "Do início") or "Assistir"; the play icon is drawn by the button. */
 export interface PlayAction {
 	href: string;
 	label: string;
@@ -22,6 +22,10 @@ export interface PlayAction {
 export interface HeroData {
 	title: string;
 	meta: string;
+	/** Outlined badges after the meta line (quality). */
+	badges?: string[];
+	/** A short state line in the accent color ("Continuar assistindo", "Novo na biblioteca"). */
+	status?: string;
 	imageId: string;
 	color?: string;
 	play?: PlayAction;
@@ -46,11 +50,11 @@ export function moviePlay(m: Movie, p?: Progress): PlayAction {
 	if (p !== undefined && resumeAt(p) > 0) {
 		return {
 			href,
-			label: `▶ Continuar · ${remaining(p)}`,
+			label: `Continuar · ${remaining(p)}`,
 			restart: playHref(m.media_id, m.title, true),
 		};
 	}
-	return { href, label: '▶ Assistir' };
+	return { href, label: 'Assistir' };
 }
 
 /** Plays the up-next episode of the profile, else the first one. */
@@ -68,11 +72,11 @@ export function seriesPlay(s: SeriesDetail, sp?: SeriesProgress): PlayAction | u
 	if (p !== undefined && resumeAt(p) > 0) {
 		return {
 			href,
-			label: `▶ Continuar ${where} · ${remaining(p)}`,
+			label: `Continuar ${where} · ${remaining(p)}`,
 			restart: playHref(e.media_id, title, true),
 		};
 	}
-	return { href, label: next === undefined ? '▶ Assistir' : `▶ Assistir ${where}` };
+	return { href, label: next === undefined ? 'Assistir' : `Assistir ${where}` };
 }
 
 export async function movieHero(m: Movie): Promise<HeroData & { progress?: Progress }> {
@@ -83,13 +87,8 @@ export async function movieHero(m: Movie): Promise<HeroData & { progress?: Progr
 	const trailer = extras.find((x) => x.type === 'trailer');
 	return {
 		title: m.title,
-		meta: join([
-			'Filme',
-			m.year,
-			formatDuration(m.duration_ms),
-			resolution(m.height),
-			m.genres?.join(', '),
-		]),
+		meta: join(['Filme', m.year, formatDuration(m.duration_ms), m.genres?.join(', ')]),
+		badges: [resolution(m.height, m.width)].filter(Boolean),
 		imageId: m.id,
 		color: m.color,
 		play: moviePlay(m, progress),
@@ -119,8 +118,8 @@ export async function seriesHero(
 			detail.year,
 			n > 1 ? `${n} temporadas` : `${detail.episodes} episódio${detail.episodes === 1 ? '' : 's'}`,
 			detail.genres?.join(', '),
-			resolution(first?.height),
 		]),
+		badges: [resolution(first?.height, first?.width)].filter(Boolean),
 		imageId: detail.id,
 		color: detail.color,
 		play: seriesPlay(detail, progress),

@@ -100,16 +100,19 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		margin: 2rem 0 1rem;
+		margin: 3rem 0 1.5rem;
 	}
 	h1 {
 		margin: 0;
-		font-size: 2.5rem;
+		font-size: 6rem;
+		line-height: 0.9;
 	}
 	h1 span {
-		font-size: 1.25rem;
-		font-weight: 400;
-		color: rgba(255, 255, 255, 0.4);
+		margin-left: 0.5rem;
+		font-family: var(--font-sans);
+		font-size: 1.625rem;
+		font-weight: 700;
+		color: var(--text-3);
 	}
 	.sorts {
 		display: flex;
@@ -126,7 +129,7 @@
 		margin: 0 0.75rem 0.75rem 0;
 	}
 	.note {
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--text-2);
 		font-size: 1.25rem;
 	}
 	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */

@@ -29,7 +29,8 @@
 
 <style>
 	h1 {
-		margin: 2rem 0 1rem;
-		font-size: 2.5rem;
+		margin: 3rem 0 1.5rem;
+		font-size: 6rem;
+		line-height: 0.9;
 	}
 </style>

@@ -21,7 +21,7 @@
 		align-items: center;
 		justify-content: center;
 		border-radius: 999px;
-		color: rgba(255, 255, 255, 0.92);
+		color: var(--text);
 		font-weight: 700;
 		line-height: 1;
 		user-select: none;

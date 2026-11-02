@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { collectionCard, collectionLabel, finishedCard, watchedLast, type CardItem } from './cards';
+import {
+	collectionCard,
+	collectionLabel,
+	finishedCard,
+	resolution,
+	watchedLast,
+	type CardItem,
+} from './cards';
 
 const card = (key: string): CardItem => ({ key, imageId: key, title: key, href: `/filme/${key}` });
 
@@ -39,5 +46,20 @@ describe('collectionCard', () => {
 			title: 'Star Wars',
 			subtitle: '3 filmes',
 		});
+	});
+});
+
+describe('resolution', () => {
+	it.each([
+		[undefined, undefined, ''],
+		[480, 720, 'SD'],
+		[720, 1280, '720p'],
+		[534, 1280, '720p'], // scope film: the width tells the quality
+		[804, 1920, '1080p'],
+		[1080, 1920, '1080p'],
+		[1600, 3840, '4K'],
+		[2160, 3840, '4K'],
+	])('%s×%s → %s', (h, w, want) => {
+		expect(resolution(h, w)).toBe(want);
 	});
 });

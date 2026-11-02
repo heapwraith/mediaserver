@@ -21,11 +21,13 @@ export function formatDuration(ms?: number): string {
 	return min < 60 ? `${min} min` : `${Math.floor(min / 60)} h ${min % 60} min`;
 }
 
-export function resolution(height?: number): string {
+/** Quality label; the width counts too, since wide films are short (1280×534 is 720p). */
+export function resolution(height?: number, width?: number): string {
 	if (height === undefined) return '';
-	if (height >= 2000) return '4K';
-	if (height >= 1000) return '1080p';
-	if (height >= 700) return '720p';
+	const w = width ?? 0;
+	if (height >= 2000 || w >= 3800) return '4K';
+	if (height >= 1000 || w >= 1900) return '1080p';
+	if (height >= 700 || w >= 1260) return '720p';
 	return 'SD';
 }
 

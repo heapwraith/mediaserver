@@ -4,7 +4,7 @@
 	"vendor": "mediaserver",
 	"type": "web",
 	"main": "index.html",
-	"title": "mediaserver",
+	"title": "Telão",
 	"icon": "icon.png",
 	"largeIcon": "largeIcon.png",
 	"bgColor": "#0B0B0F",

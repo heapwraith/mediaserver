@@ -4,7 +4,8 @@
 import 'virtual:uno.css';
 import '../app.css';
 
-import inter from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2';
+import archivo from '@fontsource-variable/archivo/files/archivo-latin-wght-normal.woff2';
+import bebas from '@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2';
 import { mount } from 'svelte';
 
 import { detectNative } from '../lib/platform/native';
@@ -13,11 +14,14 @@ import Connect from './Connect.svelte';
 // Only the latin subset (Portuguese fits in it), inlined: a page opened from
 // file:// cannot always load fonts from separate files.
 if (typeof FontFace === 'function') {
-	const face = new FontFace('Inter Variable', `url(${inter}) format('woff2')`, {
-		weight: '100 900',
-	});
-	document.fonts.add(face);
-	void face.load().catch(() => undefined);
+	const faces = [
+		new FontFace('Archivo Variable', `url(${archivo}) format('woff2')`, { weight: '100 900' }),
+		new FontFace('Bebas Neue', `url(${bebas}) format('woff2')`),
+	];
+	for (const face of faces) {
+		document.fonts.add(face);
+		void face.load().catch(() => undefined);
+	}
 }
 
 const native = detectNative(window);

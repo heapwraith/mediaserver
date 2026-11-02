@@ -1,11 +1,33 @@
-/* Base styles. Tokens: uno.config.ts theme (AGENTS.md §7). */
+/* Base styles. Tokens: uno.config.ts theme and the variables below (Telão, docs/adr/013). */
+
+:root {
+	--bg: #000;
+	--panel: #121212;
+	--panel-2: #1c1c1e;
+	--panel-3: #2a2a2d;
+	--text: #f5f5f4;
+	--text-2: #a8a29e;
+	--text-3: #8f8882;
+	--accent: #ff4d2e;
+	--ring: #fff;
+	--radius: 10px;
+	--font-sans:
+		'Archivo Variable', Archivo, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	--font-display: 'Bebas Neue', 'Archivo Variable', sans-serif;
+	/* the left menu rail (folded) */
+	--rail: 8.25rem;
+	/* where the page content starts: the folded rail plus air */
+	--content-left: 12.5rem;
+	/* focus: white ring + deep shadow (AGENTS.md §7) */
+	--focus-ring: 0 0 0 4px var(--ring), 0 24px 40px rgba(0, 0, 0, 0.7);
+}
 
 html {
 	/* Layout drawn at 1920×1080 with 16px = 1rem; scales with the width. */
 	font-size: 16px;
-	background: #0b0b0f;
-	color: rgba(255, 255, 255, 0.92);
-	font-family: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	background: var(--bg);
+	color: var(--text);
+	font-family: var(--font-sans);
 	-webkit-font-smoothing: antialiased;
 }
 @media (min-width: 1280px) {
@@ -38,7 +60,7 @@ html {
 body {
 	margin: 0;
 	min-height: 100vh;
-	background: #0b0b0f;
+	background: var(--bg);
 	overflow-x: hidden;
 }
 *,
@@ -55,4 +77,17 @@ body {
 .reduce-motion *::after {
 	transition: none !important;
 	animation: none !important;
+}
+
+::selection {
+	background: var(--accent);
+	color: #fff;
+}
+
+/* Page titles in the Telão display face (components keep their own sizes). */
+main h1 {
+	font-family: var(--font-display);
+	font-weight: 400;
+	letter-spacing: 0.01em;
+	text-transform: uppercase;
 }

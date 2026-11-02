@@ -15,11 +15,18 @@ export interface FocusableOptions {
 	id?: string;
 	/** Handles a key while focused; returns true when it consumed it. */
 	onKey?: (a: Action) => boolean;
+	/**
+	 * Brings the right part into view when the element gets the focus. Tall
+	 * nodes (a whole list) pass it: scrolling the whole element into view lands
+	 * mid-list instead of on its selected item.
+	 */
+	reveal?: () => void;
 }
 
 interface Item {
 	el: HTMLElement;
 	onKey?: (a: Action) => boolean;
+	reveal?: () => void;
 }
 
 const items = new Map<string, Item>();
@@ -78,7 +85,9 @@ function apply(id: string): void {
 	// Styled globally (app.css): scale + shadow + outline, AGENTS.md §7.
 	el.setAttribute('data-focused', '');
 	if (document.activeElement !== el) el.focus({ preventScroll: true });
-	el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+	const reveal = items.get(id)?.reveal;
+	if (reveal !== undefined) reveal();
+	else el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
 
 /** The lrud tree, rebuilt when the DOM changed; focus is kept valid. */
@@ -126,6 +135,12 @@ function changed(): void {
 	});
 }
 
+/** Makes `child` the item a group gives the focus to when it is entered (the menu rail opens on the current page). */
+export function setActiveChild(group: string, child: string): void {
+	activeChild.set(group, child);
+	changed();
+}
+
 /** Focuses an element by id (mouse hover, programmatic focus). */
 export function focusId(id: string): void {
 	const l = tree();
@@ -161,13 +176,13 @@ export function focusable(el: HTMLElement, opts: FocusableOptions = {}) {
 	el.dataset.nav = 'item';
 	el.dataset.navId = id;
 	if (!el.hasAttribute('tabindex')) el.tabIndex = -1;
-	items.set(id, { el, onKey: opts.onKey });
+	items.set(id, { el, onKey: opts.onKey, reveal: opts.reveal });
 	const hover = () => focusId(id);
 	el.addEventListener('pointerenter', hover);
 	changed();
 	return {
 		update(next: FocusableOptions = {}) {
-			items.set(id, { el, onKey: next.onKey });
+			items.set(id, { el, onKey: next.onKey, reveal: next.reveal });
 		},
 		destroy() {
 			el.removeEventListener('pointerenter', hover);

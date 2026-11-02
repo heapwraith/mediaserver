@@ -123,7 +123,7 @@
 	}
 	h2 {
 		margin: 0 0 0.75rem;
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--text-2);
 		font-size: 1.125rem;
 		font-weight: 600;
 	}
@@ -156,7 +156,7 @@
 		font-weight: 600;
 	}
 	.detail {
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--text-2);
 	}
 	.bar {
 		height: 0.5rem;
@@ -167,7 +167,7 @@
 	}
 	.bar > div {
 		height: 100%;
-		background: #4c8dff;
+		background: var(--accent);
 		transform-origin: left;
 	}
 	@media (max-width: 1100px) {
