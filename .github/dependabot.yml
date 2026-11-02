@@ -9,6 +9,9 @@ updates:
     groups:
       go-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: npm
     directory: /web
     schedule: {interval: weekly}
@@ -16,12 +19,26 @@ updates:
     groups:
       npm-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      # Major versions break the toolchain together (svelte-check needs the
+      # matching TypeScript); upgrade them by hand, in one pull request.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule: {interval: weekly}
   - package-ecosystem: docker
     directory: /
     schedule: {interval: weekly}
+    ignore:
+      # CI and the docs use Node 24: move Node everywhere at once.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: gradle
     directory: /tv/android
     schedule: {interval: weekly}
+    ignore:
+      # Gradle and the Android Gradle Plugin must go up together, and the CI
+      # does not build the .apk: upgrade by hand and build it.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
