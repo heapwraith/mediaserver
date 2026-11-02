@@ -8,7 +8,7 @@ O servidor é doméstico e escuta em todas as interfaces, sem login de rede. Uma
 ## Decisões
 - **Backup sem segredos:** sem `session_secret`, chave do TMDB e `pin_hash` (um PIN de 4 dígitos se quebra offline em minutos). Depois de restaurar, definir os PINs de novo.
 - **`guard` em toda rota:** `Host` precisa ser IP, `localhost`, nome sem ponto, `*.local`/`*.lan`/`*.home.arpa` ou estar em `ALLOWED_HOSTS`; gravação (`POST/PUT/DELETE`) com `Origin` diferente do `Host` é recusada; corpo JSON exige `Content-Type: application/json`.
-- **Cabeçalhos:** `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy: no-referrer`. A CSP completa fica para depois, testada na TV com Chromium 76 (JASSUB, hls.js e o script embutido do SvelteKit).
+- **Cabeçalhos:** `nosniff` e `Referrer-Policy: no-referrer`. **Sem** `X-Frame-Options` nem `frame-ancestors`: os apps Tizen e webOS mostram a interface num `<iframe>` (`web/src/shell`), e `DENY` os bloqueava (`ERR_BLOCKED_BY_RESPONSE`). A CSP completa fica para depois, testada na TV com Chromium 76 (JASSUB, hls.js e o script embutido do SvelteKit).
 - **Sessão:** token `id.exp.mac` com validade de 90 dias, dentro da assinatura.
 - **PIN:** bloqueio por perfil **e endereço**, dobrando de 30 s até 15 min, para um convidado não trancar o perfil dos outros.
 - **PIN de administrador (opcional, desligado por padrão):** hash em `app_state.admin_pin`; com ele, scan, Revisar, mesclar/separar, TMDB e backup exigem o cabeçalho `X-Admin` (token de 30 min assinado com o hash do PIN; trocar o PIN encerra as sessões). `POST /api/admin/unlock`, `PUT /api/admin/pin`, `GET /api/admin/access`. A interface pede o PIN na hora da ação (`withAdmin`). Desligado por padrão para não mudar o uso de quem já tem a casa funcionando.

@@ -12,7 +12,7 @@ As provas abaixo foram feitas numa instância local descartável (`MEDIA_DIR` va
 | 3 | Middleware `guard`: recusa `Host` que não seja IP, `localhost`, nome sem ponto, `*.local`/`*.lan`/`*.home.arpa` ou `ALLOWED_HOSTS` (DNS rebinding); recusa `POST/PUT/DELETE` com `Origin` de outro site (CSRF); `decodeJSON` exige `Content-Type: application/json`. |
 | 4 | Bloqueio de PIN por perfil **e endereço**, dobrando a cada rodada (30 s até 15 min). |
 | 5 | Token de sessão com validade de 90 dias, dentro da assinatura (`id.exp.mac`). Quem já estava logado escolhe o perfil de novo uma vez. |
-| 6 | `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy: no-referrer`. **Resta:** uma CSP completa (`script-src`, `worker-src`...): o JASSUB, o hls.js e o script embutido do SvelteKit exigem testar numa TV com Chromium 76 antes. |
+| 6 | `nosniff`, `Referrer-Policy: no-referrer`. O bloqueio de iframe (`X-Frame-Options`/`frame-ancestors`) foi **revertido**: os apps de TV mostram o servidor num iframe e ele quebrava a conexão (`ERR_BLOCKED_BY_RESPONSE`). **Resta:** uma CSP completa (`script-src`, `worker-src`...): o JASSUB, o hls.js e o script embutido do SvelteKit exigem testar numa TV com Chromium 76 antes. |
 | 7 | `/api/health` não devolve mais a versão e só envia CORS `*` a páginas de app (`file://`/`null`), não a sites `http(s)`. |
 
 | 2 | PIN de administrador opcional ([ADR 015](adr/015-seguranca-rede.md)): scan, Revisar, mesclar/separar, TMDB e backup pedem `X-Admin`. Desligado por padrão. |

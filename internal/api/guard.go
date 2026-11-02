@@ -23,8 +23,8 @@ func (d Deps) guard(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h := w.Header()
 		h.Set("X-Content-Type-Options", "nosniff")
-		h.Set("X-Frame-Options", "DENY")
-		h.Set("Content-Security-Policy", "frame-ancestors 'none'")
+		// No X-Frame-Options / frame-ancestors: the TV apps (Tizen, webOS) show the
+		// interface inside an <iframe> of their file:// page (web/src/shell).
 		h.Set("Referrer-Policy", "no-referrer")
 
 		if !d.hostAllowed(r.Host) {

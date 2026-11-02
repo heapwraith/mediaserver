@@ -44,10 +44,14 @@ func TestGuard(t *testing.T) {
 			if rec.Code != tt.want {
 				t.Errorf("status = %d, want %d", rec.Code, tt.want)
 			}
-			for k, v := range map[string]string{"X-Frame-Options": "DENY", "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer"} {
+			for k, v := range map[string]string{"X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer"} {
 				if rec.Header().Get(k) != v {
 					t.Errorf("%s = %q, want %q", k, rec.Header().Get(k), v)
 				}
+			}
+			// The TV apps embed the interface in an iframe.
+			if rec.Header().Get("X-Frame-Options") != "" || rec.Header().Get("Content-Security-Policy") != "" {
+				t.Error("the interface must stay embeddable by the TV apps")
 			}
 		})
 	}

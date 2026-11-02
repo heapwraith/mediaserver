@@ -133,7 +133,7 @@ Quem quiser organizar manualmente pode seguir este padrão, que garante 100% de 
 5. **FFmpeg sempre via `exec.CommandContext`**, com cancelamento quando o cliente desconecta. Nenhum processo órfão.
 6. **IDs estáveis:** o ID de uma mídia não pode mudar entre scans enquanto o arquivo não mudar de caminho.
 7. **Caminhos:** sempre `filepath` (o servidor roda no Windows, Linux e macOS). Testar caminhos com espaço, acento e Unicode.
-8. **Segurança local mínima:** nenhum endpoint pode servir arquivo fora de `MEDIA_DIR` (validar contra path traversal). O servidor escuta em `0.0.0.0` por padrão. Todo pedido passa pelo `guard` (`internal/api/guard.go`): `Host` conhecido (anti DNS rebinding), `Origin` igual ao `Host` nas gravações (anti CSRF) e corpo JSON só com `Content-Type: application/json`. Segredo (sessão, chave do TMDB, hash de PIN) nunca vai em backup, log nem resposta da API; `/api/health` não mostra a versão ([ADR 015](docs/adr/015-seguranca-rede.md)).
+8. **Segurança local mínima:** nenhum endpoint pode servir arquivo fora de `MEDIA_DIR` (validar contra path traversal). O servidor escuta em `0.0.0.0` por padrão. Todo pedido passa pelo `guard` (não pode bloquear iframe: os apps de TV embutem a interface) (`internal/api/guard.go`): `Host` conhecido (anti DNS rebinding), `Origin` igual ao `Host` nas gravações (anti CSRF) e corpo JSON só com `Content-Type: application/json`. Segredo (sessão, chave do TMDB, hash de PIN) nunca vai em backup, log nem resposta da API; `/api/health` não mostra a versão ([ADR 015](docs/adr/015-seguranca-rede.md)).
 9. **Configuração** em ordem de prioridade: flags > variáveis de ambiente > `config.toml`. Nada hardcoded.
 10. **Logs** com `log/slog` (JSON em produção, texto em dev).
 
