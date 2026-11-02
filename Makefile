@@ -52,7 +52,7 @@ dev: web-deps web-stub ## Backend with reload (Go) + Vite dev server on :5173
 	$(NPM) run dev & \
 	while true; do \
 		touch $(DEV_DIR)/stamp; \
-		if $(GO) build -o $(DEV_DIR)/mediaserver$(EXE) ./cmd/mediaserver; then \
+		if $(GO) build -ldflags "-X main.version=$(VERSION)" -o $(DEV_DIR)/mediaserver$(EXE) ./cmd/mediaserver; then \
 			APP_ENV=dev MEDIA_DIR="$(MEDIA_DIR)" DATA_DIR=$(DEV_DIR)/data $(DEV_DIR)/mediaserver$(EXE) & pid=$$!; \
 		else pid=; fi; \
 		until [ -n "$$(find cmd internal migrations web/embed.go -newer $(DEV_DIR)/stamp \( -name '*.go' -o -name '*.sql' \) 2>/dev/null | head -1)" ]; do sleep 1; done; \
