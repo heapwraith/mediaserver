@@ -6,6 +6,7 @@ import android.content.pm.ApplicationInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.Display;
 import android.view.KeyEvent;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
@@ -141,6 +142,36 @@ public class MainActivity extends Activity {
                 return wireless;
             }
             return wireless;
+        }
+
+        /** The screen modes as JSON ('' below Android 6, which cannot switch them). */
+        @JavascriptInterface
+        public String displayModes() {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return "";
+            @SuppressWarnings("deprecation")
+            Display display = getWindowManager().getDefaultDisplay();
+            StringBuilder json = new StringBuilder("{\"current\":")
+                    .append(display.getMode().getModeId()).append(",\"modes\":[");
+            String separator = "";
+            for (Display.Mode m : display.getSupportedModes()) {
+                json.append(separator).append("{\"id\":").append(m.getModeId())
+                        .append(",\"width\":").append(m.getPhysicalWidth())
+                        .append(",\"height\":").append(m.getPhysicalHeight())
+                        .append(",\"rate\":").append(m.getRefreshRate()).append('}');
+                separator = ",";
+            }
+            return json.append("]}").toString();
+        }
+
+        /** Asks for a screen mode while the app is open; 0 goes back to the default. */
+        @JavascriptInterface
+        public void setDisplayMode(int id) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return;
+            runOnUiThread(() -> {
+                WindowManager.LayoutParams attrs = getWindow().getAttributes();
+                attrs.preferredDisplayModeId = id;
+                getWindow().setAttributes(attrs);
+            });
         }
     }
 

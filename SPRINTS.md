@@ -1,6 +1,6 @@
 # SPRINTS.md
 
-Planejamento do projeto. **Sprint ativa: 10.** (As sprints 6, 7, 8 e 9 aguardam só os aceites manuais reservados ao usuário.)
+Planejamento do projeto. **Sprint ativa: 11.** (As sprints 6, 7, 8 e 9 aguardam só os aceites manuais reservados ao usuário.)
 
 Regras:
 - Marcar `[x]` só quando o critério de aceite da tarefa for cumprido.
@@ -273,6 +273,29 @@ Verificado: build ok, container `healthy`, scan com `/media`, banco persiste ap�
 
 ---
 
+## Sprint 11 — Biblioteca e player na TV
+
+**Objetivo:** menos sujeira na biblioteca, seek e legenda melhores com o controle, e gêneros e coleções para quem ligar o TMDB (opcional).
+
+- [x] **Propaganda de release:** arquivos como `1XBET.COM_promo_...mp4` são ignorados sozinhos, por nome e tamanho pequeno
+- [x] **Player — avançar/voltar segurando a seta (HLS):** somar os toques e abrir uma sessão só depois de soltar a tecla
+- [x] **Legendas na TV:** tamanho e fundo configuráveis nas Configurações (SRT/WebVTT)
+- [x] **Taxa de atualização da TV:** no app Android, casar a taxa da tela com o FPS do vídeo (opção desligada por padrão; só em TVs que oferecem o modo)
+- [x] **TMDB, opcional e desligado por padrão:** chave na tela de Configurações, identificação pelas tags do arquivo ou por título + ano, e Revisar para o que não bater com certeza ([ADR 012](docs/adr/012-metadata-tmdb.md))
+- [x] **Gêneros:** fileiras na tela inicial e filtro em Filmes/Séries/Animes (só com TMDB)
+- [x] **Coleções:** franquias do TMDB com 2 ou mais filmes na biblioteca (só com TMDB)
+- [ ] Aceite com o controle na TV e com uma chave real do TMDB (usuário)
+
+Verificado no Edge, numa instância separada com cópia do banco: 40 toques seguidos de seta abrem 1 sessão só, no ponto certo, e um clique na barra abre na hora; a fila de Revisar da biblioteca real caiu de 3 para 1 arquivo; os presets de legenda mudam o tamanho no vídeo; o TMDB real recusa uma chave falsa, a tela avisa e a chave não aparece no log. Gêneros e coleções foram vistos só com dados de teste no banco, e a troca de taxa só com uma ponte Android simulada (o APK compila, mas não foi instalado nesta sprint; a TV de teste só tem 60 Hz). Benchmarks sem mudança relevante: listagens de 0,7 a 13 ms e rescan de 10 mil arquivos em ~230 ms.
+
+**Aceite**
+- Segurar a seta num arquivo em HLS abre uma sessão só, no ponto onde o usuário soltou
+- Com o TMDB desligado, o servidor não faz nenhuma chamada de rede
+- A chave do TMDB nunca volta pela API nem aparece no log
+- Um título sem certeza vai para Revisar e nunca recebe gênero errado sozinho
+
+---
+
 ## Backlog (sem sprint)
 
 - Legendas em imagem (PGS, VobSub, DVB) via burn-in com overlay
@@ -282,12 +305,11 @@ Verificado: build ok, container `healthy`, scan com `/media`, banco persiste ap�
 - COOP/COEP para JASSUB em multithread
 
 - Acesso externo via **Tailscale** (`tailscale serve`)
-- Metadados externos opcionais (TMDB, AniList)
+- Metadados externos além de gêneros e coleções: sinopse, nota, elenco e imagens do TMDB; AniList
 - Pular a abertura automaticamente (opção no perfil) e corrigir/marcar a abertura à mão em Revisar
 - Pular o recap ("Nos episódios anteriores")
 - *Trickplay* (miniaturas na barra de progresso)
 - Múltiplas bibliotecas / múltiplas pastas raiz
-- Coleções (ex.: filmes de uma franquia)
 - Pré-transcodificação noturna da biblioteca
 - **Organizador físico** (renomear/mover para o formato padrão), com dry-run, desfazer e modo hardlink
 - Apps nativos para **Apple TV (tvOS)** e **Roku**, que não rodam apps web
@@ -311,15 +333,12 @@ Revisão do sistema (01/11/2026), por prioridade:
 - **Serviço no Windows — firewall:** o `service install` deveria criar a regra de firewall para o binário instalado. A regra atual vale só para o caminho de dev; sem ela a TV não alcança o servidor
 - **Parser — grupo entre parênteses:** uma tag no início do nome vira parte do título: `(AnimesTotais) Obi-Wan...` virou uma série separada
 - **Parser — ano depois do codec:** um ano que vem depois de uma tag de codec é ignorado (`Teste HEVC (2026)` caiu em Revisar sem ano)
-- **Propaganda de release:** arquivos como `1XBET.COM_promo_...mp4` caem em Revisar. Ignorar sozinho por padrões de nome e tamanho pequeno
 - **Versões do mesmo episódio** (ex.: Obi-Wan S01E02 em 720p e 2160p): mostrar uma entrada só, com "versões", e escolher a melhor para cada aparelho
 - **Idioma de áudio preferido por perfil** (ex.: anime sempre em japonês): a coluna `profiles.audio_language` já existe e não é usada. Lembrar também a última faixa escolhida por mídia (`progress.audio_stream` já existe)
-- **Legendas na TV:** tamanho e fundo configuráveis nas Configurações (hoje vale o padrão do navegador ou do JASSUB)
 - **"Continuar assistindo":** remover um item da fileira manualmente
 - **Pular abertura — faixa de áudio:** o fingerprint usa a 1ª faixa de áudio. Usar a faixa padrão, ou a do mesmo idioma em todos os episódios
 - **Pular abertura — créditos longos:** créditos maiores que a janela de 4 min (comum na Disney+) são marcados tarde. Aumentar a janela quando o trecho encontrado encosta no início dela
 - **Versão do build local:** o binário de dev e o app da TV mostram "versão dev"; aplicar a versão do git também no `go build` de desenvolvimento
-- **Taxa de atualização da TV:** casar a taxa da tela com o FPS do vídeo (23,976/24/29,97), sem a trepidação de 3:2. No app Android, uma ponte JS pede o modo de tela certo (`WindowManager.LayoutParams.preferredDisplayModeId`, Android 6+) ao abrir o player e volta ao padrão ao sair; o servidor passa o FPS no JSON da mídia. Só funciona em TVs que oferecem modos de 24/50 Hz: a TCL/SEMP de teste só tem 1080p a 60 Hz. No Tizen/webOS, verificar
 - **Histórico de sessões:** uma tela "Histórico" (em Configurações/Status) com cada reprodução: perfil, título/episódio, aparelho (TV ou navegador, IP), início, tempo assistido e trecho (de onde até onde), e modo (direto, remux, conversão com GPU, legenda queimada). Filtros por perfil e aparelho. Hoje só o log JSON registra o play (`"msg":"playback"`), sem perfil, título, aparelho nem duração. Dados numa tabela nova, gravada no play e nos salvamentos de progresso (a cada 10 s)
-- **Player — avançar/voltar segurando a seta (HLS):** cada toque de ±10 s fora do trecho que o hls.js já conhece abre uma sessão nova (`seekTo` → `play`), e o vídeo recarrega a cada toque. No teste da noite de 01/11/2026, a TV abriu 111 sessões em 50 s para o mesmo filme. Cada remux segue até o fim do arquivo, então o cache foi a 7,3 GB. Somar os toques, mostrar o ponto na barra e abrir uma sessão só ~0,5 s depois de soltar a tecla. O *throttling* (item acima) reduz o cache de cada sessão
 - **Filmes pedem "próximo episódio":** o player chama `/api/media/{id}/next` também em filme e recebe 404 (inofensivo, mas suja o log). Não chamar para filmes, ou responder 204
+- **Compatibilidade — funções de JavaScript novas:** o `make check` barra CSS proibido e o Vite converte a sintaxe, mas nada acusa funções mais novas que o Chromium 76, como `toSorted` (Chrome 110) ou `Array.at` (Chrome 92). Elas passam em todas as checagens e só quebram na TV de 2021, em tempo de execução. Na Sprint 11 quase entrou um `toSorted` na página de Filmes. Acusar no `make check`: por regra do Oxlint, se houver, ou por uma lista de funções proibidas no `web/scripts/check-build.ts`, que já verifica o CSS do build

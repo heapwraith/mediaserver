@@ -48,3 +48,7 @@ A Sprint 7 leva o mediaserver para Samsung (Tizen), LG (webOS) e Android TV/Goog
 - A TV precisa do servidor ligado para abrir. Sem ele, a tela de conexão mostra o erro e procura de novo.
 - **Risco a verificar na TV:** a partir da Tizen 8 / webOS 23 (Chromium 108+), o storage do iframe pode ficar particionado pela origem `file://`. Se o perfil e as configurações não sobreviverem a fechar o app, mover o storage para a página local (via `postMessage`).
 - Os pacotes só empacotam a página (`make tv-tizen`, `make tv-webos`, `make tv-android`). Ferramentas: Tizen Studio CLI + certificado Samsung; `@webos-tools/cli`; Android SDK. Nenhuma entra nas dependências do `web/`.
+
+## Taxa da tela (Sprint 11)
+
+No app Android, a opção "Ajustar a tela ao vídeo" (desligada por padrão, porque a troca apaga a tela por 1 a 3 s) pede o modo de tela cuja taxa é múltipla inteira do FPS do vídeo (`preferredDisplayModeId`, Android 6+) e volta ao padrão ao sair do player. O app só lista os modos e aplica o escolhido; a decisão fica em `web/src/lib/platform/framerate.ts`, onde dá para testar, e o servidor manda o FPS em `/api/media/{id}`. Sem múltiplo, nada muda. A opção só aparece com mais de uma taxa: a TV TCL/SEMP de teste tem só 60 Hz, então a troca real ainda não foi vista numa TV. Tizen e webOS ficam sem a opção: não achei API pública para páginas web, mas isso não foi verificado num aparelho.

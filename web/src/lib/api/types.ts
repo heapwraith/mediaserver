@@ -17,6 +17,9 @@ export interface Movie {
 	height?: number;
 	added_at: number;
 	color?: string;
+	/** Only in the details, and only with TMDB on. */
+	genres?: string[];
+	collection?: { id: number; name: string };
 }
 
 export type SeriesKind = 'series' | 'anime';
@@ -54,6 +57,38 @@ export interface Season {
 
 export interface SeriesDetail extends Omit<Series, 'seasons'> {
 	seasons: Season[];
+	/** Only with TMDB on. */
+	genres?: string[];
+}
+
+/** A filter button of a library page (only with TMDB on). */
+export interface GenreCount {
+	id: number;
+	name: string;
+	count: number;
+}
+
+/** A home row: the latest titles of a genre. */
+export interface GenreRow {
+	id: number;
+	name: string;
+	movies: Movie[];
+	series: Series[];
+}
+
+/** A franchise with two or more movies in the library. */
+export interface Collection {
+	id: number;
+	name: string;
+	count: number;
+	image_id: string;
+	color?: string;
+}
+
+export interface CollectionDetail {
+	id: number;
+	name: string;
+	movies: Movie[];
 }
 
 export interface Extra {
@@ -87,6 +122,8 @@ export interface Playback {
 }
 
 export interface Media {
+	/** Frames per second of the video. */
+	fps?: number;
 	id: string;
 	kind: string;
 	status: string;
@@ -222,6 +259,32 @@ export interface HomeItem {
 	duration_ms: number;
 	updated_at?: number;
 	color?: string;
+}
+
+/** TMDB lookups (optional, off by default). Never has the key. */
+export interface MetadataStatus {
+	enabled: boolean;
+	has_key: boolean;
+	running: boolean;
+	matched: number;
+	review: number;
+	last_error?: 'invalid_key' | 'unavailable';
+}
+
+export interface TMDBCandidate {
+	id: number;
+	title: string;
+	original_title?: string;
+	year?: number;
+}
+
+/** A title TMDB could not identify for sure (Revisar). */
+export interface MetadataReviewItem {
+	id: string;
+	kind: 'movie' | 'series';
+	title: string;
+	year?: number;
+	candidates: TMDBCandidate[];
 }
 
 /** A title the profile finished: "Assista novamente". */

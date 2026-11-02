@@ -203,6 +203,20 @@ make tv-android    # dist/tv/mediaserver-tv.apk     (Android SDK)
 
 ---
 
+## Gêneros e coleções (TMDB, opcional)
+
+Nenhum arquivo de vídeo costuma trazer gênero, então essa parte vem do [TMDB](https://www.themoviedb.org), pela internet. **É opcional e vem desligada:** sem ligar, o servidor não faz nenhuma chamada externa.
+
+1. Crie uma conta gratuita no TMDB e pegue a chave em **Configurações → API** do site.
+2. Em **Configurações** do mediaserver (no navegador do PC, para colar a chave), salve a chave e ligue o TMDB.
+3. O servidor busca um título por vez, em segundo plano. Depois disso, a tela inicial ganha fileiras por gênero e de coleções, e Filmes, Séries e Animes ganham filtro por gênero.
+
+Só entra o que é certo: pelo código do TMDB ou do IMDb gravado no arquivo ou, na busca por nome, quando há um único título igual com ano compatível. O resto fica em **Revisar**, em "Títulos do TMDB", para você escolher.
+
+A chave fica no banco de dados, nunca volta pela API e entra no backup do banco.
+
+Este produto usa a API do TMDB, mas não é endossado nem certificado pelo TMDB.
+
 ## Configuração
 
 Prioridade: **flags > variáveis de ambiente > `config.toml`** (na pasta atual, ou o caminho em `-config` / `CONFIG_FILE`).
@@ -324,6 +338,10 @@ JSON em `/api`. Rotas de perfil e progresso exigem o cabeçalho `X-Profile: <tok
 | `GET /api/images/{id}?w=480\|960\|1920&variant=card\|backdrop\|blur` | Imagem 16:9 em WebP, gerada na 1ª vez e guardada em `DATA_DIR/images` |
 
 Listagens e detalhes respondem com `ETag` (o cliente revalida e recebe 304).
+| `GET /api/genres?kind=movie\|series\|anime` | Gêneros de um tipo, com contagem (vazio com o TMDB desligado) |
+| `GET /api/genres/rows` | Fileiras por gênero da tela inicial |
+| `GET /api/collections`, `GET /api/collections/{id}` | Coleções com 2 ou mais filmes na biblioteca |
+| `GET /api/movies?genre=ID`, `/api/series?genre=ID`, `/api/animes?genre=ID` | Listagens filtradas por gênero |
 
 ### Reprodução e legendas
 
@@ -356,6 +374,11 @@ Listagens e detalhes respondem com `ETag` (o cliente revalida e recebe 304).
 |---|---|
 | `GET /api/admin/backup` | Baixa uma cópia consistente do banco (`mediaserver-AAAAMMDD-HHMM.db`) |
 | `GET /api/admin/status` | CPU, memória, encoder, GPU NVIDIA, conversões ativas, caches e biblioteca |
+| `GET /api/metadata/status` | TMDB: ligado, tem chave, títulos reconhecidos e para revisar (nunca a chave) |
+| `PUT /api/metadata/settings` | Liga ou desliga o TMDB e salva a chave (`{"enabled": true, "key": "..."}`) |
+| `POST /api/metadata/sync` | Busca agora os títulos ainda sem resposta |
+| `GET /api/metadata/review` | Títulos sem certeza, com as opções |
+| `PUT /api/metadata/{id}` | Resposta do usuário: `{"tmdb_id": 123}` ou `{"skip": true}` |
 
 ### Erros
 

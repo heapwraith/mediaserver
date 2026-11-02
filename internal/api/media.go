@@ -17,7 +17,7 @@ import (
 
 const defaultLimit = 100
 
-// pageParams reads ?sort=title|added|year&order=asc|desc&offset=&limit=&q=.
+// pageParams reads ?sort=title|added|year&order=asc|desc&offset=&limit=&q=&genre=.
 // q is a local title search, normalized like the stored titles (no accents,
 // case or punctuation).
 func pageParams(r *http.Request) (library.Page, error) {
@@ -30,7 +30,7 @@ func pageParams(r *http.Request) (library.Page, error) {
 	default:
 		return p, fmt.Errorf("%w: order must be asc or desc", library.ErrInvalid)
 	}
-	for name, dst := range map[string]*int{"offset": &p.Offset, "limit": &p.Limit} {
+	for name, dst := range map[string]*int{"offset": &p.Offset, "limit": &p.Limit, "genre": &p.Genre} {
 		if v := q.Get(name); v != "" {
 			n, err := strconv.Atoi(v)
 			if err != nil {

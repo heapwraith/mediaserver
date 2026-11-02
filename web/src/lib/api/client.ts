@@ -1,11 +1,17 @@
 import { clearSession, session } from './session.svelte';
 import type {
+	Collection,
+	CollectionDetail,
 	Correction,
 	Extra,
+	GenreCount,
+	GenreRow,
 	Home,
 	HomeItem,
 	List,
 	Media,
+	MetadataReviewItem,
+	MetadataStatus,
 	Movie,
 	Playback,
 	Profile,
@@ -79,6 +85,7 @@ export interface ListParams {
 	offset?: number;
 	limit?: number;
 	q?: string;
+	genre?: number;
 }
 
 /** Query string of a listing, without empty values. */
@@ -96,6 +103,11 @@ const seriesPath = (kind: SeriesKind) => (kind === 'anime' ? '/api/animes' : '/a
 export const listMovies = (p: ListParams = {}) => api<List<Movie>>(`/api/movies${query(p)}`);
 export const listSeries = (kind: SeriesKind, p: ListParams = {}) =>
 	api<List<Series>>(`${seriesPath(kind)}${query(p)}`);
+export const listGenres = (kind: 'movie' | SeriesKind) =>
+	api<GenreCount[]>(`/api/genres?kind=${kind}`);
+export const genreRows = () => api<GenreRow[]>('/api/genres/rows');
+export const listCollections = () => api<Collection[]>('/api/collections');
+export const getCollection = (id: string) => api<CollectionDetail>(`/api/collections/${id}`);
 export const getMovie = (id: string) => api<Movie>(`/api/movies/${id}`);
 export const getSeries = (id: string) => api<SeriesDetail>(`/api/series/${id}`);
 export const movieExtras = (id: string) => api<Extra[]>(`/api/movies/${id}/extras`);
@@ -121,6 +133,13 @@ export const listFonts = (mediaId: string) => api<string[]>(`/api/media/${mediaI
 export const stopPlayback = (p: Playback) =>
 	api<unknown>(p.url.replace(/\/index\.m3u8$/, ''), { method: 'DELETE', keepalive: true });
 
+export const metadataStatus = () => api<MetadataStatus>('/api/metadata/status');
+export const saveMetadataSettings = (s: { enabled?: boolean; key?: string }) =>
+	api<MetadataStatus>('/api/metadata/settings', json('PUT', s));
+export const syncMetadata = () => api<unknown>('/api/metadata/sync', { method: 'POST' });
+export const metadataReview = () => api<MetadataReviewItem[]>('/api/metadata/review');
+export const answerMetadata = (id: string, answer: { tmdb_id: number } | { skip: true }) =>
+	api<unknown>(`/api/metadata/${id}`, json('PUT', answer));
 export const scanStatus = () => api<ScanStatus>('/api/library/scan');
 export const startScan = () => api<{ started: boolean }>('/api/library/scan', { method: 'POST' });
 export const reviewQueue = () => api<ReviewItem[]>('/api/review');

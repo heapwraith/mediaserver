@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 
-	import { listMovies, listSeries, type ListParams } from '../api/client';
+	import { listGenres, listMovies, listSeries, type ListParams } from '../api/client';
+	import type { GenreCount } from '../api/types';
 	import { focusGroup } from '../platform/nav.svelte';
 	import Button from './Button.svelte';
 	import Card from './Card.svelte';
@@ -19,6 +20,15 @@
 	] as const;
 
 	let sortIdx = $state(0);
+	// Filter by genre: only with TMDB on (no buttons otherwise).
+	let genres: GenreCount[] = $state([]);
+	let genre: number | undefined = $state();
+	$effect(() => {
+		void listGenres(kind).then(
+			(g) => (genres = [...g].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))),
+			() => undefined,
+		);
+	});
 	let items: CardItem[] = $state([]);
 	let total = $state(0);
 	let loading = $state(false);
@@ -27,7 +37,7 @@
 
 	async function fetchPage(offset: number) {
 		const s = sorts[sortIdx] ?? sorts[0];
-		const p: ListParams = { sort: s.sort, order: s.order, offset, limit: PAGE };
+		const p: ListParams = { sort: s.sort, order: s.order, offset, limit: PAGE, genre };
 		if (kind === 'movie') {
 			const r = await listMovies(p);
 			return { total: r.total, items: r.items.map(movieCard) };
@@ -55,6 +65,7 @@
 
 	$effect(() => {
 		void sortIdx;
+		void genre;
 		void more(true);
 	});
 </script>
@@ -67,6 +78,14 @@
 		{/each}
 	</div>
 </div>
+{#if genres.length > 0}
+	<div class="genres" use:focusGroup={{ orientation: 'horizontal' }}>
+		<Button selected={genre === undefined} onclick={() => (genre = undefined)}>Todos</Button>
+		{#each genres as g (g.id)}
+			<Button selected={genre === g.id} onclick={() => (genre = g.id)}>{g.name}</Button>
+		{/each}
+	</div>
+{/if}
 {#if error !== undefined}<ErrorNotice {error} onretry={() => void more(true)} />{/if}
 {#if error === undefined && total === 0 && !loading}<p class="note">Nada por aqui ainda.</p>{/if}
 
@@ -97,6 +116,14 @@
 	}
 	.sorts > :global(* + *) {
 		margin-left: 0.75rem;
+	}
+	.genres {
+		display: flex;
+		flex-wrap: wrap;
+		margin-bottom: 0.75rem;
+	}
+	.genres > :global(*) {
+		margin: 0 0.75rem 0.75rem 0;
 	}
 	.note {
 		color: rgba(255, 255, 255, 0.6);

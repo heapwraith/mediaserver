@@ -46,6 +46,15 @@ const problems: Record<string, Problem> = {
 		title: 'Recurso indisponível',
 		hint: 'O servidor iniciou sem esta parte. Veja o log do servidor.',
 	},
+	tmdb_key: {
+		title: 'O TMDB recusou a chave',
+		hint: 'Confira a chave em Configurações e salve de novo.',
+	},
+	tmdb_unavailable: {
+		title: 'Sem resposta do TMDB',
+		hint: 'Confira a internet do servidor e tente de novo.',
+		action: 'retry',
+	},
 	[UNSUPPORTED]: {
 		title: 'Formato não suportado',
 		hint: 'Este aparelho não conseguiu tocar o vídeo, nem convertido. Veja "Este aparelho" em Configurações.',

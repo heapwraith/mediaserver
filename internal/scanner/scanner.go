@@ -517,7 +517,7 @@ func (s *Scanner) loadSidecars(ctx context.Context) ([]string, error) {
 
 // materializeVersion changes when the parser/classifier rules change, so the
 // library is rebuilt once after an upgrade even if no file changed.
-const materializeVersion = "1"
+const materializeVersion = "2"
 
 func (s *Scanner) materializeStale(ctx context.Context) (bool, error) {
 	v, err := s.getState(ctx, "materialize_version")

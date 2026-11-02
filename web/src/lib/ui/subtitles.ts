@@ -1,4 +1,16 @@
 import type { Subtitle } from '#lib/api/types.ts';
+import type { SubtitleBackground, SubtitleSize } from '#lib/platform/settings.svelte.ts';
+
+const SUBTITLE_VH: Record<SubtitleSize, number> = { s: 3.6, m: 4.8, l: 6.2, xl: 8 };
+const SUBTITLE_BG: Record<SubtitleBackground, string> = {
+	none: 'background:transparent;text-shadow:0 0 4px #000,0 2px 3px #000',
+	soft: 'background:rgba(0,0,0,.65)',
+	solid: 'background:rgba(0,0,0,.92)',
+};
+
+/** Declarations of a subtitle preset: for `video::cue` and the sample in Configurações. */
+export const subtitleCSS = (size: SubtitleSize, background: SubtitleBackground): string =>
+	`color:#fff;font-size:${SUBTITLE_VH[size]}vh;${SUBTITLE_BG[background]}`;
 
 const primary = (language: string) => language.toLowerCase().split('-')[0];
 

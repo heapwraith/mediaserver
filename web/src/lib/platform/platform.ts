@@ -10,6 +10,7 @@ import {
 	type AppMessage,
 	type Platform,
 } from './bridge';
+import { bestMode, parseDisplayModes, type DisplayModes } from './framerate';
 import { dispatchKey } from './keys';
 
 export type { Platform } from './bridge';
@@ -84,6 +85,28 @@ export function exitApp(): void {
 export function changeServer(): void {
 	if (platform === 'android') androidBridge(window)?.openSetup();
 	else if (platform === 'tizen' || platform === 'webos') toShell('change-server');
+}
+
+function displayModes(): DisplayModes | undefined {
+	if (platform !== 'android') return undefined;
+	const raw = androidBridge(window)?.displayModes?.();
+	return raw === undefined ? undefined : parseDisplayModes(raw);
+}
+
+/** Refresh rates of this screen at its current resolution, lowest first (Android only). */
+export function displayRates(): number[] {
+	const d = displayModes();
+	const now = d?.modes.find((m) => m.id === d.current);
+	if (d === undefined || now === undefined) return [];
+	const same = d.modes.filter((m) => m.width === now.width && m.height === now.height);
+	return [...new Set(same.map((m) => Math.round(m.rate * 100) / 100))].sort((a, b) => a - b);
+}
+
+/** Asks for the screen mode that suits a video; 0 goes back to the default. */
+export function matchFrameRate(fps: number): void {
+	const d = displayModes();
+	if (d === undefined) return;
+	androidBridge(window)?.setDisplayMode?.(fps > 0 ? bestMode(d, fps) : 0);
 }
 
 /**

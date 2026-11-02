@@ -27,7 +27,7 @@ Servidor de streaming **local** e próprio para **filmes, séries e animes**, co
 
 - O **servidor** também é multiplataforma: binário para **Windows, Linux e macOS** (amd64 e arm64).
 - **Escopo atual: somente rede local.** O acesso externo (Tailscale) fica pra depois e não deve exigir mudança de código.
-- **Sem APIs externas.** Nada de TMDB, AniList ou qualquer outra chamada à internet. Todo metadado vem do nome do arquivo, da estrutura de pastas, do `ffprobe` e de arquivos locais (pôster, legendas).
+- **Sem APIs externas por padrão.** Todo metadado vem do nome do arquivo, da estrutura de pastas, do `ffprobe` e de arquivos locais (pôster, legendas). A única exceção é o **TMDB, opcional e desligado por padrão**: só com o usuário ligando e com a chave dele, e só para gêneros e coleções ([ADR 012](docs/adr/012-metadata-tmdb.md)). Desligado, o servidor não faz nenhuma chamada à internet.
 
 ## 2. Stack
 
@@ -64,6 +64,7 @@ internal/api/           → handlers HTTP, rotas, middlewares
 internal/service/       → subcomando `service`: systemd, launchd e Windows Service
 internal/sysinfo/       → CPU, memória e GPU para a página de status
 internal/intro/         → abertura e créditos dos episódios por fingerprint de áudio
+internal/metadata/      → gêneros e coleções do TMDB (opcional, desligado por padrão)
 web/                    → SvelteKit (o build vai para web/build, embutido)
 web/src/shell/          → tela de conexão dos apps de TV (build em web/build-tv, vai nos pacotes)
 tv/tizen/               → empacotamento Samsung (.wgt)
@@ -99,6 +100,7 @@ A pasta onde o arquivo está também conta como pista (ex.: uma pasta chamada `A
 - Legendas laterais: `.srt .ass .ssa .vtt`, com idioma opcional (`.pt-BR.srt`, `.en.ass`)
 - Arquivos que não são mídia principal **não entram como filme/episódio** (o arquivo nunca é tocado):
   - **Sample** (`sample` no nome ou na pasta, ou < 50 MB com essa marcação): ignorado.
+  - **Propaganda de release** (< 100 MB, nome com `promo`, `1xbet`, `www.` ou domínio, sem ano nem episódio no próprio nome): ignorada.
   - **Trailer** (`-trailer`, `.trailer.`, `trailer.mkv`, pasta `trailers/`): vinculado ao filme/série/temporada da mesma pasta como **trailer**.
   - **Extras** (pastas `extras/`, `featurettes/`, `behind the scenes/`, `deleted scenes/`, `interviews/`, ou sufixos `-featurette`, `-behindthescenes`, `-deleted`, `-interview`): vinculados como **extras**, com o tipo identificado.
 
@@ -299,7 +301,7 @@ TRANSCODE_CACHE_MB=10240 # cache de HLS em DATA_DIR/transcode (LRU)
 
 ## 12. Fora de escopo (por enquanto)
 
-- APIs externas de metadados (TMDB, AniList, OpenSubtitles)
+- APIs externas de metadados além do TMDB opcional (AniList, OpenSubtitles); do TMDB, só gêneros e coleções
 - Acesso externo (Tailscale, domínio, HTTPS)
 - Multiusuário com senha forte (por enquanto são só perfis locais)
 - Download de mídia, integração com *arr, torrents

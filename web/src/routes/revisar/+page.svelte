@@ -1,13 +1,22 @@
 <script lang="ts">
 	import {
+		answerMetadata,
 		correctFile,
 		getSeries,
 		listSeries,
 		mergeSeries,
+		metadataReview,
 		reviewQueue,
 		splitSeries,
 	} from '#lib/api/client.ts';
-	import type { CorrectionKind, Episode, ReviewItem, Series } from '#lib/api/types.ts';
+	import type {
+		CorrectionKind,
+		Episode,
+		MetadataReviewItem,
+		ReviewItem,
+		Series,
+		TMDBCandidate,
+	} from '#lib/api/types.ts';
 	import { focusGroup, focusable } from '#lib/platform/nav.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import Grid from '#lib/ui/Grid.svelte';
@@ -44,6 +53,11 @@
 	let splitting: { series: Series; episodes: Episode[]; files: string[]; title: string } | undefined =
 		$state();
 
+	// Titles TMDB could not identify for sure (only with TMDB on).
+	let metaQueue: MetadataReviewItem[] = $state([]);
+	let metaEditing: MetadataReviewItem | undefined = $state();
+	let metaCode = $state('');
+
 	const fail = (e: unknown) => {
 		const p = describeError(e);
 		message = `${p.title}. ${p.hint}`;
@@ -51,12 +65,14 @@
 
 	async function reload() {
 		try {
-			const [q, s, a] = await Promise.all([
+			const [q, s, a, m] = await Promise.all([
 				reviewQueue(),
 				listSeries('series', { limit: 500 }),
 				listSeries('anime', { limit: 500 }),
+				metadataReview().catch(() => []),
 			]);
 			queue = q;
+			metaQueue = m;
 			allSeries = [...s.items, ...a.items].sort((x, y) => x.title.localeCompare(y.title, 'pt-BR'));
 			picked = picked.filter((id) => allSeries.some((x) => x.id === id));
 		} catch (e) {
@@ -96,6 +112,29 @@
 		} catch (e) {
 			fail(e);
 		}
+	}
+
+	function editMeta(item: MetadataReviewItem) {
+		metaEditing = item;
+		metaCode = '';
+	}
+
+	async function answerMeta(answer: { tmdb_id: number } | { skip: true }) {
+		if (metaEditing === undefined) return;
+		try {
+			await answerMetadata(metaEditing.id, answer);
+			message = `“${metaEditing.title}” atualizado.`;
+			metaEditing = undefined;
+			await reload();
+		} catch (e) {
+			fail(e);
+		}
+	}
+
+	function answerCode() {
+		const id = Number(metaCode.trim());
+		if (Number.isInteger(id) && id > 0) void answerMeta({ tmdb_id: id });
+		else message = 'O código do TMDB é um número (está no endereço da página do título).';
 	}
 
 	function pick(s: Series) {
@@ -186,6 +225,38 @@
 			<Button onclick={() => (editing = undefined)}>Cancelar</Button>
 		</div>
 	</section>
+{:else if metaEditing !== undefined}
+	<section class="panel">
+		<h2>{metaEditing.title}{metaEditing.year ? ` (${metaEditing.year})` : ''}</h2>
+		{#if metaEditing.candidates.length > 0}
+			<p class="note">Qual destes é este título no TMDB?</p>
+			<Grid
+				id="review:candidates"
+				items={metaEditing.candidates}
+				key={(c: TMDBCandidate) => c.id}
+				minWidth={0}
+				onopen={(c: TMDBCandidate) => answerMeta({ tmdb_id: c.id })}
+			>
+				{#snippet cell(c: TMDBCandidate, current: boolean)}
+					<div class="chip" class:current>
+						<strong>{c.title}{c.year ? ` (${c.year})` : ''}</strong>
+						{#if c.original_title && c.original_title !== c.title}<span>{c.original_title}</span>{/if}
+					</div>
+				{/snippet}
+			</Grid>
+		{:else}
+			<p class="note">O TMDB não achou este título pelo nome.</p>
+		{/if}
+		<label>
+			Ou digite o código do TMDB (o número no endereço da página do título)
+			<input bind:value={metaCode} inputmode="numeric" use:focusable autocomplete="off" />
+		</label>
+		<div class="bar" use:focusGroup={{ orientation: 'horizontal' }}>
+			<Button primary onclick={answerCode}>Usar este código</Button>
+			<Button onclick={() => answerMeta({ skip: true })}>Não é nenhum destes</Button>
+			<Button onclick={() => (metaEditing = undefined)}>Cancelar</Button>
+		</div>
+	</section>
 {:else if splitting !== undefined}
 	{@const sp = splitting}
 	<section class="panel">
@@ -225,6 +296,28 @@
 			</div>
 		{/snippet}
 	</Grid>
+
+	{#if metaQueue.length > 0}
+		<h2>Títulos do TMDB ({metaQueue.length})</h2>
+		<p class="note">Sem certeza de qual título é este. Escolha, para ele ganhar gêneros e coleção.</p>
+		<Grid
+			id="review:tmdb"
+			items={metaQueue}
+			key={(i: MetadataReviewItem) => i.id}
+			minWidth={0}
+			onopen={editMeta}
+		>
+			{#snippet cell(item: MetadataReviewItem, current: boolean)}
+				<div class="chip" class:current>
+					<strong>{item.title}{item.year ? ` (${item.year})` : ''}</strong>
+					<span>
+						{item.kind === 'movie' ? 'Filme' : 'Série'} ·
+						{item.candidates.length > 0 ? `${item.candidates.length} opções` : 'não encontrado'}
+					</span>
+				</div>
+			{/snippet}
+		</Grid>
+	{/if}
 
 	<h2>Mesclar ou separar séries</h2>
 	<p class="note">

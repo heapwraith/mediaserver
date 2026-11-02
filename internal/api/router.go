@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"mediaserver/internal/library"
+	"mediaserver/internal/metadata"
 	"mediaserver/internal/scanner"
 	"mediaserver/internal/stream"
 	"mediaserver/internal/subtitles"
@@ -36,6 +37,8 @@ type Deps struct {
 	Images  *stream.Images
 	// Transcoder powers the playback decision and the HLS sessions.
 	Transcoder *stream.Transcoder
+	// Metadata looks titles up on TMDB, when the user turns it on.
+	Metadata *metadata.Syncer
 	// Subtitles serves WebVTT, ASS and the attached fonts.
 	Subtitles *subtitles.Store
 	// Secret signs the profile sessions (library.Store.Secret). Profile and
@@ -72,6 +75,10 @@ func NewRouter(d Deps) http.Handler {
 			r.Post("/series/merge", d.mergeSeries)
 			r.Post("/series/split", d.splitSeries)
 
+			r.Get("/genres", d.listGenres)
+			r.Get("/genres/rows", d.genreRows)
+			r.Get("/collections", d.listCollections)
+			r.Get("/collections/{id}", d.collection)
 			r.Get("/movies", d.listMovies)
 			r.Get("/series", d.listSeries("series"))
 			r.Get("/animes", d.listSeries("anime"))
@@ -125,6 +132,14 @@ func NewRouter(d Deps) http.Handler {
 				r.Get("/home", d.home)
 				r.Get("/admin/backup", d.backup)
 				r.Get("/admin/status", d.status)
+				r.Group(func(r chi.Router) {
+					r.Use(d.requireMetadata)
+					r.Get("/metadata/status", d.metadataStatus)
+					r.Put("/metadata/settings", d.putMetadataSettings)
+					r.Post("/metadata/sync", d.syncMetadata)
+					r.Get("/metadata/review", d.metadataReview)
+					r.Put("/metadata/{id}", d.answerMetadata)
+				})
 			})
 		})
 		r.NotFound(func(w http.ResponseWriter, _ *http.Request) {

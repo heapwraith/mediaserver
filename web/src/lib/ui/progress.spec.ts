@@ -7,6 +7,7 @@ import {
 	nextCountdown,
 	remaining,
 	resumeAt,
+	seekAction,
 	shouldSave,
 	skipIntro,
 } from './progress';
@@ -86,5 +87,19 @@ describe('skipIntro and creditsAt', () => {
 	it('finds the credits', () => {
 		expect(creditsAt(markers)).toBe(1100);
 		expect(creditsAt([])).toBeUndefined();
+	});
+});
+
+describe('seekAction', () => {
+	it('stays in the file on direct play', () => {
+		expect(seekAction(5000, 0, Infinity, true)).toBe('inplace');
+	});
+	it('stays in what the HLS session knows', () => {
+		expect(seekAction(120, 100, 200, false)).toBe('inplace');
+		expect(seekAction(100, 100, 200, false)).toBe('inplace');
+	});
+	it('needs a new session outside it', () => {
+		expect(seekAction(99, 100, 200, false)).toBe('session');
+		expect(seekAction(201, 100, 200, false)).toBe('session');
 	});
 });

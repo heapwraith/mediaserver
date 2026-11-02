@@ -45,7 +45,27 @@ var (
 	reSample      = regexp.MustCompile(`(?i)(?:^|[ ._\-\[(])sample(?:$|[ ._\-\])])`)
 	reTrailer     = regexp.MustCompile(`(?i)(?:^|[ ._\-])trailer\d*$|(?i)^trailer\d*$|(?i)[._\-]trailer[._\-]`)
 	reExtraSuffix = regexp.MustCompile(`(?i)-(featurette|behindthescenes|deleted|interview|scene|short|other)$`)
+	rePromo       = regexp.MustCompile(`(?i)(?:^|[ ._\-\[(])(?:promo|1xbet|www)(?:$|[ ._\-\])])|\.(?:com|net|org)(?:$|[ ._\-\])])`)
 )
+
+// promoMaxSize is the largest file that can be a release group's ad.
+const promoMaxSize = 100 << 20
+
+// isPromo reports an ad that release groups add next to the video
+// ("1XBET.COM_promo_….mp4"): small, with an ad-like name and, in its own name,
+// no year or episode (those come from a real title, like "Promo.2015.mkv").
+func isPromo(rel string, size int64) bool {
+	if size >= promoMaxSize {
+		return false
+	}
+	base := path.Base(rel)
+	base = strings.TrimSuffix(base, path.Ext(base))
+	if !rePromo.MatchString(base) {
+		return false
+	}
+	own := parseName(base)
+	return own.Year == 0 && !own.SeasonEpisode && !own.AbsoluteEp
+}
 
 var extraSuffixType = map[string]string{
 	"featurette":      ExtraFeaturette,

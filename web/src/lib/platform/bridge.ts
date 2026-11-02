@@ -69,6 +69,10 @@ export interface AndroidBridge {
 	connect(url: string): void;
 	/** IPv4 address of the device on the local network ('' when offline). */
 	localIp(): string;
+	/** The screen modes as JSON (framerate.ts). Missing in an APK older than the server. */
+	displayModes?(): string;
+	/** Asks for a screen mode; 0 goes back to the default. */
+	setDisplayMode?(id: number): void;
 }
 
 function isAndroidBridge(b: unknown): b is AndroidBridge {

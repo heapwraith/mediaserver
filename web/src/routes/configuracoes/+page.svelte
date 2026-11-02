@@ -4,16 +4,31 @@
 	import { goto } from '$app/navigation';
 
 	import { fetchHealth } from '#lib';
-	import { downloadBackup, scanStatus, startScan } from '#lib/api/client.ts';
+	import {
+		downloadBackup,
+		metadataStatus,
+		saveMetadataSettings,
+		scanStatus,
+		startScan,
+		syncMetadata,
+	} from '#lib/api/client.ts';
 	import { session } from '#lib/api/session.svelte.ts';
-	import type { ScanStatus } from '#lib/api/types.ts';
+	import type { MetadataStatus, ScanStatus } from '#lib/api/types.ts';
 	import { capabilities } from '#lib/platform/codecs.ts';
-	import { focusGroup } from '#lib/platform/nav.svelte.ts';
-	import { changeServer, isTV, platform } from '#lib/platform/platform.ts';
-	import { saveSettings, settings } from '#lib/platform/settings.svelte.ts';
+	import { focusGroup, focusable } from '#lib/platform/nav.svelte.ts';
+	import { changeServer, displayRates, isTV, platform } from '#lib/platform/platform.ts';
+	import {
+		SUBTITLE_BACKGROUNDS,
+		SUBTITLE_SIZES,
+		saveSettings,
+		settings,
+		type SubtitleBackground,
+		type SubtitleSize,
+	} from '#lib/platform/settings.svelte.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import ErrorNotice from '#lib/ui/ErrorNotice.svelte';
+	import { subtitleCSS } from '#lib/ui/subtitles.ts';
 
 	const POLL_MS = 1000;
 
@@ -35,13 +50,78 @@
 	void refresh();
 	onDestroy(() => clearTimeout(timer));
 
+	// TMDB: optional and off by default (docs/adr/012). The key goes in and never comes back.
+	let meta: MetadataStatus | undefined = $state();
+	let metaKey = $state('');
+	let metaError: unknown = $state();
+	let metaTimer: ReturnType<typeof setTimeout> | undefined;
+
+	function showMeta(st: MetadataStatus) {
+		meta = st;
+		clearTimeout(metaTimer);
+		if (st.running) metaTimer = setTimeout(() => void loadMeta(), POLL_MS);
+	}
+
+	async function loadMeta() {
+		try {
+			showMeta(await metadataStatus());
+		} catch {
+			meta = undefined; // this server cannot do it: no section
+		}
+	}
+	void loadMeta();
+	onDestroy(() => clearTimeout(metaTimer));
+
+	async function saveMeta(change: { enabled?: boolean; key?: string }) {
+		metaError = undefined;
+		try {
+			showMeta(await saveMetadataSettings(change));
+			// The run has just been asked for: its first status comes in a moment.
+			metaTimer = setTimeout(() => void loadMeta(), POLL_MS);
+		} catch (e) {
+			metaError = e;
+		}
+	}
+
+	async function saveKey() {
+		const key = metaKey.trim();
+		if (key === '') return;
+		await saveMeta({ key });
+		if (metaError === undefined) metaKey = '';
+	}
+
+	async function syncNow() {
+		metaError = undefined;
+		await syncMetadata().catch((e: unknown) => (metaError = e));
+		metaTimer = setTimeout(() => void loadMeta(), POLL_MS);
+	}
+
 	async function scan() {
 		await startScan().catch((e: unknown) => (error = e));
 		await refresh();
 	}
 
-	function toggle(key: 'reduceMotion' | 'backgroundTrailer' | 'autoplayNext') {
+	const rates = displayRates();
+
+	function toggle(key: 'reduceMotion' | 'backgroundTrailer' | 'autoplayNext' | 'matchFrameRate') {
 		settings[key] = !settings[key];
+		saveSettings();
+	}
+
+	const sizeNames: Record<SubtitleSize, string> = { s: 'Pequena', m: 'Média', l: 'Grande', xl: 'Enorme' };
+	const backgroundNames: Record<SubtitleBackground, string> = {
+		none: 'Sem fundo',
+		soft: 'Suave',
+		solid: 'Preto',
+	};
+
+	function subtitleSize(s: SubtitleSize) {
+		settings.subtitleSize = s;
+		saveSettings();
+	}
+
+	function subtitleBackground(b: SubtitleBackground) {
+		settings.subtitleBackground = b;
 		saveSettings();
 	}
 
@@ -129,7 +209,30 @@
 		<Button selected={settings.autoplayNext} onclick={() => toggle('autoplayNext')}>
 			Próximo episódio automático: {settings.autoplayNext ? 'sim' : 'não'}
 		</Button>
+		{#if rates.length > 1}
+			<Button selected={settings.matchFrameRate} onclick={() => toggle('matchFrameRate')}>
+				Ajustar a tela ao vídeo: {settings.matchFrameRate ? 'sim' : 'não'}
+			</Button>
+		{/if}
 	</div>
+	<p class="label">Tamanho da legenda</p>
+	<div class="bar" use:focusGroup={{ orientation: 'horizontal' }}>
+		{#each SUBTITLE_SIZES as s (s)}
+			<Button selected={settings.subtitleSize === s} onclick={() => subtitleSize(s)}>{sizeNames[s]}</Button>
+		{/each}
+	</div>
+	<p class="label">Fundo da legenda</p>
+	<div class="bar" use:focusGroup={{ orientation: 'horizontal' }}>
+		{#each SUBTITLE_BACKGROUNDS as b (b)}
+			<Button selected={settings.subtitleBackground === b} onclick={() => subtitleBackground(b)}>
+				{backgroundNames[b]}
+			</Button>
+		{/each}
+	</div>
+	<div class="sample">
+		<span style={subtitleCSS(settings.subtitleSize, settings.subtitleBackground)}>Assim fica a legenda</span>
+	</div>
+	<p class="note">Vale neste aparelho. Legendas ASS mantêm o estilo do próprio arquivo.</p>
 </section>
 
 <section>
@@ -143,6 +246,54 @@
 		</Button>
 	</div>
 </section>
+
+{#if meta}
+	<section>
+		<h2>Gêneros e coleções (TMDB)</h2>
+		<p class="intro">
+			Opcional. Ligado, o servidor busca no TMDB, pela internet, os gêneros e as coleções dos títulos,
+			com a sua chave. Desligado, ele não faz nenhuma chamada externa.
+		</p>
+		<label class="field">
+			Chave do TMDB
+			<input
+				type="password"
+				bind:value={metaKey}
+				placeholder={meta.has_key ? 'Chave salva. Cole outra para trocar.' : 'Cole aqui a sua chave'}
+				use:focusable
+				autocomplete="off"
+			/>
+		</label>
+		<div class="bar" use:focusGroup={{ orientation: 'horizontal' }}>
+			<Button onclick={saveKey}>Salvar chave</Button>
+			<Button selected={meta.enabled} onclick={() => saveMeta({ enabled: !meta?.enabled })}>
+				TMDB: {meta.enabled ? 'ligado' : 'desligado'}
+			</Button>
+			{#if meta.enabled && meta.has_key}
+				<Button onclick={syncNow}>{meta.running ? 'Atualizando…' : 'Atualizar agora'}</Button>
+			{/if}
+			{#if meta.review > 0}
+				<Button onclick={() => goto('/revisar')}>Revisar títulos</Button>
+			{/if}
+		</div>
+		{#if metaError !== undefined}<ErrorNotice error={metaError} />{/if}
+		{#if meta.enabled && !meta.has_key}
+			<p class="note">Ligado, mas sem chave: nada é buscado até você salvar uma.</p>
+		{/if}
+		{#if meta.last_error === 'invalid_key'}
+			<p class="note">O TMDB recusou esta chave. Confira e salve de novo.</p>
+		{:else if meta.last_error === 'unavailable'}
+			<p class="note">Sem resposta do TMDB. O servidor tenta de novo no próximo scan.</p>
+		{/if}
+		<dl>
+			<dt>Títulos reconhecidos</dt>
+			<dd>{meta.matched}</dd>
+			<dt>Para revisar</dt>
+			<dd>{meta.review}</dd>
+		</dl>
+		<p class="note">Este produto usa a API do TMDB, mas não é endossado nem certificado pelo TMDB.</p>
+	</section>
+{/if}
 
 <section>
 	<h2>Servidor</h2>
@@ -169,6 +320,10 @@
 		<dd>{platformName}</dd>
 		<dt>Reproduz direto</dt>
 		<dd>{caps.length > 0 ? caps.join(' · ') : '—'}</dd>
+		{#if rates.length > 0}
+			<dt>Taxas da tela</dt>
+			<dd>{rates.map((r) => `${r} Hz`).join(' · ')}</dd>
+		{/if}
 		<dt>Legendas ASS no aparelho</dt>
 		<dd>{caps.includes('ass') ? 'sim' : 'não (gravadas no vídeo pelo servidor)'}</dd>
 	</dl>
@@ -220,8 +375,50 @@
 		margin-top: 2rem;
 		color: rgba(255, 255, 255, 0.6);
 	}
+	.label {
+		margin: 1.5rem 0 0.75rem;
+		color: rgba(255, 255, 255, 0.6);
+	}
+	.intro {
+		max-width: 60rem;
+		color: rgba(255, 255, 255, 0.6);
+	}
+	.field {
+		display: block;
+		max-width: 40rem;
+		margin: 1rem 0 1.5rem;
+		color: rgba(255, 255, 255, 0.6);
+	}
+	input {
+		display: block;
+		width: 100%;
+		height: 3.25rem;
+		margin-top: 0.5rem;
+		padding: 0 1.25rem;
+		border: 0;
+		border-radius: 12px;
+		background: rgba(255, 255, 255, 0.1);
+		color: rgba(255, 255, 255, 0.92);
+		font: inherit;
+		font-size: 1.25rem;
+		outline: none;
+	}
+	input:global([data-focused]) {
+		box-shadow: 0 0 0 3px #4c8dff;
+	}
+	.sample {
+		margin-top: 1.5rem;
+		padding: 2rem;
+		border-radius: 12px;
+		background: linear-gradient(135deg, #5b7083, #1c2733);
+		text-align: center;
+	}
 	/* TV: text of at least 24px at 1080p (AGENTS.md §7). */
-	:global(html.tv) dl {
+	:global(html.tv) dl,
+	:global(html.tv) .label,
+	:global(html.tv) .intro,
+	:global(html.tv) .field,
+	:global(html.tv) input {
 		font-size: 1.5rem;
 	}
 </style>

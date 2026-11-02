@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { finishedCard, watchedLast, type CardItem } from './cards';
+import { collectionCard, collectionLabel, finishedCard, watchedLast, type CardItem } from './cards';
 
 const card = (key: string): CardItem => ({ key, imageId: key, title: key, href: `/filme/${key}` });
 
@@ -20,5 +20,24 @@ describe('finishedCard', () => {
 			watched: true,
 		});
 		expect(finishedCard({ kind: 'anime', id: 's', title: 'S', at: 1 }).href).toBe('/serie/s');
+	});
+});
+
+describe('collectionLabel', () => {
+	it('does not repeat the word', () => {
+		expect(collectionLabel('Star Wars')).toBe('Coleção: Star Wars');
+		expect(collectionLabel('Coleção Star Wars')).toBe('Coleção Star Wars');
+		expect(collectionLabel('Star Wars: A Coleção')).toBe('Star Wars: A Coleção');
+	});
+});
+
+describe('collectionCard', () => {
+	it('opens the collection, with its oldest movie as the image', () => {
+		expect(collectionCard({ id: 7, name: 'Star Wars', count: 3, image_id: 'm1' })).toMatchObject({
+			href: '/colecao/7',
+			imageId: 'm1',
+			title: 'Star Wars',
+			subtitle: '3 filmes',
+		});
 	});
 });

@@ -177,3 +177,31 @@ func TestProbeRealFile(t *testing.T) {
 		t.Errorf("probe of fake file: err = %v", err)
 	}
 }
+
+func TestFrameRate(t *testing.T) {
+	cases := []struct {
+		name, avg, r string
+		want         float64
+	}{
+		{"film", "24000/1001", "24000/1001", 24000.0 / 1001},
+		{"unknown average", "0/0", "25/1", 25},
+		{"unknown", "0/0", "0/0", 0},
+		{"missing", "", "", 0},
+	}
+	for _, c := range cases {
+		if got := frameRate(ffStream{AvgFrameRate: c.avg, RFrameRate: c.r}); got != c.want {
+			t.Errorf("%s = %v, want %v", c.name, got, c.want)
+		}
+	}
+}
+
+func TestFormatTags(t *testing.T) {
+	raw := `{"streams":[{"codec_type":"video","codec_name":"h264"}],"format":{"format_name":"matroska","tags":{"TMDB":"tv/136315","IMDB":"tt14452776"}}}`
+	res, err := Parse([]byte(raw), ".mkv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Tags["tmdb"] != "tv/136315" || res.Tags["imdb"] != "tt14452776" {
+		t.Errorf("tags = %v", res.Tags)
+	}
+}

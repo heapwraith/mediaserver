@@ -8,7 +8,7 @@
 	import Hero from '#lib/ui/Hero.svelte';
 	import PlayButtons from '#lib/ui/PlayButtons.svelte';
 	import Row from '#lib/ui/Row.svelte';
-	import { extraCard } from '#lib/ui/cards.ts';
+	import { collectionLabel, extraCard } from '#lib/ui/cards.ts';
 	import { moviePlay, movieHero } from '#lib/ui/hero.ts';
 	import ErrorNotice from '#lib/ui/ErrorNotice.svelte';
 
@@ -38,6 +38,10 @@
 			<Button id="movie:watched" onclick={() => toggleWatched(movie.media_id, watched)}>
 				{watched ? '✓ Assistido' : 'Marcar como assistido'}
 			</Button>
+			{#if movie.collection}
+				{@const c = movie.collection}
+				<Button onclick={() => goto(`/colecao/${c.id}`)}>{collectionLabel(c.name)}</Button>
+			{/if}
 		{/snippet}
 	</Hero>
 	<Row id="extras" title="Extras" items={h.extras.map(extraCard)} />
