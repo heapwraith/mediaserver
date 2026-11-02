@@ -127,9 +127,11 @@ func TestProfilesAndProgress(t *testing.T) {
 	if status, _ := call(http.MethodPost, "/api/profiles/"+bia.ID+"/session", `{}`); status != http.StatusForbidden {
 		t.Errorf("session without pin = %d", status)
 	}
-	if status, body := call(http.MethodPost, "/api/profiles/"+bia.ID+"/session", `{"pin":"1234"}`); status != http.StatusOK ||
-		ProfileHeader+": "+decode[sessionBody](t, body).Token != biaH {
+	// The token carries an expiry in seconds, so a new one may differ: it must work.
+	if status, body := call(http.MethodPost, "/api/profiles/"+bia.ID+"/session", `{"pin":"1234"}`); status != http.StatusOK {
 		t.Errorf("session with pin = %d %s", status, body)
+	} else if status, _ := call(http.MethodGet, "/api/home", "", ProfileHeader+": "+decode[sessionBody](t, body).Token); status != http.StatusOK {
+		t.Errorf("home with the new session = %d", status)
 	}
 	if status, _ := call(http.MethodPost, "/api/profiles/"+ana.ID+"/session", `{}`); status != http.StatusOK {
 		t.Errorf("session without pin (none set) = %d", status)
