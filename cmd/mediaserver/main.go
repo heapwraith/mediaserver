@@ -108,6 +108,18 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 		return err
 	}
 
+	mediaRoot, err := os.OpenRoot(cfg.MediaDir)
+	if err != nil {
+		return fmt.Errorf("open media dir: %w", err)
+	}
+	defer mediaRoot.Close()
+	// Before the library: the scan that starts with it ends in afterScan.
+	images, err := stream.NewImages(conn, mediaRoot, cfg.FFmpegPath, filepath.Join(cfg.DataDir, "images"),
+		logger.With("component", "images"))
+	if err != nil {
+		return err
+	}
+
 	// Background work (scan, watcher) stops with this context; it is canceled
 	// before waiting for it, also when serve fails early.
 	ctx, cancel := context.WithCancel(ctx)
@@ -118,6 +130,7 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 	afterScan := func() {
 		analyzer.Trigger()
 		meta.Trigger()
+		images.Trigger()
 	}
 	lib, stopLib, err := startLibrary(ctx, cfg, conn, logger, afterScan)
 	if err != nil {
@@ -129,18 +142,8 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 		stopLib()
 	}()
 
-	mediaRoot, err := os.OpenRoot(cfg.MediaDir)
-	if err != nil {
-		return fmt.Errorf("open media dir: %w", err)
-	}
-	defer mediaRoot.Close()
 	store := library.Store{DB: conn}
 	secret, err := store.Secret(ctx)
-	if err != nil {
-		return err
-	}
-	images, err := stream.NewImages(conn, mediaRoot, cfg.FFmpegPath, filepath.Join(cfg.DataDir, "images"),
-		logger.With("component", "images"))
 	if err != nil {
 		return err
 	}
@@ -164,6 +167,7 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 	bg.Go(func() { transcoder.Run(ctx) })
 	bg.Go(func() { analyzer.Run(ctx) })
 	bg.Go(func() { meta.Run(ctx) })
+	bg.Go(func() { images.Run(ctx) })
 	defer func() {
 		cancel()
 		bg.Wait()

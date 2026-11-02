@@ -9,7 +9,10 @@ import bebas from '@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff
 import { mount } from 'svelte';
 
 import { detectNative } from '../lib/platform/native';
+import { installPolyfills } from '../lib/platform/polyfills';
 import Connect from './Connect.svelte';
+
+installPolyfills();
 
 // Only the latin subset (Portuguese fits in it), inlined: a page opened from
 // file:// cannot always load fonts from separate files.

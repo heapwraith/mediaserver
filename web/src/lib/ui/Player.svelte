@@ -234,10 +234,18 @@
 	}
 
 	async function loadTracks(id: string) {
+		next = undefined;
 		const m = await getMedia(id).catch(() => undefined);
 		if (m === undefined) {
 			tracksReady = true;
 			return;
+		}
+		// Only episodes have a next one: for the rest the server would just log a 404.
+		if (m.kind === 'episode') {
+			nextEpisode(id).then(
+				(n) => (next = n),
+				() => (next = undefined),
+			);
 		}
 		audio = m.audio;
 		markers = m.markers ?? [];
@@ -399,10 +407,6 @@
 				() => (resume = 0),
 			);
 		}
-		nextEpisode(id).then(
-			(n) => (next = n),
-			() => (next = undefined),
-		);
 	});
 
 	/** Saves the position; keepalive lets it finish while the page closes. */

@@ -2,7 +2,7 @@
 
 Instruções para qualquer agente de IA (Claude Code, Codex, Cursor etc.) que trabalhe neste repositório.
 
-> **Nome do projeto:** ainda não definido. Use `mediaserver` como placeholder no módulo Go, no binário e nos textos. A troca será feita de uma vez quando o nome for escolhido.
+> **Nome do projeto:** **Telão** na interface e nos apps de TV ([ADR 013](docs/adr/013-identidade-telao.md)). `mediaserver` continua como placeholder no módulo Go, no binário e nos pacotes, até a troca, que está no Backlog e será feita de uma vez.
 
 ---
 
@@ -94,7 +94,7 @@ A pasta onde o arquivo está também conta como pista (ex.: uma pasta chamada `A
 - Anime com episódio absoluto: ` - 01`, ` - 1080`, `EP01`, `E01`, `v2` (versão)
 - Ano: `(2020)`, `.2020.`, `[2020]`
 - Separadores `.`, `_` e `-` tratados como espaço
-- Tags de release ignoradas no título: grupo (`[SubsPlease]`), resolução (`1080p`, `2160p`), codec (`x265`, `HEVC`, `AV1`), fonte (`WEB-DL`, `BluRay`), áudio (`DTS`, `AAC`), hash (`[ABC123EF]`), `REPACK`, `PROPER`
+- Tags de release ignoradas no título: grupo (`[SubsPlease]`, `(AnimesTotais)`), resolução (`1080p`, `2160p`), codec (`x265`, `HEVC`, `AV1`), fonte (`WEB-DL`, `BluRay`), áudio (`DTS`, `AAC`), hash (`[ABC123EF]`), `REPACK`, `PROPER`
 - Títulos com acento, Unicode e caracteres japoneses
 - Extensões de vídeo: `.mkv .mp4 .m4v .avi .webm .mov .ts`
 - Legendas laterais: `.srt .ass .ssa .vtt`, com idioma opcional (`.pt-BR.srt`, `.en.ass`)
@@ -167,6 +167,8 @@ edge >= 115
 | `subgrid` | Chrome 117 | Grid comum |
 
 Esses recursos são bloqueados na **`blocklist` do `uno.config.ts`** (ex.: `aspect-*`, `inset-*`, `has-*`, `@container`, `gap-*` aplicado a flex). O `preset-typography` não é usado, porque gera `:where()`. Usar algo da lista só é permitido dentro de `@supports`, como melhoria opcional, e nunca para algo essencial.
+
+**Funções de JavaScript:** o Vite converte a sintaxe, não as funções (`toSorted`, `Array.at`, `structuredClone`). O `make check` procura no JS final, dependências incluídas, as funções mais novas que o Chromium 76 (`web/scripts/check-build.ts`). `String.replaceAll` e `Object.hasOwn`, que o Svelte e o SvelteKit usam, vêm de um polyfill (`web/src/lib/platform/polyfills.ts`).
 
 ## 7. Design e UX
 
