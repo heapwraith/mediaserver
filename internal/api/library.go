@@ -28,6 +28,9 @@ func decodeJSON(r *http.Request, v any) error {
 	if err != nil {
 		return fmt.Errorf("%w: read body: %w", scanner.ErrInvalid, err)
 	}
+	if len(data) > 0 && !isJSON(r) {
+		return fmt.Errorf("%w: Content-Type must be application/json", scanner.ErrInvalid)
+	}
 	if err := json.Unmarshal(data, v, json.RejectUnknownMembers(true)); err != nil {
 		return fmt.Errorf("%w: invalid JSON: %w", scanner.ErrInvalid, err)
 	}

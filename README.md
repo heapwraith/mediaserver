@@ -234,6 +234,7 @@ Prioridade: **flags > variáveis de ambiente > `config.toml`** (na pasta atual, 
 | `-hwaccel` | `HWACCEL` | `hwaccel` | `auto` (`auto`, `nvenc`, `qsv`, `amf`, `vaapi`, `videotoolbox`, `none`) |
 | `-env` | `APP_ENV` | `env` | `prod` (`dev` = logs em texto; `prod` = JSON) |
 | `-log-level` | `LOG_LEVEL` | `log_level` | `info` |
+| — | `ALLOWED_HOSTS` | `allowed_hosts` | vazio. Nomes com ponto (ex.: `telao.casa`) que o servidor aceita; IPs, `localhost`, nomes sem ponto e `*.local` sempre passam |
 | `-scan-workers` | `SCAN_WORKERS` | `scan_workers` | `0` (= nº de CPUs) |
 | `-watch` | `WATCH` | `watch` | `true` (detecta arquivos novos sozinho) |
 | `-scan-on-start` | `SCAN_ON_START` | `scan_on_start` | `true` |
@@ -438,3 +439,12 @@ Decisões de arquitetura em [`docs/adr/`](docs/adr/).
 - **Marcas:** Samsung, Tizen, LG, webOS, Android, Google TV, Fire TV e outras citadas são marcas dos seus donos. O projeto não é afiliado, patrocinado nem endossado por eles.
 - **TMDB:** este produto usa a API do TMDB, mas não é endossado nem certificado pelo TMDB. O recurso é opcional e desligado por padrão.
 - **Privacidade:** sem telemetria e sem contas externas. Perfis e histórico ficam só no seu banco local.
+
+## Privacidade e segurança na rede
+
+- O servidor **não faz nenhuma chamada à internet** (só o TMDB, se você ligar). Sem telemetria.
+- Ele escuta em todas as interfaces, **inclusive IPv6**. Confira no roteador que **não há encaminhamento de porta** para ele e que o firewall IPv6 bloqueia entrada. Não exponha a porta à internet.
+- O servidor recusa pedidos com `Host` de domínio externo (proteção contra *DNS rebinding*) e pedidos de gravação vindos de outro site (CSRF).
+- O backup (`/api/admin/backup`) **não leva** o segredo das sessões, a chave do TMDB nem os PINs: depois de restaurar, defina os PINs de novo.
+- A sessão de um perfil vale 90 dias.
+- Detalhes: [docs/auditoria-seguranca.md](docs/auditoria-seguranca.md).

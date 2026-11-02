@@ -274,7 +274,7 @@
 						onclick={() => void connect(f)}
 					>
 						<span class="font-600">{label(f)}</span>
-						<span class="ml-4 text-text-secondary">versão {f.version}</span>
+						{#if f.version}<span class="ml-4 text-text-secondary">versão {f.version}</span>{/if}
 					</button>
 				{/each}
 				<p class="m-0 text-[1.5rem] text-text-tertiary" aria-live="polite">

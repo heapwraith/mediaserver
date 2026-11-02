@@ -126,6 +126,7 @@ func TestLoad(t *testing.T) {
 		if err != nil {
 			return 0, err.Error()
 		}
+		req.Header.Set("Content-Type", "application/json")
 		res, err := client.Do(req)
 		if err != nil {
 			return 0, err.Error()

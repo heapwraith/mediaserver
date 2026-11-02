@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -187,7 +188,7 @@ func serve(ctx context.Context, cfg config.Config, logger *slog.Logger, start ti
 			Scanner: lib, StartScan: func() bool { return lib.Start(ctx) },
 			Library: store, Stream: &stream.Server{Root: mediaRoot, Files: store}, Images: images,
 			Transcoder: transcoder, Subtitles: subs, Secret: secret, Metadata: meta,
-			DataDir: cfg.DataDir, Started: start,
+			DataDir: cfg.DataDir, Started: start, AllowedHosts: strings.Split(cfg.AllowedHosts, ","),
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       2 * time.Minute,

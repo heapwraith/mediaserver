@@ -71,8 +71,8 @@ func TestHealth(t *testing.T) {
 		wantStatus int
 		want       healthBody
 	}{
-		{"db ok", true, http.StatusOK, healthBody{Name: "mediaserver", Status: "ok", Version: "1.2.3-test", DB: "ok"}},
-		{"db missing", false, http.StatusServiceUnavailable, healthBody{Name: "mediaserver", Status: "degraded", Version: "1.2.3-test", DB: "error"}},
+		{"db ok", true, http.StatusOK, healthBody{Name: "mediaserver", Status: "ok", DB: "ok"}},
+		{"db missing", false, http.StatusServiceUnavailable, healthBody{Name: "mediaserver", Status: "degraded", DB: "error"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

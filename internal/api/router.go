@@ -49,6 +49,8 @@ type Deps struct {
 	// DataDir holds the temporary copy of a backup (DATA_DIR) and the
 	// caches whose size the status page shows.
 	DataDir string
+	// AllowedHosts are extra host names the server answers to (ALLOWED_HOSTS).
+	AllowedHosts []string
 	// Started is when the server started (uptime on the status page).
 	Started time.Time
 
@@ -63,6 +65,7 @@ func NewRouter(d Deps) http.Handler {
 	d.admin = &adminState{}
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
+	r.Use(d.guard)
 	r.Use(requestLogger(d.Logger))
 	r.Use(middleware.Recoverer)
 

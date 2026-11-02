@@ -3,6 +3,7 @@
 package db
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"errors"
@@ -156,5 +157,49 @@ func TestRestore(t *testing.T) {
 				t.Errorf("leftovers: %v", leftovers)
 			}
 		})
+	}
+}
+
+func TestBackupHasNoSecrets(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "mediaserver.db")
+	newDB(t, file, "Sala")
+	conn, err := Open(t.Context(), file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	for _, q := range []string{
+		`INSERT INTO app_state (key, value) VALUES ('session_secret', 'SEGREDO-DA-SESSAO'), ('tmdb_key', 'CHAVE-DO-TMDB'), ('other', 'kept')`,
+		`UPDATE profiles SET pin_hash = 'pbkdf2-sha256$1$aa$HASH-DO-PIN'`,
+	} {
+		if _, err := conn.ExecContext(t.Context(), q); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	out, err := Backup(t.Context(), conn, dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, secret := range []string{"SEGREDO-DA-SESSAO", "CHAVE-DO-TMDB", "HASH-DO-PIN"} {
+		if bytes.Contains(raw, []byte(secret)) {
+			t.Errorf("the backup file still holds %q", secret)
+		}
+	}
+	if !bytes.Contains(raw, []byte("kept")) || profileName(t, out) != "Sala" {
+		t.Error("the backup lost data that is not a secret")
+	}
+	if left, _ := filepath.Glob(filepath.Join(dir, "backup-*")); len(left) != 1 {
+		t.Errorf("files left in %s: %v, want only the backup", dir, left)
+	}
+	// The database in use keeps its secrets.
+	var n int
+	if err := conn.QueryRowContext(t.Context(), `SELECT COUNT(*) FROM app_state WHERE key = 'session_secret'`).Scan(&n); err != nil || n != 1 {
+		t.Errorf("session secret in the live database: n=%d err=%v", n, err)
 	}
 }

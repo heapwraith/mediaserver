@@ -384,6 +384,7 @@ Revisão do sistema (01/11/2026), por prioridade:
 
 - **Conformidade ([docs/conformidade.md](docs/conformidade.md)):** confirmar a licença da fonte padrão do JASSUB; buscar "Telão" no INPI; PIN de administrador e backup (itens de segurança abaixo)
 
+- **Auditoria de segurança ([docs/auditoria-seguranca.md](docs/auditoria-seguranca.md)):** o item de backup abaixo foi comprovado (um perfil novo, sem PIN, baixa o banco e forja a sessão de quem tem PIN). Também faltam checagem de `Origin`/`Host` e `Content-Type` JSON (CSRF e DNS rebinding), cabeçalhos de segurança, limite de PIN por IP e prazo de sessão
 - **Segurança — backup:** `/api/admin/backup` aceita qualquer perfil, inclusive um recém-criado sem PIN por alguém da rede. O backup leva o segredo que assina as sessões, o que permite forjar a sessão de um perfil com PIN. Restringir a um perfil administrador e/ou tirar o segredo do backup
 - **Segurança — administração:** Revisar, scan e mesclar/separar séries não pedem nada na rede local. Criar um PIN de administrador para Revisar e Configurações
 - **Scanner — perda de progresso:** se uma subpasta fica ilegível por um momento (permissão, HD externo ou rede instável), os arquivos dela são apagados do banco junto com o progresso. Usar o status `missing` (já existe no esquema) e só apagar depois de alguns scans ou dias

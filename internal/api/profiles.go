@@ -8,6 +8,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"time"
 
 	"mediaserver/internal/library"
 )
@@ -21,7 +22,7 @@ type sessionBody struct {
 }
 
 func (d Deps) session(p library.Profile, pinHash string) sessionBody {
-	return sessionBody{Profile: p, Token: sessionToken(d.Secret, p.ID, pinHash)}
+	return sessionBody{Profile: p, Token: sessionToken(d.Secret, p.ID, pinHash, time.Now().Add(sessionTTL))}
 }
 
 // GET /api/profiles
@@ -69,7 +70,8 @@ func (d Deps) startSession(w http.ResponseWriter, r *http.Request) {
 		d.writeError(w, r, err)
 		return
 	}
-	if left := d.pins.wait(id); left > 0 {
+	key := pinKey(id, r)
+	if left := d.pins.wait(key); left > 0 {
 		w.Header().Set("Retry-After", strconv.Itoa(int(math.Ceil(left.Seconds()))))
 		writeJSON(w, http.StatusTooManyRequests, errorBody{Error: "too many wrong PINs, wait a moment", Code: "pin_locked"})
 		return
@@ -80,15 +82,15 @@ func (d Deps) startSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if hash != "" && !library.VerifyPIN(hash, b.PIN) {
-		if d.pins.fail(id) {
-			w.Header().Set("Retry-After", strconv.Itoa(int(pinLock.Seconds())))
+		if d.pins.fail(key) {
+			w.Header().Set("Retry-After", strconv.Itoa(int(math.Ceil(d.pins.lockFor(key).Seconds()))))
 			writeJSON(w, http.StatusTooManyRequests, errorBody{Error: "too many wrong PINs, wait a moment", Code: "pin_locked"})
 			return
 		}
 		writeJSON(w, http.StatusForbidden, errorBody{Error: "wrong PIN", Code: "wrong_pin"})
 		return
 	}
-	d.pins.reset(id)
+	d.pins.reset(key)
 	writeJSON(w, http.StatusOK, d.session(p, hash))
 }
 

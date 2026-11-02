@@ -23,19 +23,77 @@ var (
 // Backup writes a consistent copy of the database to a new file in dir and
 // returns its path. VACUUM INTO works while the server keeps using the
 // database, and the copy has no WAL to carry along.
+//
+// The copy has no secrets: the session secret, the TMDB key and the PIN
+// hashes are removed (a 4-digit PIN hash is broken offline in minutes, and
+// the secret would let anyone forge a session). After a restore the sessions
+// are signed with a new secret and the profiles come back without PIN.
 func Backup(ctx context.Context, conn *sql.DB, dir string) (string, error) {
-	f, err := os.CreateTemp(dir, "backup-*.db")
+	tmp, err := tempName(dir, "backup-raw-*.db")
+	if err != nil {
+		return "", err
+	}
+	defer removeDB(tmp)
+	if _, err := conn.ExecContext(ctx, `VACUUM INTO ?`, tmp); err != nil {
+		return "", fmt.Errorf("backup %s: %w", tmp, err)
+	}
+	if err := stripSecrets(ctx, tmp); err != nil {
+		return "", err
+	}
+	// A second VACUUM INTO drops the free pages where the removed values
+	// would still be readable.
+	name, err := tempName(dir, "backup-*.db")
+	if err != nil {
+		return "", err
+	}
+	src, err := Open(ctx, tmp)
+	if err != nil {
+		return "", fmt.Errorf("backup: %w", err)
+	}
+	defer src.Close()
+	if _, err := src.ExecContext(ctx, `VACUUM INTO ?`, name); err != nil {
+		_ = os.Remove(name)
+		return "", fmt.Errorf("backup %s: %w", name, err)
+	}
+	return name, nil
+}
+
+// secretKeys are the app_state keys that never go into a backup.
+var secretKeys = []string{"session_secret", "tmdb_key"}
+
+func stripSecrets(ctx context.Context, file string) (err error) {
+	c, err := Open(ctx, file)
+	if err != nil {
+		return fmt.Errorf("backup: %w", err)
+	}
+	defer func() {
+		if cerr := c.Close(); err == nil && cerr != nil {
+			err = cerr
+		}
+	}()
+	for _, q := range []struct {
+		sql  string
+		args []any
+	}{
+		{`DELETE FROM app_state WHERE key IN (?, ?)`, []any{secretKeys[0], secretKeys[1]}},
+		{`UPDATE profiles SET pin_hash = NULL`, nil},
+	} {
+		if _, err := c.ExecContext(ctx, q.sql, q.args...); err != nil {
+			return fmt.Errorf("backup: remove secrets: %w", err)
+		}
+	}
+	return nil
+}
+
+// tempName reserves a unique file name in dir and leaves no file behind.
+func tempName(dir, pattern string) (string, error) {
+	f, err := os.CreateTemp(dir, pattern)
 	if err != nil {
 		return "", fmt.Errorf("backup: %w", err)
 	}
 	name := f.Name()
-	// VACUUM INTO wants a file that does not exist yet.
 	if err := errors.Join(f.Close(), os.Remove(name)); err != nil {
 		return "", fmt.Errorf("backup: %w", err)
-	}
-	if _, err := conn.ExecContext(ctx, `VACUUM INTO ?`, name); err != nil {
-		_ = os.Remove(name)
-		return "", fmt.Errorf("backup %s: %w", name, err)
 	}
 	return name, nil
 }

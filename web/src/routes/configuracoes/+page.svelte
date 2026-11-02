@@ -338,7 +338,7 @@
 </section>
 
 {#await health then h}
-	{#if h}<p class="note">Servidor {h.version} · banco {h.db}</p>{/if}
+	{#if h}<p class="note">Servidor{h.version ? ` ${h.version}` : ''} · banco {h.db}</p>{/if}
 {/await}
 
 <style>

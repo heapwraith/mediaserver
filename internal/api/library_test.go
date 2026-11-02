@@ -109,6 +109,9 @@ func do(t *testing.T, srv *httptest.Server, method, path, body string, headers .
 	if err != nil {
 		t.Fatal(err)
 	}
+	if body != "" {
+		req.Header.Set("Content-Type", "application/json")
+	}
 	for _, h := range headers {
 		if k, v, ok := strings.Cut(h, ": "); ok {
 			req.Header.Set(k, v)

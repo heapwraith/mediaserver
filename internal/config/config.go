@@ -44,9 +44,12 @@ type Config struct {
 	HWAccel     string `toml:"hwaccel"`
 	Env         string `toml:"env"`
 	LogLevel    string `toml:"log_level"`
-	ScanWorkers int    `toml:"scan_workers"`  // 0 = number of CPUs
-	Watch       bool   `toml:"watch"`         // watch MEDIA_DIR for changes
-	ScanOnStart bool   `toml:"scan_on_start"` // incremental scan at startup
+	// AllowedHosts: comma-separated extra host names the server answers to
+	// (a name with dots, e.g. telao.casa). IPs, localhost and *.local always pass.
+	AllowedHosts string `toml:"allowed_hosts"`
+	ScanWorkers  int    `toml:"scan_workers"`  // 0 = number of CPUs
+	Watch        bool   `toml:"watch"`         // watch MEDIA_DIR for changes
+	ScanOnStart  bool   `toml:"scan_on_start"` // incremental scan at startup
 	// MaxTranscodes limits the concurrent video encodes (remuxes are free).
 	MaxTranscodes int `toml:"max_transcodes"`
 	// TranscodeCacheMB is the size of DATA_DIR/transcode (oldest deleted first).
@@ -193,14 +196,15 @@ func loadFile(cfg *Config, path string, explicit bool) error {
 
 func applyEnv(cfg *Config, getenv func(string) string) error {
 	str := map[string]*string{
-		"MEDIA_DIR":    &cfg.MediaDir,
-		"DATA_DIR":     &cfg.DataDir,
-		"HOST":         &cfg.Host,
-		"FFMPEG_PATH":  &cfg.FFmpegPath,
-		"FFPROBE_PATH": &cfg.FFprobePath,
-		"HWACCEL":      &cfg.HWAccel,
-		"APP_ENV":      &cfg.Env,
-		"LOG_LEVEL":    &cfg.LogLevel,
+		"MEDIA_DIR":     &cfg.MediaDir,
+		"DATA_DIR":      &cfg.DataDir,
+		"HOST":          &cfg.Host,
+		"FFMPEG_PATH":   &cfg.FFmpegPath,
+		"FFPROBE_PATH":  &cfg.FFprobePath,
+		"HWACCEL":       &cfg.HWAccel,
+		"APP_ENV":       &cfg.Env,
+		"LOG_LEVEL":     &cfg.LogLevel,
+		"ALLOWED_HOSTS": &cfg.AllowedHosts,
 	}
 	for key, dst := range str {
 		if v := getenv(key); v != "" {

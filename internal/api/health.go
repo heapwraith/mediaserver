@@ -29,7 +29,7 @@ type errorBody struct {
 // call it from their packaged (file://) page to find the server.
 func healthHandler(d Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		body := healthBody{Name: "mediaserver", Status: "ok", Version: d.Version, DB: "ok"}
+		body := healthBody{Name: "mediaserver", Status: "ok", DB: "ok"} // no version: anyone on the network can read this
 		status := http.StatusOK
 
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
@@ -39,7 +39,11 @@ func healthHandler(d Deps) http.HandlerFunc {
 			status = http.StatusServiceUnavailable
 		}
 		w.Header().Set("Cache-Control", "no-store")
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		// The TV apps (file:// pages) probe the network for servers; a web
+		// page may not, so a site cannot map the house through this endpoint.
+		if o := r.Header.Get("Origin"); !webOrigin(o) {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+		}
 		writeJSON(w, status, body)
 	}
 }
