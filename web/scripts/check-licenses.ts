@@ -43,6 +43,8 @@ function walk(tree: Record<string, Node>, out: Map<string, string>): void {
 const raw = execFileSync('npm', ['ls', '--omit=dev', '--all', '--json'], {
 	encoding: 'utf8',
 	maxBuffer: 64 * 1024 * 1024,
+	// On Windows npm is npm.cmd, which Node only runs through a shell (fixed arguments).
+	shell: process.platform === 'win32',
 });
 const deps = new Map<string, string>();
 const tree: Node = JSON.parse(raw);
