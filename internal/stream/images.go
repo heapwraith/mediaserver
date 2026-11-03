@@ -211,7 +211,18 @@ func (im *Images) ServeImage(w http.ResponseWriter, r *http.Request, id, variant
 	}
 	key := im.sourceKey(&src)
 	keyDir := filepath.Join(im.dir, id, key)
-	name := fmt.Sprintf("%s-%d.webp", variant, width)
+	// The file name comes from the known variants and widths, never from the request.
+	name := ""
+	for _, v := range Variants {
+		for _, w := range Widths {
+			if v == variant && w == width {
+				name = fmt.Sprintf("%s-%d.webp", v, w)
+			}
+		}
+	}
+	if name == "" {
+		return fmt.Errorf("image %s: variant %q width %d: %w", id, variant, width, ErrNotFound)
+	}
 
 	f, err := os.Open(filepath.Join(keyDir, name)) //nolint:gosec // id is a UUID, key a hex hash, name a fixed variant
 	if errors.Is(err, os.ErrNotExist) {
