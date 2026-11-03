@@ -46,7 +46,7 @@ func (d Deps) writeError(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, stream.ErrFileMissing):
 		writeJSON(w, http.StatusGone, errorBody{Error: "media file missing", Code: "file_missing"})
 	case errors.Is(err, exec.ErrNotFound):
-		d.Logger.WarnContext(r.Context(), "ffmpeg not found", "path", logSafe(r.URL.Path), "err", err)
+		d.Logger.WarnContext(r.Context(), "ffmpeg not found", "path", logSafe(r.URL.Path), "err", logSafe(err.Error()))
 		writeJSON(w, http.StatusServiceUnavailable, errorBody{Error: "ffmpeg not available", Code: "no_ffmpeg"})
 	case errors.Is(err, stream.ErrBusy):
 		writeJSON(w, http.StatusServiceUnavailable, errorBody{Error: "too many transcodes running", Code: "busy"})
@@ -64,7 +64,7 @@ func (d Deps) writeError(w http.ResponseWriter, r *http.Request, err error) {
 		errors.Is(err, metadata.ErrNotFound):
 		writeJSON(w, http.StatusNotFound, errorBody{Error: "not found", Code: "not_found"})
 	default:
-		d.Logger.ErrorContext(r.Context(), "request failed", "path", logSafe(r.URL.Path), "err", err)
+		d.Logger.ErrorContext(r.Context(), "request failed", "path", logSafe(r.URL.Path), "err", logSafe(err.Error()))
 		writeJSON(w, http.StatusInternalServerError, errorBody{Error: "internal error", Code: "internal"})
 	}
 }
