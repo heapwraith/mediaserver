@@ -40,7 +40,7 @@ func (d Deps) playback(w http.ResponseWriter, r *http.Request) {
 			// What each device got and why: checked on every TV (docs/tv/README.md).
 			if d.Logger != nil {
 				d.Logger.InfoContext(r.Context(), "playback", "media", id, "direct", pb.Direct,
-					"video", pb.Video, "audio", pb.Audio, "burned", pb.Burned, "caps", strings.Join(req.Caps, ","))
+					"video", pb.Video, "audio", pb.Audio, "burned", pb.Burned, "caps", logSafe(strings.Join(req.Caps, ",")))
 			}
 			if pb.Direct { // <video src> cannot send headers: the URL carries the media token
 				var tok string
