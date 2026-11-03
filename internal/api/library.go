@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"os/exec"
+	"strings"
 	"uuid"
 
 	"github.com/go-chi/chi/v5"
@@ -45,7 +46,7 @@ func (d Deps) writeError(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, stream.ErrFileMissing):
 		writeJSON(w, http.StatusGone, errorBody{Error: "media file missing", Code: "file_missing"})
 	case errors.Is(err, exec.ErrNotFound):
-		d.Logger.WarnContext(r.Context(), "ffmpeg not found", "path", r.URL.Path, "err", err)
+		d.Logger.WarnContext(r.Context(), "ffmpeg not found", "path", logSafe(r.URL.Path), "err", err)
 		writeJSON(w, http.StatusServiceUnavailable, errorBody{Error: "ffmpeg not available", Code: "no_ffmpeg"})
 	case errors.Is(err, stream.ErrBusy):
 		writeJSON(w, http.StatusServiceUnavailable, errorBody{Error: "too many transcodes running", Code: "busy"})
@@ -63,18 +64,26 @@ func (d Deps) writeError(w http.ResponseWriter, r *http.Request, err error) {
 		errors.Is(err, metadata.ErrNotFound):
 		writeJSON(w, http.StatusNotFound, errorBody{Error: "not found", Code: "not_found"})
 	default:
-		d.Logger.ErrorContext(r.Context(), "request failed", "path", r.URL.Path, "err", err)
+		d.Logger.ErrorContext(r.Context(), "request failed", "path", logSafe(r.URL.Path), "err", err)
 		writeJSON(w, http.StatusInternalServerError, errorBody{Error: "internal error", Code: "internal"})
 	}
 }
 
 // pathID reads a UUID URL parameter.
 func pathID(r *http.Request, name string) (string, error) {
-	id := chi.URLParam(r, name)
-	if _, err := uuid.Parse(id); err != nil {
+	u, err := uuid.Parse(chi.URLParam(r, name))
+	if err != nil {
 		return "", fmt.Errorf("%w: %s must be a UUID", scanner.ErrInvalid, name)
 	}
-	return id, nil
+	// The canonical form, rebuilt from the parsed bytes: nothing the client
+	// sent (separators, "..") survives into paths or logs.
+	return u.String(), nil
+}
+
+// logSafe strips line breaks from client-controlled text before it is logged,
+// so a request cannot forge log lines.
+func logSafe(s string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(s, "\n", ""), "\r", "")
 }
 
 func validIDs(ids ...string) error {

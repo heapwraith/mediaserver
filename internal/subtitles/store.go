@@ -187,7 +187,17 @@ func (s *Store) FontPath(ctx context.Context, mediaID, name string) (string, err
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, "fonts", name), nil
+	// Answer with the name the folder lists, never with the requested one.
+	entries, err := os.ReadDir(filepath.Join(dir, "fonts"))
+	if err != nil {
+		return "", fmt.Errorf("fonts of %s: %w", mediaID, err)
+	}
+	for _, e := range entries {
+		if e.Name() == name {
+			return filepath.Join(dir, "fonts", e.Name()), nil
+		}
+	}
+	return "", fmt.Errorf("font %s: %w", name, library.ErrNotFound)
 }
 
 // BurnFile prepares an ASS subtitle for FFmpeg's subtitles filter: it

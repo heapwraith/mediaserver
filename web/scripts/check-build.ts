@@ -97,12 +97,12 @@ export function checkCss(css: string): string[] {
 
 /** The CSS of the <style> blocks of a page. */
 export function inlineStyles(html: string): string[] {
-	return [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1] ?? '');
+	return [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style[^>]*>/g)].map((m) => m[1] ?? '');
 }
 
 /** The code of the inline <script> blocks of a page. */
 export function inlineScripts(html: string): string[] {
-	return [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1] ?? '');
+	return [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script[^>]*>/g)].map((m) => m[1] ?? '');
 }
 
 /** Static imports (not dynamic import()) of a built JS file. */
